@@ -16,12 +16,13 @@
     
     body {
       background: #ffffff;
-      height: 100vh;
+      min-height: 100vh;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: #1a1a1a;
       margin: 0;
       padding: 0;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       position: relative;
       cursor: default;
     }
@@ -66,6 +67,18 @@
       font-size: 1.4rem;
       font-weight: 700;
       margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .queue-logo {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: white;
+      padding: 2px;
     }
     
     .step-indicator {
@@ -75,13 +88,13 @@
     }
     
     .hero-container {
-      height: 100vh;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
       position: relative;
-      padding: 100px 30px 30px;
+      padding: 100px 30px 50px;
       z-index: 1;
     }
     
@@ -272,7 +285,7 @@
       backdrop-filter: blur(10px);
       opacity: 0;
       transition: all 0.3s ease;
-      z-index: 20;
+      z-index: 30;
     }
     
     .selection-feedback.show {
@@ -305,8 +318,19 @@
         font-size: 1.1rem;
       }
       
+      .queue-logo {
+        width: 28px;
+        height: 28px;
+        background: white;
+        padding: 2px;
+      }
+      
       .step-indicator {
         font-size: 0.9rem;
+      }
+      
+      .hero-container {
+        padding: 80px 20px 40px;
       }
       
       .page-title {
@@ -355,7 +379,10 @@
   <!-- Kiosk Header -->
   <div class="kiosk-header">
     <div class="header-content">
-      <h1 class="kiosk-title">🎯 Queue Management System</h1>
+      <h1 class="kiosk-title">
+        <img src="images/Queue-logo.jpg" alt="Queue Logo" class="queue-logo">
+        Queue Management System
+      </h1>
       <div class="step-indicator">Step 1 of 2</div>
     </div>
   </div>
@@ -378,22 +405,22 @@
         <!-- IE Department Chair -->
         <div class="person-card" onclick="selectPerson('ie-chair', 'IE Department Chair')">
           <div class="person-icon">🏭</div>
-          <div class="person-title">Department Chair</div>
-          <div class="person-department">Industrial Engineering</div>
+          <div class="person-title">Industrial Engineering</div>
+          <div class="person-department">Department Chair</div>
         </div>
         
         <!-- CPE Department Chair -->
         <div class="person-card" onclick="selectPerson('cpe-chair', 'CPE Department Chair')">
           <div class="person-icon">💻</div>
-          <div class="person-title">Department Chair</div>
-          <div class="person-department">Computer Engineering</div>
+          <div class="person-title">Computer Engineering</div>
+          <div class="person-department">Department Chair</div>
         </div>
         
         <!-- ECE Department Chair -->
         <div class="person-card" onclick="selectPerson('ece-chair', 'ECE Department Chair')">
           <div class="person-icon">⚡</div>
-          <div class="person-title">Department Chair</div>
-          <div class="person-department">Electronics & Communications</div>
+          <div class="person-title">Electronics Engineering</div>
+          <div class="person-department">Department Chair</div>
         </div>
         
         <!-- Others Option -->
