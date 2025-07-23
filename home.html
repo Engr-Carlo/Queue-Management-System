@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home - Queue Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    
+    body {
+      background: #ffffff;
+      height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+      cursor: default;
+    }
+    
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.4;
+      z-index: 0;
+    }
+    
+    .kiosk-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(30, 64, 175, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 15px 30px;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .kiosk-title {
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0;
+    }
+    
+    .step-indicator {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    
+    .hero-container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 100px 30px 30px;
+      z-index: 1;
+    }
+    
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.75);
+      z-index: 1;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 1000px;
+      width: 100%;
+    }
+    
+    .page-title {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 15px;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .page-subtitle {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #4b5563;
+      margin-bottom: 50px;
+      line-height: 1.3;
+    }
+    
+    .selection-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 25px;
+      margin-bottom: 50px;
+      max-width: 900px;
+      width: 100%;
+    }
+    
+    .person-card {
+      background: rgba(255, 255, 255, 0.95);
+      border: 3px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 40px 25px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(15px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      min-height: 180px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .person-card:hover {
+      transform: translateY(-8px) scale(1.02);
+      border-color: #dc2626;
+      box-shadow: 0 15px 40px rgba(220, 38, 38, 0.2);
+      background: rgba(255, 255, 255, 0.98);
+    }
+    
+    .person-card:active {
+      transform: translateY(-4px) scale(1.01);
+      transition: all 0.1s ease;
+    }
+    
+    .person-card.selected {
+      border-color: #dc2626;
+      background: rgba(220, 38, 38, 0.08);
+      transform: translateY(-5px) scale(1.02);
+      box-shadow: 0 12px 35px rgba(220, 38, 38, 0.25);
+    }
+    
+    .person-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 36px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .person-card:hover .person-icon,
+    .person-card.selected .person-icon {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 6px 20px rgba(220, 38, 38, 0.3);
+    }
+    
+    .person-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+    
+    .person-department {
+      font-size: 1rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 25px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .btn-kiosk {
+      padding: 18px 45px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+      cursor: pointer;
+      border: none;
+      min-width: 160px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-kiosk:active {
+      transform: translateY(2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-primary-kiosk {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+    }
+    
+    .btn-primary-kiosk:hover:not(:disabled) {
+      background: linear-gradient(135deg, #b91c1c, #991b1b);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(220, 38, 38, 0.3);
+      color: white;
+    }
+    
+    .btn-primary-kiosk:disabled {
+      background: linear-gradient(135deg, #9ca3af, #6b7280);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-secondary-kiosk {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+    }
+    
+    .btn-secondary-kiosk:hover {
+      background: linear-gradient(135deg, #4b5563, #374151);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(75, 85, 99, 0.3);
+      color: white;
+    }
+    
+    .selection-feedback {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(34, 197, 94, 0.95);
+      color: white;
+      padding: 12px 25px;
+      border-radius: 25px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      backdrop-filter: blur(10px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 20;
+    }
+    
+    .selection-feedback.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-10px);
+    }
+    
+    .touch-ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(220, 38, 38, 0.3);
+      pointer-events: none;
+      transform: scale(0);
+      animation: ripple 0.6s linear;
+    }
+    
+    @keyframes ripple {
+      to {
+        transform: scale(4);
+        opacity: 0;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .kiosk-header {
+        padding: 12px 20px;
+      }
+      
+      .kiosk-title {
+        font-size: 1.1rem;
+      }
+      
+      .step-indicator {
+        font-size: 0.9rem;
+      }
+      
+      .page-title {
+        font-size: 2.5rem;
+      }
+      
+      .page-subtitle {
+        font-size: 1.2rem;
+      }
+      
+      .selection-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .person-card {
+        padding: 35px 20px;
+        min-height: 160px;
+      }
+      
+      .person-icon {
+        width: 70px;
+        height: 70px;
+        font-size: 32px;
+      }
+      
+      .person-title {
+        font-size: 1.2rem;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .btn-kiosk {
+        width: 100%;
+        max-width: 300px;
+        padding: 16px 35px;
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Kiosk Header -->
+  <div class="kiosk-header">
+    <div class="header-content">
+      <h1 class="kiosk-title">🎯 Queue Management System</h1>
+      <div class="step-indicator">Step 1 of 2</div>
+    </div>
+  </div>
+
+  <div class="hero-container">
+    <div class="hero-overlay"></div>
+    
+    <div class="hero-content">
+      <h1 class="page-title">👋 Who would you like to see?</h1>
+      <p class="page-subtitle">Please select the person or office you need to visit</p>
+      
+      <div class="selection-grid">
+        <!-- Dean Card -->
+        <div class="person-card" onclick="selectPerson('dean', 'Dean - College of Engineering')">
+          <div class="person-icon">👨‍💼</div>
+          <div class="person-title">Dean</div>
+          <div class="person-department">College of Engineering</div>
+        </div>
+        
+        <!-- IE Department Chair -->
+        <div class="person-card" onclick="selectPerson('ie-chair', 'IE Department Chair')">
+          <div class="person-icon">🏭</div>
+          <div class="person-title">Department Chair</div>
+          <div class="person-department">Industrial Engineering</div>
+        </div>
+        
+        <!-- CPE Department Chair -->
+        <div class="person-card" onclick="selectPerson('cpe-chair', 'CPE Department Chair')">
+          <div class="person-icon">💻</div>
+          <div class="person-title">Department Chair</div>
+          <div class="person-department">Computer Engineering</div>
+        </div>
+        
+        <!-- ECE Department Chair -->
+        <div class="person-card" onclick="selectPerson('ece-chair', 'ECE Department Chair')">
+          <div class="person-icon">⚡</div>
+          <div class="person-title">Department Chair</div>
+          <div class="person-department">Electronics & Communications</div>
+        </div>
+        
+        <!-- Others Option -->
+        <div class="person-card" onclick="selectPerson('others', 'Other Staff/Faculty')">
+          <div class="person-icon">👥</div>
+          <div class="person-title">Others</div>
+          <div class="person-department">Other Staff/Faculty</div>
+        </div>
+      </div>
+      
+      <div class="action-buttons">
+        <button id="continueBtn" class="btn-kiosk btn-primary-kiosk" disabled onclick="continueTo()">
+          ✅ Continue
+        </button>
+        <button class="btn-kiosk btn-secondary-kiosk" onclick="goBack()">
+          ⬅️ Back
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Selection Feedback -->
+  <div id="selectionFeedback" class="selection-feedback"></div>
+  
+  <script>
+    let selectedPerson = null;
+    let selectedPersonName = null;
+    
+    function createRipple(event, element) {
+      const rect = element.getBoundingClientRect();
+      const ripple = document.createElement('span');
+      const size = Math.max(rect.width, rect.height);
+      const x = event.clientX - rect.left - size / 2;
+      const y = event.clientY - rect.top - size / 2;
+      
+      ripple.classList.add('touch-ripple');
+      ripple.style.width = ripple.style.height = size + 'px';
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      
+      element.style.position = 'relative';
+      element.style.overflow = 'hidden';
+      element.appendChild(ripple);
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 600);
+    }
+    
+    function selectPerson(personType, personName) {
+      // Add ripple effect
+      createRipple(event, event.currentTarget);
+      
+      // Remove previous selection
+      document.querySelectorAll('.person-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Add selection to clicked card
+      event.currentTarget.classList.add('selected');
+      selectedPerson = personType;
+      selectedPersonName = personName;
+      
+      // Show feedback
+      const feedback = document.getElementById('selectionFeedback');
+      feedback.textContent = `✅ Selected: ${personName}`;
+      feedback.classList.add('show');
+      
+      // Enable continue button
+      const continueBtn = document.getElementById('continueBtn');
+      continueBtn.disabled = false;
+      
+      // Hide feedback after 3 seconds
+      setTimeout(() => {
+        feedback.classList.remove('show');
+      }, 3000);
+      
+      // Add haptic feedback (if supported)
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    }
+    
+    function continueTo() {
+      if (selectedPerson) {
+        // Store selection in localStorage
+        localStorage.setItem('selectedPerson', selectedPerson);
+        localStorage.setItem('selectedPersonName', selectedPersonName);
+        localStorage.setItem('selectionTime', new Date().toISOString());
+        
+        // Navigate to queue number page
+        window.location.href = 'queue-number.html';
+      }
+    }
+    
+    function goBack() {
+      window.location.href = 'index.html';
+    }
+    
+    // Add touch feedback to buttons
+    document.querySelectorAll('.btn-kiosk').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        createRipple(e, this);
+      });
+    });
+    
+    // Prevent context menu and text selection (kiosk mode)
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+    
+    // Add keyboard navigation for accessibility
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && selectedPerson) {
+        continueTo();
+      } else if (e.key === 'Escape') {
+        goBack();
+      }
+    });
+  </script>
+</body>
+</html>
