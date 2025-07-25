@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queue Number - Queue Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    
+    body {
+      background: #ffffff;
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a1a;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: relative;
+      cursor: default;
+    }
+    
+    body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.4;
+      z-index: 0;
+    }
+    
+    .kiosk-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(30, 64, 175, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 15px 30px;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .kiosk-title {
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .queue-logo {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: white;
+      padding: 2px;
+    }
+    
+    .step-indicator {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    
+    .hero-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      padding: 100px 30px 50px;
+      z-index: 1;
+    }
+    
+    .hero-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, 0.85);
+      z-index: 1;
+    }
+    
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 800px;
+      width: 100%;
+    }
+    
+    .success-icon {
+      font-size: 4rem;
+      color: #22c55e;
+      margin-bottom: 20px;
+      animation: bounce 2s infinite;
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-10px);
+      }
+      60% {
+        transform: translateY(-5px);
+      }
+    }
+    
+    .page-title {
+      font-size: 3rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 15px;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .queue-number-display {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+      font-size: 6rem;
+      font-weight: 900;
+      padding: 40px;
+      border-radius: 20px;
+      margin: 30px 0;
+      box-shadow: 0 15px 40px rgba(220, 38, 38, 0.3);
+      text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      letter-spacing: -0.02em;
+    }
+    
+    .queue-info {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 30px;
+      margin: 30px 0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+    }
+    
+    .queue-info h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 15px;
+    }
+    
+    .queue-info p {
+      font-size: 1.2rem;
+      color: #4b5563;
+      margin-bottom: 10px;
+    }
+    
+    .qr-section {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius: 20px;
+      padding: 40px;
+      margin: 30px 0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+    }
+    
+    .qr-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 20px;
+    }
+    
+    .qr-container {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    
+    #qrcode {
+      padding: 20px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      min-height: 240px;
+      min-width: 240px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #qrcode canvas {
+      border-radius: 8px;
+    }
+    
+    .qr-instructions {
+      font-size: 1.1rem;
+      color: #6b7280;
+      margin-top: 20px;
+      line-height: 1.5;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 25px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 40px;
+    }
+    
+    .btn-kiosk {
+      padding: 18px 45px;
+      font-size: 1.3rem;
+      font-weight: 700;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+      display: inline-block;
+      cursor: pointer;
+      border: none;
+      min-width: 160px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-kiosk:active {
+      transform: translateY(2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .btn-primary-kiosk {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+    }
+    
+    .btn-primary-kiosk:hover {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+      color: white;
+    }
+    
+    .btn-secondary-kiosk {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+    }
+    
+    .btn-secondary-kiosk:hover {
+      background: linear-gradient(135deg, #4b5563, #374151);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(75, 85, 99, 0.3);
+      color: white;
+    }
+    
+    .print-area {
+      display: none;
+    }
+    
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      .print-area, .print-area * {
+        visibility: visible;
+      }
+      .print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        display: block !important;
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .kiosk-header {
+        padding: 12px 20px;
+      }
+      
+      .kiosk-title {
+        font-size: 1.1rem;
+      }
+      
+      .queue-logo {
+        width: 28px;
+        height: 28px;
+        background: white;
+        padding: 2px;
+      }
+      
+      .hero-container {
+        padding: 80px 20px 40px;
+      }
+      
+      .page-title {
+        font-size: 2.2rem;
+      }
+      
+      .queue-number-display {
+        font-size: 4rem;
+        padding: 30px 20px;
+      }
+      
+      .queue-info, .qr-section {
+        padding: 25px 20px;
+      }
+      
+      .action-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .btn-kiosk {
+        width: 100%;
+        max-width: 300px;
+        padding: 16px 35px;
+        font-size: 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Kiosk Header -->
+  <div class="kiosk-header">
+    <div class="header-content">
+      <h1 class="kiosk-title">
+        <img src="images/Queue-logo.jpg" alt="Queue Logo" class="queue-logo">
+        Queue Management System
+      </h1>
+      <div class="step-indicator">Step 2 of 2</div>
+    </div>
+  </div>
+
+  <div class="hero-container">
+    <div class="hero-overlay"></div>
+    
+    <div class="hero-content">
+      <div class="success-icon">✅</div>
+      <h1 class="page-title">Queue Number Generated!</h1>
+      
+      <div class="queue-number-display" id="queueNumber">
+        A001
+      </div>
+      
+      <div class="queue-info">
+        <h3>📋 Queue Details</h3>
+        <p><strong>Person:</strong> <span id="selectedPerson">Dean - College of Engineering</span></p>
+        <p><strong>Date:</strong> <span id="queueDate">January 23, 2025</span></p>
+        <p><strong>Time:</strong> <span id="queueTime">2:30 PM</span></p>
+        <p><strong>Status:</strong> <span style="color: #f59e0b; font-weight: 600;">Waiting</span></p>
+      </div>
+      
+      <div class="qr-section">
+        <h3 class="qr-title">📱 Scan QR Code to Track Your Queue</h3>
+        <div class="qr-container">
+          <div id="qrcode"></div>
+        </div>
+        <p class="qr-instructions">
+          Scan this QR code with your phone to track your queue status in real-time. 
+          You'll receive updates when your turn is approaching!
+        </p>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn-kiosk btn-primary-kiosk" onclick="printQueue()">
+          🖨️ Print Queue
+        </button>
+        <button class="btn-kiosk btn-secondary-kiosk" onclick="newQueue()">
+          🔄 New Queue
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Print Area (Hidden) -->
+  <div class="print-area">
+    <div style="text-align: center; padding: 20px; font-family: 'Inter', sans-serif;">
+      <h2 style="margin: 0 0 10px 0;">Queue Management System</h2>
+      <h1 style="font-size: 3rem; margin: 10px 0; color: #dc2626;" id="printQueueNumber">A001</h1>
+      <p style="margin: 5px 0;"><strong>Person:</strong> <span id="printSelectedPerson">Dean</span></p>
+      <p style="margin: 5px 0;"><strong>Date:</strong> <span id="printDate">Jan 23, 2025</span></p>
+      <p style="margin: 5px 0;"><strong>Time:</strong> <span id="printTime">2:30 PM</span></p>
+      <div id="printQrcode" style="margin: 20px 0;"></div>
+      <p style="font-size: 0.9rem; margin: 10px 0;">Scan QR code to track your queue status</p>
+    </div>
+  </div>
+  
+  <script>
+    let queueData = {};
+    
+    // Generate unique queue number
+    function generateQueueNumber() {
+      const person = localStorage.getItem('selectedPerson') || 'dean';
+      const now = new Date();
+      
+      // Get person prefix
+      let prefix = 'A'; // Default for Dean
+      switch(person) {
+        case 'ie-chair': prefix = 'B'; break;
+        case 'cpe-chair': prefix = 'C'; break;
+        case 'ece-chair': prefix = 'D'; break;
+        case 'others': prefix = 'E'; break;
+      }
+      
+      // Generate sequential number (simulate from localStorage or use timestamp)
+      const savedCounters = JSON.parse(localStorage.getItem('queueCounters') || '{}');
+      const todayKey = now.toDateString();
+      
+      if (!savedCounters[todayKey]) {
+        savedCounters[todayKey] = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+      }
+      
+      savedCounters[todayKey][prefix]++;
+      localStorage.setItem('queueCounters', JSON.stringify(savedCounters));
+      
+      const number = savedCounters[todayKey][prefix].toString().padStart(3, '0');
+      return prefix + number;
+    }
+    
+    // Generate unique queue ID
+    function generateQueueId() {
+      return 'queue_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+    }
+    
+    // Initialize queue data
+    function initializeQueue() {
+      const selectedPerson = localStorage.getItem('selectedPersonName') || 'Dean - College of Engineering';
+      const queueNumber = generateQueueNumber();
+      const queueId = generateQueueId();
+      const now = new Date();
+      
+      queueData = {
+        id: queueId,
+        number: queueNumber,
+        person: selectedPerson,
+        date: now.toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        }),
+        time: now.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }),
+        timestamp: now.toISOString(),
+        status: 'waiting'
+      };
+      
+      // Save to localStorage for persistence
+      const allQueues = JSON.parse(localStorage.getItem('allQueues') || '{}');
+      allQueues[queueId] = queueData;
+      localStorage.setItem('allQueues', JSON.stringify(allQueues));
+      
+      // Update display
+      updateDisplay();
+      generateQRCode();
+    }
+    
+    // Update display elements
+    function updateDisplay() {
+      document.getElementById('queueNumber').textContent = queueData.number;
+      document.getElementById('selectedPerson').textContent = queueData.person;
+      document.getElementById('queueDate').textContent = queueData.date;
+      document.getElementById('queueTime').textContent = queueData.time;
+      
+      // Update print area
+      document.getElementById('printQueueNumber').textContent = queueData.number;
+      document.getElementById('printSelectedPerson').textContent = queueData.person;
+      document.getElementById('printDate').textContent = queueData.date;
+      document.getElementById('printTime').textContent = queueData.time;
+    }
+    
+    // Generate QR Code
+    function generateQRCode() {
+      const baseUrl = window.location.origin + window.location.pathname.replace('queue-number.html', '');
+      const queueUrl = `${baseUrl}queue-status.html?id=${queueData.id}`;
+      
+      console.log('Generating QR Code for URL:', queueUrl); // Debug log
+      console.log('QRCode library available:', typeof QRCode !== 'undefined'); // Check if library is loaded
+      
+      // Clear previous QR codes
+      document.getElementById('qrcode').innerHTML = '';
+      document.getElementById('printQrcode').innerHTML = '';
+      
+      // Check if QRCode library is available
+      if (typeof QRCode === 'undefined' || typeof QRCode.toCanvas !== 'function') {
+        console.error('QRCode library not loaded! Using Google Charts fallback.');
+        // Fallback: Use Google Charts API to generate QR code image
+        const googleQRUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(queueUrl)}&size=200x200&color=1a1a1a&bgcolor=ffffff`;
+        document.getElementById('qrcode').innerHTML = `
+          <div style="padding: 20px; text-align: center;">
+            <img src="${googleQRUrl}" alt="QR Code" style="width:200px;height:200px;" />
+          </div>
+        `;
+        // For printing, use smaller QR
+        const googlePrintQRUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(queueUrl)}&size=150x150&color=000000&bgcolor=ffffff`;
+        document.getElementById('printQrcode').innerHTML = `<img src="${googlePrintQRUrl}" alt="QR Code" style="width:150px;height:150px;" />`;
+        return;
+      }
+      // Create canvas element for display QR code
+      const displayCanvas = document.createElement('canvas');
+      document.getElementById('qrcode').appendChild(displayCanvas);
+      // Generate QR code for display
+      QRCode.toCanvas(displayCanvas, queueUrl, {
+        width: 200,
+        height: 200,
+        colorDark: '#1a1a1a',
+        colorLight: '#ffffff',
+        margin: 2,
+        errorCorrectionLevel: 'M'
+      }, function (error) {
+        if (error) {
+          console.error('QR Code generation failed:', error);
+          // Fallback: Use Google Charts API to generate QR code image
+          const googleQRUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(queueUrl)}&size=200x200&color=1a1a1a&bgcolor=ffffff`;
+          document.getElementById('qrcode').innerHTML = `
+            <div style="padding: 20px; text-align: center;">
+              <img src="${googleQRUrl}" alt="QR Code" style="width:200px;height:200px;" />
+            </div>
+          `;
+        } else {
+          console.log('QR Code generated successfully!');
+        }
+      });
+      // Generate QR code for printing
+      const printCanvas = document.createElement('canvas');
+      QRCode.toCanvas(printCanvas, queueUrl, {
+        width: 150,
+        height: 150,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        margin: 1,
+        errorCorrectionLevel: 'M'
+      }, function (error) {
+        if (!error) {
+          document.getElementById('printQrcode').appendChild(printCanvas);
+        } else {
+          // Fallback for print
+          const googlePrintQRUrl = `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(queueUrl)}&size=150x150&color=000000&bgcolor=ffffff`;
+          document.getElementById('printQrcode').innerHTML = `<img src="${googlePrintQRUrl}" alt="QR Code" style="width:150px;height:150px;" />`;
+        }
+      });
+    }
+    
+    // Print function
+    function printQueue() {
+      // Update print area with current data
+      updateDisplay();
+      
+      // Trigger print
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
+    
+    // New queue function
+    function newQueue() {
+      // Clear previous data
+      localStorage.removeItem('selectedPerson');
+      localStorage.removeItem('selectedPersonName');
+      localStorage.removeItem('selectionTime');
+      
+      // Redirect to home
+      window.location.href = 'Home.html';
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check if we have selection data
+      const selectedPerson = localStorage.getItem('selectedPerson');
+      if (!selectedPerson) {
+        // No selection data, redirect to home
+        window.location.href = 'Home.html';
+        return;
+      }
+      
+      // Add a small delay to ensure DOM is fully ready
+      setTimeout(() => {
+        initializeQueue();
+        
+        // If QR code is still empty after 2 seconds, try alternative method
+        setTimeout(() => {
+          const qrElement = document.getElementById('qrcode');
+          if (!qrElement.querySelector('canvas') && !qrElement.querySelector('a')) {
+            generateAlternativeQR();
+          }
+        }, 2000);
+      }, 100);
+    });
+    
+    // Alternative QR generation using Google Charts API
+    function generateAlternativeQR() {
+      const baseUrl = window.location.origin + window.location.pathname.replace('queue-number.html', '');
+      const queueUrl = `${baseUrl}queue-status.html?id=${queueData.id}`;
+      
+      console.log('Using alternative QR generation method');
+      
+      const qrElement = document.getElementById('qrcode');
+      qrElement.innerHTML = `
+        <div style="text-align: center;">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(queueUrl)}" 
+               alt="QR Code" 
+               style="border-radius: 8px; max-width: 200px; max-height: 200px;"
+               onload="console.log('Alternative QR code loaded successfully')"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <div style="display: none; padding: 20px; text-align: center;">
+            <p style="color: #dc2626; font-weight: bold;">QR Generation Failed</p>
+            <p style="font-size: 0.9rem; color: #6b7280; margin: 10px 0;">Manual Link:</p>
+            <a href="${queueUrl}" target="_blank" style="color: #3b82f6; text-decoration: underline; font-size: 0.8rem; word-break: break-all;">${queueUrl}</a>
+          </div>
+        </div>
+      `;
+      
+      // Also update print QR code
+      const printQrElement = document.getElementById('printQrcode');
+      printQrElement.innerHTML = `
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(queueUrl)}" 
+             alt="QR Code for Print" 
+             style="max-width: 150px; max-height: 150px;">
+      `;
+    }
+    
+    // Prevent context menu and text selection (kiosk mode)
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('selectstart', e => e.preventDefault());
+    
+    // Add keyboard navigation
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        newQueue();
+      } else if (e.ctrlKey && e.key === 'p') {
+        e.preventDefault();
+        printQueue();
+      }
+    });
+  </script>
+</body>
+</html>
