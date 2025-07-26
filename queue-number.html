@@ -450,7 +450,7 @@
     }
     
     // Initialize queue data
-    function initializeQueue() {
+    async function initializeQueue() {
       const selectedPerson = localStorage.getItem('selectedPersonName') || 'Dean - College of Engineering';
       const queueNumber = generateQueueNumber();
       const queueId = generateQueueId();
@@ -473,15 +473,32 @@
         timestamp: now.toISOString(),
         status: 'waiting'
       };
-      
-      // Save to localStorage for persistence
-      const allQueues = JSON.parse(localStorage.getItem('allQueues') || '{}');
-      allQueues[queueId] = queueData;
-      localStorage.setItem('allQueues', JSON.stringify(allQueues));
-      
-      // Update display
-      updateDisplay();
-      generateQRCode();
+
+      // Send data directly to database via backend API
+      try {
+        const response = await fetch('http://localhost:5000/queue', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(queueData)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          console.log('Queue data saved to database successfully!');
+          // Update display
+          updateDisplay();
+          generateQRCode();
+        } else {
+          console.error('Failed to save queue data to database:', result.error);
+          alert('Failed to save queue data. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error sending data to backend:', error);
+        alert('Cannot connect to server. Please check if the backend is running.');
+      }
     }
     
     // Update display elements

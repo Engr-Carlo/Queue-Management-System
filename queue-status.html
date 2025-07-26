@@ -336,7 +336,7 @@
     }
     
     // Load queue data
-    function loadQueueData() {
+    async function loadQueueData() {
       queueId = getQueueId();
       
       if (!queueId) {
@@ -344,22 +344,32 @@
         return;
       }
       
-      // Get queue data from localStorage (simulate database)
-      const allQueues = JSON.parse(localStorage.getItem('allQueues') || '{}');
-      const queueData = allQueues[queueId];
-      
-      if (!queueData) {
+      try {
+        // Fetch queue data from backend API
+        const response = await fetch(`http://localhost:5000/queue/${queueId}`);
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            showError();
+            return;
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const queueData = await response.json();
+        
+        // Calculate estimated position and time (simulation)
+        const position = Math.floor(Math.random() * 8) + 1;
+        const waitTime = position * 3; // 3 minutes per person
+        
+        // Update display
+        updateDisplay(queueData, position, waitTime);
+        showContent();
+        
+      } catch (error) {
+        console.error('Error fetching queue data:', error);
         showError();
-        return;
       }
-      
-      // Calculate estimated position and time (simulation)
-      const position = Math.floor(Math.random() * 8) + 1;
-      const waitTime = position * 3; // 3 minutes per person
-      
-      // Update display
-      updateDisplay(queueData, position, waitTime);
-      showContent();
     }
     
     // Update display with queue data
