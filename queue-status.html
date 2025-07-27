@@ -346,7 +346,7 @@
       
       try {
         // Fetch queue data from backend API
-        const response = await fetch(`http://localhost:5000/queue/${queueId}`);
+        const response = await fetch(`http://192.168.118.164:5000/queue/${queueId}`);
         
         if (!response.ok) {
           if (response.status === 404) {
