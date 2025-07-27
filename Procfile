@@ -4,7 +4,7 @@
   "description": "Queue Management System with Flask backend",
   "main": "backend.py",
   "scripts": {
-    "start": "python backend.py"
+    "start": "py backend.py"
   },
   "engines": {
     "python": "3.x"
