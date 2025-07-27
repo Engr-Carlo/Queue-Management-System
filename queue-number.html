@@ -670,8 +670,9 @@
     
     // Generate QR Code
     function generateQRCode() {
-      const baseUrl = window.location.origin + window.location.pathname.replace('queue-number.html', '');
-      const queueUrl = `${baseUrl}queue-status.html?id=${queueData.id}`;
+      // Use GitHub Pages URL for the frontend (publicly accessible)
+      const publicBaseUrl = 'https://engr-carlo.github.io/Queue-Management-System/';
+      const queueUrl = `${publicBaseUrl}queue-status.html?id=${queueData.id}`;
       
       console.log('Generating QR Code for URL:', queueUrl); // Debug log
       console.log('QRCode library available:', typeof QRCode !== 'undefined'); // Check if library is loaded
@@ -788,8 +789,9 @@
     
     // Alternative QR generation using Google Charts API
     function generateAlternativeQR() {
-      const baseUrl = window.location.origin + window.location.pathname.replace('queue-number.html', '');
-      const queueUrl = `${baseUrl}queue-status.html?id=${queueData.id}`;
+      // Use GitHub Pages URL for the frontend (publicly accessible)
+      const publicBaseUrl = 'https://engr-carlo.github.io/Queue-Management-System/';
+      const queueUrl = `${publicBaseUrl}queue-status.html?id=${queueData.id}`;
       
       console.log('Using alternative QR generation method');
       
