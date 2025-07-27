@@ -94,15 +94,28 @@ def get_queue(queue_id):
     try:
         cur = conn.cursor()
         
+        # First, try to add the new columns if they don't exist (for backward compatibility)
+        try:
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS accessed BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS accessed_at TIMESTAMP DEFAULT NULL")
+            conn.commit()
+        except Exception as alter_error:
+            # Columns might already exist, continue
+            pass
+        
         # Mark as accessed when someone visits the queue status page
-        cur.execute(
-            "UPDATE queue SET accessed = TRUE, accessed_at = NOW() WHERE id = %s",
-            (queue_id,)
-        )
+        try:
+            cur.execute(
+                "UPDATE queue SET accessed = TRUE, accessed_at = NOW() WHERE id = %s",
+                (queue_id,)
+            )
+            conn.commit()
+        except Exception as update_error:
+            # If update fails, just continue with the select
+            print(f"Warning: Could not update accessed status: {update_error}")
         
         cur.execute("SELECT * FROM queue WHERE id = %s", (queue_id,))
         row = cur.fetchone()
-        conn.commit()
         conn.close()
         
         if row:
@@ -126,15 +139,30 @@ def check_queue_accessed(queue_id):
     
     try:
         cur = conn.cursor()
-        cur.execute("SELECT accessed, accessed_at FROM queue WHERE id = %s", (queue_id,))
-        row = cur.fetchone()
-        conn.close()
         
-        if row:
-            return jsonify({
-                "accessed": row[0] if row[0] is not None else False,
-                "accessed_at": row[1].isoformat() if row[1] else None
-            })
+        # Try to select with new columns, fallback if they don't exist
+        try:
+            cur.execute("SELECT accessed, accessed_at FROM queue WHERE id = %s", (queue_id,))
+            row = cur.fetchone()
+            conn.close()
+            
+            if row:
+                return jsonify({
+                    "accessed": row[0] if row[0] is not None else False,
+                    "accessed_at": row[1].isoformat() if row[1] else None
+                })
+        except Exception as select_error:
+            # Columns might not exist, return default values
+            cur.execute("SELECT id FROM queue WHERE id = %s", (queue_id,))
+            row = cur.fetchone()
+            conn.close()
+            
+            if row:
+                return jsonify({
+                    "accessed": False,
+                    "accessed_at": None
+                })
+        
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
