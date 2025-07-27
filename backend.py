@@ -28,7 +28,8 @@ def home():
         "status": "active",
         "endpoints": {
             "POST /queue": "Create new queue entry",
-            "GET /queue/<id>": "Get queue entry by ID",
+            "GET /queue/<id>": "Get queue entry by ID (marks as accessed)",
+            "GET /queue/<id>/accessed": "Check if queue has been accessed",
             "GET /test-db": "Test database connection"
         }
     })
@@ -66,7 +67,9 @@ def create_queue():
                 person VARCHAR(255),
                 date VARCHAR(100),
                 time VARCHAR(50),
-                status VARCHAR(50)
+                status VARCHAR(50),
+                accessed BOOLEAN DEFAULT FALSE,
+                accessed_at TIMESTAMP DEFAULT NULL
             )
         """)
         
@@ -90,8 +93,16 @@ def get_queue(queue_id):
     
     try:
         cur = conn.cursor()
+        
+        # Mark as accessed when someone visits the queue status page
+        cur.execute(
+            "UPDATE queue SET accessed = TRUE, accessed_at = NOW() WHERE id = %s",
+            (queue_id,)
+        )
+        
         cur.execute("SELECT * FROM queue WHERE id = %s", (queue_id,))
         row = cur.fetchone()
+        conn.commit()
         conn.close()
         
         if row:
@@ -102,6 +113,27 @@ def get_queue(queue_id):
                 "date": row[3],
                 "time": row[4],
                 "status": row[5]
+            })
+        return jsonify({"error": "Not found"}), 404
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/queue/<queue_id>/accessed')
+def check_queue_accessed(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT accessed, accessed_at FROM queue WHERE id = %s", (queue_id,))
+        row = cur.fetchone()
+        conn.close()
+        
+        if row:
+            return jsonify({
+                "accessed": row[0] if row[0] is not None else False,
+                "accessed_at": row[1].isoformat() if row[1] else None
             })
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
