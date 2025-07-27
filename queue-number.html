@@ -607,7 +607,7 @@
       localStorage.removeItem('selectionTime');
       
       // Redirect to home
-      window.location.href = 'Home.html';
+      window.location.href = 'index.html';
     }
     
     // Initialize when page loads
@@ -615,8 +615,8 @@
       // Check if we have selection data
       const selectedPerson = localStorage.getItem('selectedPerson');
       if (!selectedPerson) {
-        // No selection data, redirect to home
-        window.location.href = 'Home.html';
+        // No selection data, redirect to index
+        window.location.href = 'index.html';
         return;
       }
       
