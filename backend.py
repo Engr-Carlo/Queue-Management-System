@@ -415,8 +415,8 @@ def get_queue_status(queue_id):
             WHERE number LIKE %s 
             AND completed = FALSE 
             AND created_at < %s
-            AND number < %s
-        """, (department_prefix + '%', created_at, queue_number))
+            ORDER BY created_at ASC
+        """, (department_prefix + '%', created_at))
         
         position_result = cur.fetchone()
         position = position_result[0] if position_result else 0
@@ -431,11 +431,25 @@ def get_queue_status(queue_id):
         total_result = cur.fetchone()
         total_in_department = total_result[0] if total_result else 1
         
-        # Calculate estimated time (3 minutes per person ahead + 2 minutes buffer)
-        estimated_minutes = (position * 3) + 2 if position > 0 else 2
+        # Get admin status for this department
+        admin_status = get_admin_status(department_prefix)
         
-        # Determine status based on actual conditions
-        if is_called:
+        # Calculate estimated time based on position and admin status
+        if admin_status == 'away':
+            estimated_minutes = 999  # Unknown time when admin is away
+        elif admin_status == 'busy':
+            estimated_minutes = (position * 5) + 10  # Longer time when busy
+        else:  # available
+            estimated_minutes = (position * 3) + 2 if position > 0 else 2
+        
+        # Determine status based on actual conditions and admin status
+        if admin_status == 'away':
+            status = {
+                "text": "⚪ Admin Away",
+                "class": "status-away",
+                "priority": "low"
+            }
+        elif is_called:
             status = {
                 "text": "🔴 You are now being called!",
                 "class": "status-called",
@@ -447,7 +461,13 @@ def get_queue_status(queue_id):
                 "class": "status-priority", 
                 "priority": "medium"
             }
-        elif position <= 1:
+        elif position <= 0:
+            status = {
+                "text": "🟢 You're Next!",
+                "class": "status-next",
+                "priority": "high"
+            }
+        elif position <= 2:
             status = {
                 "text": "🟢 Ready Soon",
                 "class": "status-ready",
@@ -474,12 +494,70 @@ def get_queue_status(queue_id):
             "estimated_minutes": estimated_minutes,
             "status": status,
             "department_prefix": department_prefix,
+            "admin_status": admin_status,
             "is_called": is_called,
             "is_priority": is_priority
         })
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# Admin status management
+admin_statuses = {}  # In-memory storage for admin statuses
+
+def get_admin_status(department):
+    """Get admin status for a department"""
+    status = admin_statuses.get(department, 'available')
+    return status
+
+@app.route('/admin/status', methods=['POST'])
+def set_admin_status():
+    """Set admin status for a department"""
+    try:
+        data = request.get_json()
+        department = data.get('department')
+        status = data.get('status')  # 'available', 'busy', 'away'
+        
+        if not department or status not in ['available', 'busy', 'away']:
+            return jsonify({"success": False, "error": "Invalid department or status"}), 400
+            
+        # Map department to department prefix
+        department_mapping = {
+            'dean': 'A',
+            'ie-chair': 'B',
+            'cpe-chair': 'C',
+            'ece-chair': 'D',
+            'others': 'E'
+        }
+        
+        department_prefix = department_mapping.get(department)
+        if not department_prefix:
+            return jsonify({"success": False, "error": "Invalid department"}), 400
+            
+        admin_statuses[department_prefix] = status
+        
+        return jsonify({
+            "success": True,
+            "department": department_prefix,
+            "status": status
+        })
+        
+    except Exception as e:
+        print(f"Error setting admin status: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/status/<department>', methods=['GET'])
+def get_admin_status_endpoint(department):
+    """Get admin status for a department"""
+    try:
+        status = admin_statuses.get(department.upper(), 'available')
+        return jsonify({
+            "success": True,
+            "department": department.upper(),
+            "status": status
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

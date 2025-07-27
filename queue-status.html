@@ -144,6 +144,48 @@
       color: #4b5563;
       border: 2px solid rgba(107, 114, 128, 0.3);
     }
+
+    .status-next {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+      border: 2px solid rgba(34, 197, 94, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    .status-away {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+      border: 2px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .countdown-timer {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: #667eea;
+      text-align: center;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+    }
+
+    .admin-status {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      margin: 15px 0;
+      text-align: center;
+    }
+
+    .admin-available {
+      border-left: 4px solid #10b981;
+    }
+
+    .admin-busy {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .admin-away {
+      border-left: 4px solid #ef4444;
+    }
     
     .queue-details {
       background: rgba(243, 244, 246, 0.8);
@@ -417,7 +459,13 @@
         
         <div class="estimated-time">
           <h3>⏱️ Estimated Wait Time</h3>
-          <p class="time" id="estimatedTime">~15 minutes</p>
+          <div class="countdown-timer" id="countdownTimer">~15 minutes</div>
+          <p class="time" id="estimatedTime">Loading...</p>
+        </div>
+
+        <div class="admin-status" id="adminStatus">
+          <strong>👨‍💼 Admin Status:</strong>
+          <span id="adminStatusText">Available</span>
         </div>
         
         <button class="refresh-btn" onclick="refreshStatus()">
@@ -426,7 +474,7 @@
         
         <div class="auto-refresh">
           <div class="refresh-indicator"></div>
-          <span>Auto-refreshing every 15 seconds</span>
+          <span>Auto-refreshing every 10 seconds</span>
         </div>
         
         <div class="last-updated">
@@ -496,7 +544,9 @@
         let statusData = {
           position: 1,
           estimated_minutes: 5,
-          status: { text: '🟡 Waiting', class: 'status-waiting' }
+          status: { text: '🟡 Waiting', class: 'status-waiting' },
+          admin_status: 'available',
+          department_prefix: 'A'
         };
         
         if (statusResponse.ok) {
@@ -514,6 +564,9 @@
     }
     
     // Update display with queue data
+    let countdownInterval = null;
+    let estimatedSeconds = 0;
+
     function updateDisplay(queueData, statusData) {
       document.getElementById('queueNumber').textContent = queueData.number;
       document.getElementById('selectedPerson').textContent = queueData.person;
@@ -525,13 +578,23 @@
       const ordinalSuffix = getOrdinalSuffix(position);
       document.getElementById('queuePosition').textContent = `${position}${ordinalSuffix} in line`;
       
-      // Update estimated time with real calculation
+      // Update estimated time with real calculation and start countdown
       const waitTime = statusData.estimated_minutes;
+      estimatedSeconds = waitTime * 60; // Convert to seconds
+      
       if (waitTime <= 2) {
         document.getElementById('estimatedTime').textContent = '~Now';
+      } else if (waitTime === 999) {
+        document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
       } else {
         document.getElementById('estimatedTime').textContent = `~${waitTime} minutes`;
       }
+      
+      // Start countdown timer
+      startCountdown();
+      
+      // Update admin status
+      updateAdminStatus(statusData.admin_status, statusData.department_prefix);
       
       // Update last updated time
       document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
@@ -549,6 +612,91 @@
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
         estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
         estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
+        stopCountdown();
+      }
+    }
+
+    // Update admin status display
+    function updateAdminStatus(status, department) {
+      const adminStatusElement = document.getElementById('adminStatus');
+      const adminStatusText = document.getElementById('adminStatusText');
+      
+      // Remove existing admin status classes
+      adminStatusElement.classList.remove('admin-available', 'admin-busy', 'admin-away');
+      
+      switch(status) {
+        case 'available':
+          adminStatusElement.classList.add('admin-available');
+          adminStatusText.textContent = '🟢 Available';
+          break;
+        case 'busy':
+          adminStatusElement.classList.add('admin-busy');
+          adminStatusText.textContent = '🟡 Busy';
+          break;
+        case 'away':
+          adminStatusElement.classList.add('admin-away');
+          adminStatusText.textContent = '🔴 Away';
+          break;
+        default:
+          adminStatusElement.classList.add('admin-available');
+          adminStatusText.textContent = '🟢 Available';
+      }
+    }
+
+    // Start countdown timer
+    function startCountdown() {
+      stopCountdown(); // Clear any existing interval
+      
+      countdownInterval = setInterval(() => {
+        if (estimatedSeconds > 0) {
+          estimatedSeconds--;
+          updateCountdownDisplay();
+        } else {
+          stopCountdown();
+        }
+      }, 1000);
+      
+      updateCountdownDisplay();
+    }
+
+    // Stop countdown timer
+    function stopCountdown() {
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+    }
+
+    // Update countdown display
+    function updateCountdownDisplay() {
+      const countdownElement = document.getElementById('countdownTimer');
+      
+      if (estimatedSeconds <= 0) {
+        countdownElement.textContent = '⏰ Time\'s up!';
+        countdownElement.style.color = '#ef4444';
+        return;
+      }
+      
+      const hours = Math.floor(estimatedSeconds / 3600);
+      const minutes = Math.floor((estimatedSeconds % 3600) / 60);
+      const seconds = estimatedSeconds % 60;
+      
+      let timeString = '';
+      if (hours > 0) {
+        timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+      
+      countdownElement.textContent = timeString;
+      
+      // Color coding based on time remaining
+      if (estimatedSeconds <= 60) {
+        countdownElement.style.color = '#ef4444'; // Red
+      } else if (estimatedSeconds <= 300) {
+        countdownElement.style.color = '#f59e0b'; // Orange
+      } else {
+        countdownElement.style.color = '#667eea'; // Blue
       }
     }
     
@@ -586,13 +734,13 @@
       }, 1000);
     }
     
-    // Auto refresh every 15 seconds (faster for real-time updates)
+    // Auto refresh every 10 seconds (faster for real-time updates)
     function startAutoRefresh() {
       autoRefreshInterval = setInterval(() => {
         if (document.getElementById('contentArea').style.display !== 'none') {
           loadQueueData();
         }
-      }, 15000); // Refresh every 15 seconds for real-time updates
+      }, 10000); // Refresh every 10 seconds for real-time updates
     }
     
     // Initialize when page loads

@@ -265,6 +265,16 @@
       background: #667eea;
       color: white;
     }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -388,6 +398,9 @@
 
       // Update admin info
       document.getElementById('adminInfo').textContent = `Welcome, ${adminSession.name}`;
+      
+      // Load current admin status
+      loadAdminStatus();
       
       // Load dashboard data
       loadDashboard();
@@ -563,13 +576,112 @@
     }
 
     // Set department status
-    function setStatus(status) {
+    // Load current admin status
+    async function loadAdminStatus() {
+      try {
+        const adminSession = JSON.parse(localStorage.getItem('adminSession'));
+        const departmentMapping = {
+          'dean': 'A',
+          'ie-chair': 'B',
+          'cpe-chair': 'C',
+          'ece-chair': 'D',
+          'others': 'E'
+        };
+        
+        const departmentPrefix = departmentMapping[adminSession.department];
+        const response = await fetch(`${API_BASE_URL}/admin/status/${departmentPrefix}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          
+          // Update the status buttons to reflect current status
+          document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+          
+          const statusMap = {
+            'available': '🟢 Available',
+            'busy': '🔴 Busy',
+            'away': '🟡 Away'
+          };
+          
+          const targetText = statusMap[result.status] || '🟢 Available';
+          const targetBtn = Array.from(document.querySelectorAll('.status-btn')).find(btn => 
+            btn.textContent.trim() === targetText
+          );
+          
+          if (targetBtn) {
+            targetBtn.classList.add('active');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading admin status:', error);
+        // Default to available if error
+        document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.status-btn').classList.add('active');
+      }
+    }
+
+    async function setStatus(status) {
       // Update UI
       document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
       
-      // TODO: Send status update to backend
-      console.log('Status set to:', status);
+      try {
+        // Send status update to backend
+        const adminSession = JSON.parse(localStorage.getItem('adminSession'));
+        const response = await fetch(`${API_BASE_URL}/admin/status`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            department: adminSession.department,
+            status: status
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Status updated successfully:', result);
+          
+          // Show success feedback
+          showStatusFeedback(`Status set to: ${status}`, 'success');
+        } else {
+          throw new Error('Failed to update status');
+        }
+      } catch (error) {
+        console.error('Error updating status:', error);
+        showStatusFeedback('Failed to update status', 'error');
+      }
+    }
+
+    // Show status feedback
+    function showStatusFeedback(message, type) {
+      // Remove existing feedback
+      const existingFeedback = document.querySelector('.status-feedback');
+      if (existingFeedback) {
+        existingFeedback.remove();
+      }
+
+      // Create feedback element
+      const feedback = document.createElement('div');
+      feedback.className = `status-feedback alert ${type === 'success' ? 'alert-success' : 'alert-danger'}`;
+      feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        min-width: 200px;
+        animation: slideIn 0.3s ease-out;
+      `;
+      feedback.textContent = message;
+
+      document.body.appendChild(feedback);
+
+      // Remove after 3 seconds
+      setTimeout(() => {
+        feedback.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => feedback.remove(), 300);
+      }, 3000);
     }
 
     // Logout function
