@@ -250,9 +250,95 @@
       border-top-color: #667eea;
       animation: spin 2s linear infinite;
     }
+
+    /* Enhanced Loading Screen Styles */
+    .portal-loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .portal-loading-overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .portal-loading-circle {
+      width: 80px;
+      height: 80px;
+      border: 4px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: #667eea;
+      border-right-color: #764ba2;
+      animation: portalSpin 1.5s linear infinite;
+      margin-bottom: 30px;
+      box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+    }
+
+    @keyframes portalSpin {
+      0% {
+        transform: rotate(0deg);
+        box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+      }
+      50% {
+        transform: rotate(180deg);
+        box-shadow: 0 0 40px rgba(118, 75, 162, 0.4);
+      }
+      100% {
+        transform: rotate(360deg);
+        box-shadow: 0 0 30px rgba(102, 126, 234, 0.3);
+      }
+    }
+
+    .portal-success-message {
+      color: white;
+      font-size: 1.4rem;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      animation: fadeInUp 0.8s ease-out 0.5s both;
+    }
+
+    .portal-sub-message {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 1rem;
+      text-align: center;
+      animation: fadeInUp 0.8s ease-out 1s both;
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
   </style>
 </head>
 <body>
+  <!-- Portal Loading Overlay -->
+  <div id="portalLoadingOverlay" class="portal-loading-overlay">
+    <div class="portal-loading-circle"></div>
+    <div class="portal-success-message">User successfully directed to the portal</div>
+    <div class="portal-sub-message">Loading your queue information...</div>
+  </div>
+
   <div class="container">
     <div class="header">
       <div class="logo">🎯</div>
@@ -343,6 +429,22 @@
       if (!queueId) {
         showError();
         return;
+      }
+
+      // Check if user has already visited this queue status page
+      const visitKey = `queue_visited_${queueId}`;
+      const hasVisited = localStorage.getItem(visitKey);
+      
+      // If this is a return visit, show portal loading again
+      if (hasVisited && !document.getElementById('portalLoadingOverlay').classList.contains('hidden')) {
+        // User is already on their status page, show success message
+        const messageElement = document.querySelector('.portal-success-message');
+        if (messageElement) {
+          messageElement.textContent = 'Welcome back! You are already on your portal';
+        }
+      } else {
+        // Mark this queue as visited
+        localStorage.setItem(visitKey, 'true');
       }
       
       try {
@@ -447,16 +549,66 @@
     
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
+      // Show portal loading screen first
+      showPortalLoading();
+      
+      // After 3 seconds, hide portal loading and start normal loading
       setTimeout(() => {
-        loadQueueData();
-        startAutoRefresh();
-      }, 1500); // Simulate loading time
+        hidePortalLoading();
+        setTimeout(() => {
+          loadQueueData();
+          startAutoRefresh();
+        }, 500); // Small delay for smooth transition
+      }, 3000); // Show portal loading for 3 seconds
     });
+
+    // Show portal loading overlay
+    function showPortalLoading() {
+      const overlay = document.getElementById('portalLoadingOverlay');
+      if (overlay) {
+        overlay.style.display = 'flex';
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    // Hide portal loading overlay
+    function hidePortalLoading() {
+      const overlay = document.getElementById('portalLoadingOverlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 500); // Wait for fade out animation
+      }
+    }
     
     // Clean up on page unload
     window.addEventListener('beforeunload', function() {
       if (autoRefreshInterval) {
         clearInterval(autoRefreshInterval);
+      }
+    });
+
+    // Detect when user returns to the same page (back button, etc.)
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        // Page was loaded from cache (user used back button)
+        const queueId = getQueueId();
+        if (queueId) {
+          const visitKey = `queue_visited_${queueId}`;
+          const hasVisited = localStorage.getItem(visitKey);
+          if (hasVisited) {
+            // Show portal loading with "already on portal" message
+            showPortalLoading();
+            const messageElement = document.querySelector('.portal-success-message');
+            if (messageElement) {
+              messageElement.textContent = 'You are already on your portal';
+            }
+            setTimeout(() => {
+              hidePortalLoading();
+            }, 2500);
+          }
+        }
       }
     });
     
