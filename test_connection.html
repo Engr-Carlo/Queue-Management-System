@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Connection Test</title>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    <button onclick="testConnection()">Test Backend Connection</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+            
+            try {
+                // Test database connection endpoint
+                const response = await fetch('http://192.168.118.164:5000/test-db');
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <h3>✅ Connection Successful!</h3>
+                    <p>Status: ${response.status}</p>
+                    <p>Database Connected: ${data.db_connected}</p>
+                    <p>Result: ${JSON.stringify(data)}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <h3>❌ Connection Failed!</h3>
+                    <p>Error: ${error.message}</p>
+                    <p>This means the backend server is not accessible from your current location.</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

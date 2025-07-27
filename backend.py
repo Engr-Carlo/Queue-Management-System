@@ -64,4 +64,15 @@ def test_db():
         return jsonify({'db_connected': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    print("Starting Flask server...")
+    print(f"Server will be accessible at:")
+    print(f"- Local: http://localhost:5000")
+    print(f"- Network: http://192.168.118.164:5000")
+    print(f"- Test endpoint: http://192.168.118.164:5000/test-db")
+    print("Make sure Windows Firewall allows Python through...")
+    
+    try:
+        app.run(host='0.0.0.0', port=5000, debug=True)
+    except Exception as e:
+        print(f"Failed to start server: {e}")
+        input("Press Enter to continue...")
