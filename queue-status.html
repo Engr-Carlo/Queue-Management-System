@@ -97,6 +97,36 @@
       margin-bottom: 20px;
     }
     
+    .status-called {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+      border: 2px solid rgba(239, 68, 68, 0.3);
+      animation: pulse 1s infinite;
+    }
+    
+    .status-priority {
+      background: rgba(245, 158, 11, 0.1);
+      color: #d97706;
+      border: 2px solid rgba(245, 158, 11, 0.3);
+      animation: glow 2s infinite;
+    }
+    
+    .status-queued {
+      background: rgba(156, 163, 175, 0.1);
+      color: #6b7280;
+      border: 2px solid rgba(156, 163, 175, 0.3);
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.5); }
+      50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+    }
+
     .status-waiting {
       background: rgba(245, 158, 11, 0.1);
       color: #d97706;
@@ -396,7 +426,7 @@
         
         <div class="auto-refresh">
           <div class="refresh-indicator"></div>
-          <span>Auto-refreshing every 30 seconds</span>
+          <span>Auto-refreshing every 15 seconds</span>
         </div>
         
         <div class="last-updated">
@@ -461,12 +491,20 @@
         
         const queueData = await response.json();
         
-        // Calculate estimated position and time (simulation)
-        const position = Math.floor(Math.random() * 8) + 1;
-        const waitTime = position * 3; // 3 minutes per person
+        // Get real-time status and position
+        const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
+        let statusData = {
+          position: 1,
+          estimated_minutes: 5,
+          status: { text: '🟡 Waiting', class: 'status-waiting' }
+        };
         
-        // Update display
-        updateDisplay(queueData, position, waitTime);
+        if (statusResponse.ok) {
+          statusData = await statusResponse.json();
+        }
+        
+        // Update display with real data
+        updateDisplay(queueData, statusData);
         showContent();
         
       } catch (error) {
@@ -476,31 +514,41 @@
     }
     
     // Update display with queue data
-    function updateDisplay(queueData, position, waitTime) {
+    function updateDisplay(queueData, statusData) {
       document.getElementById('queueNumber').textContent = queueData.number;
       document.getElementById('selectedPerson').textContent = queueData.person;
       document.getElementById('queueDate').textContent = queueData.date;
       document.getElementById('queueTime').textContent = queueData.time;
-      document.getElementById('queuePosition').textContent = `${position}${getOrdinalSuffix(position)} in line`;
-      document.getElementById('estimatedTime').textContent = `~${waitTime} minutes`;
+      
+      // Update position with real data
+      const position = statusData.position;
+      const ordinalSuffix = getOrdinalSuffix(position);
+      document.getElementById('queuePosition').textContent = `${position}${ordinalSuffix} in line`;
+      
+      // Update estimated time with real calculation
+      const waitTime = statusData.estimated_minutes;
+      if (waitTime <= 2) {
+        document.getElementById('estimatedTime').textContent = '~Now';
+      } else {
+        document.getElementById('estimatedTime').textContent = `~${waitTime} minutes`;
+      }
+      
+      // Update last updated time
       document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
       
-      // Update status
+      // Update status with real-time data
       const statusElement = document.getElementById('queueStatus');
-      const currentStatus = simulateStatus(position);
+      statusElement.textContent = statusData.status.text;
+      statusElement.className = `queue-status ${statusData.status.class}`;
       
-      statusElement.textContent = currentStatus.text;
-      statusElement.className = `queue-status ${currentStatus.class}`;
-    }
-    
-    // Simulate queue status based on position
-    function simulateStatus(position) {
-      if (position <= 2) {
-        return { text: '🟢 Ready Soon', class: 'status-ready' };
-      } else if (position <= 10) {
-        return { text: '🟡 Waiting', class: 'status-waiting' };
-      } else {
-        return { text: '⚫ Completed', class: 'status-completed' };
+      // If called, make it more prominent
+      if (statusData.is_called) {
+        statusElement.style.animation = 'pulse 1s infinite';
+        // Change estimated time section for called status
+        const estimatedTimeSection = document.querySelector('.estimated-time');
+        estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+        estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
+        estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
       }
     }
     
@@ -538,13 +586,13 @@
       }, 1000);
     }
     
-    // Auto refresh every 30 seconds
+    // Auto refresh every 15 seconds (faster for real-time updates)
     function startAutoRefresh() {
       autoRefreshInterval = setInterval(() => {
         if (document.getElementById('contentArea').style.display !== 'none') {
           loadQueueData();
         }
-      }, 30000);
+      }, 15000); // Refresh every 15 seconds for real-time updates
     }
     
     // Initialize when page loads

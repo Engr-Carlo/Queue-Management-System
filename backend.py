@@ -75,7 +75,10 @@ def create_queue():
                 completed_at TIMESTAMP DEFAULT NULL,
                 completed_by VARCHAR(255) DEFAULT NULL,
                 priority BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT NOW()
+                created_at TIMESTAMP DEFAULT NOW(),
+                called BOOLEAN DEFAULT FALSE,
+                called_at TIMESTAMP DEFAULT NULL,
+                called_by VARCHAR(255) DEFAULT NULL
             )
         """)
         
@@ -378,6 +381,103 @@ def get_recent_activity(department):
             })
         
         return jsonify(activities)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/queue/<queue_id>/status')
+def get_queue_status(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Get the current queue details
+        cur.execute("SELECT number, person, created_at, called, priority FROM queue WHERE id = %s", (queue_id,))
+        current_queue = cur.fetchone()
+        
+        if not current_queue:
+            return jsonify({"error": "Queue not found"}), 404
+            
+        queue_number = current_queue[0]
+        person = current_queue[1]
+        created_at = current_queue[2]
+        is_called = current_queue[3] if len(current_queue) > 3 else False
+        is_priority = current_queue[4] if len(current_queue) > 4 else False
+        
+        # Extract department prefix from queue number (A, B, C, D, E)
+        department_prefix = queue_number[0] if queue_number else 'A'
+        
+        # Count queues ahead of this one in the same department (not completed and created before this one)
+        cur.execute("""
+            SELECT COUNT(*) FROM queue 
+            WHERE number LIKE %s 
+            AND completed = FALSE 
+            AND created_at < %s
+            AND number < %s
+        """, (department_prefix + '%', created_at, queue_number))
+        
+        position_result = cur.fetchone()
+        position = position_result[0] if position_result else 0
+        
+        # Count total active queues in department
+        cur.execute("""
+            SELECT COUNT(*) FROM queue 
+            WHERE number LIKE %s 
+            AND completed = FALSE
+        """, (department_prefix + '%',))
+        
+        total_result = cur.fetchone()
+        total_in_department = total_result[0] if total_result else 1
+        
+        # Calculate estimated time (3 minutes per person ahead + 2 minutes buffer)
+        estimated_minutes = (position * 3) + 2 if position > 0 else 2
+        
+        # Determine status based on actual conditions
+        if is_called:
+            status = {
+                "text": "🔴 You are now being called!",
+                "class": "status-called",
+                "priority": "high"
+            }
+        elif is_priority:
+            status = {
+                "text": "⭐ Priority Queue - Ready Soon",
+                "class": "status-priority", 
+                "priority": "medium"
+            }
+        elif position <= 1:
+            status = {
+                "text": "🟢 Ready Soon",
+                "class": "status-ready",
+                "priority": "medium"
+            }
+        elif position <= 5:
+            status = {
+                "text": "🟡 Waiting",
+                "class": "status-waiting",
+                "priority": "low"
+            }
+        else:
+            status = {
+                "text": "⚪ In Queue",
+                "class": "status-queued",
+                "priority": "low"
+            }
+            
+        conn.close()
+        
+        return jsonify({
+            "position": position + 1,  # 1-based position
+            "total_in_department": total_in_department,
+            "estimated_minutes": estimated_minutes,
+            "status": status,
+            "department_prefix": department_prefix,
+            "is_called": is_called,
+            "is_priority": is_priority
+        })
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
