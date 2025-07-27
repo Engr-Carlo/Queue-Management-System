@@ -12,11 +12,11 @@ CORS(app)
 
 # PostgreSQL connection settings using environment variables
 conn = psycopg2.connect(
-    dbname=os.getenv('DB_NAME', 'queue_system'),
-    user=os.getenv('DB_USER', 'postgres'),
-    password=os.getenv('DB_PASSWORD'),
-    host=os.getenv('DB_HOST', 'localhost'),
-    port=os.getenv('DB_PORT', '5432')
+    dbname=os.getenv('PGDATABASE', os.getenv('DB_NAME', 'queue_system')),
+    user=os.getenv('PGUSER', os.getenv('DB_USER', 'postgres')),
+    password=os.getenv('PGPASSWORD', os.getenv('DB_PASSWORD')),
+    host=os.getenv('PGHOST', os.getenv('DB_HOST', 'localhost')),
+    port=os.getenv('PGPORT', os.getenv('DB_PORT', '5432'))
 )
 cur = conn.cursor()
 
