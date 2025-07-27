@@ -476,7 +476,7 @@
 
       // Send data directly to database via backend API
       try {
-        const response = await fetch('http://localhost:5000/queue', {
+        const response = await fetch('http://192.168.1.100:5000/queue', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

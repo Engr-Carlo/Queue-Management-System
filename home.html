@@ -540,6 +540,22 @@
         goBack();
       }
     });
+    
+    // Fetch queue data from server
+    fetch('http://192.168.1.100:5000/queue', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log('Queue data:', data);
+      // Handle queue data
+    })
+    .catch(error => {
+      console.error('Error fetching queue data:', error);
+    });
   </script>
 </body>
 </html>

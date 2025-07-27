@@ -64,4 +64,4 @@ def test_db():
         return jsonify({'db_connected': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='192.168.1.100', debug=True)
