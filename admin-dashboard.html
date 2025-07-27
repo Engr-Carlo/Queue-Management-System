@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Queue Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="config.js"></script>
+  <style>
+    body {
+      background: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a1a;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      padding: 15px 0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-brand {
+      color: white !important;
+      font-weight: 800;
+      font-size: 1.3rem;
+    }
+
+    .admin-info {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .dashboard-container {
+      padding: 30px 0;
+    }
+
+    .stats-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      margin-bottom: 20px;
+      transition: transform 0.3s ease;
+    }
+
+    .stats-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stats-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+
+    .stats-number {
+      font-size: 2.5rem;
+      font-weight: 900;
+      margin-bottom: 5px;
+    }
+
+    .stats-label {
+      color: #6b7280;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .queue-card {
+      background: white;
+      border-radius: 15px;
+      padding: 25px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      margin-bottom: 20px;
+    }
+
+    .queue-header {
+      display: flex;
+      justify-content: between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .queue-title {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin: 0;
+    }
+
+    .refresh-btn {
+      background: #f3f4f6;
+      color: #6b7280;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .queue-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      transition: all 0.3s ease;
+    }
+
+    .queue-item:hover {
+      border-color: #667eea;
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+    }
+
+    .queue-number {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #dc2626;
+      margin-bottom: 10px;
+    }
+
+    .queue-details {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .queue-info {
+      flex: 1;
+    }
+
+    .queue-meta {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 5px;
+    }
+
+    .queue-person {
+      font-weight: 600;
+      color: #374151;
+      font-size: 1.1rem;
+    }
+
+    .queue-actions {
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .btn-call {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-call:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-priority {
+      background: #fbbf24;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 15px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-priority:hover {
+      background: #f59e0b;
+    }
+
+    .status-indicator {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+
+    .status-available {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+    }
+
+    .status-busy {
+      background: rgba(239, 68, 68, 0.1);
+      color: #dc2626;
+    }
+
+    .no-queues {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .no-queues-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+
+    .department-status {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      margin-bottom: 20px;
+    }
+
+    .status-toggle {
+      display: flex;
+      gap: 10px;
+    }
+
+    .status-btn {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .status-btn.active {
+      border-color: #667eea;
+      background: #667eea;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center w-100">
+        <div>
+          <span class="navbar-brand">🏢 Admin Dashboard</span>
+          <span id="adminInfo" class="admin-info"></span>
+        </div>
+        <a href="#" class="btn-logout" onclick="logout()">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="dashboard-container">
+    <div class="container">
+      <!-- Department Status -->
+      <div class="department-status">
+        <h5 class="mb-3">Department Status</h5>
+        <div class="status-toggle">
+          <button class="status-btn active" onclick="setStatus('available')">
+            🟢 Available
+          </button>
+          <button class="status-btn" onclick="setStatus('busy')">
+            🔴 Busy
+          </button>
+          <button class="status-btn" onclick="setStatus('away')">
+            🟡 Away
+          </button>
+        </div>
+      </div>
+
+      <!-- Statistics Row -->
+      <div class="row">
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
+              📊
+            </div>
+            <div class="stats-number text-success" id="totalToday">0</div>
+            <div class="stats-label">Total Today</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+              ⏳
+            </div>
+            <div class="stats-number text-primary" id="currentQueue">0</div>
+            <div class="stats-label">Current Queue</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+              ✅
+            </div>
+            <div class="stats-number text-warning" id="completedToday">0</div>
+            <div class="stats-label">Completed Today</div>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+              ⏱️
+            </div>
+            <div class="stats-number text-purple" id="avgWaitTime">0m</div>
+            <div class="stats-label">Avg Wait Time</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Queue -->
+      <div class="queue-card">
+        <div class="queue-header">
+          <h3 class="queue-title">Current Queue</h3>
+          <button class="refresh-btn" onclick="refreshQueue()">
+            🔄 Refresh
+          </button>
+        </div>
+        <div id="queueList">
+          <!-- Queue items will be loaded here -->
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="queue-card">
+        <h3 class="queue-title">Recent Activity</h3>
+        <div id="recentActivity">
+          <!-- Recent activity will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let adminSession = null;
+    let refreshInterval = null;
+
+    // Check authentication
+    document.addEventListener('DOMContentLoaded', function() {
+      const session = localStorage.getItem('adminSession');
+      if (!session) {
+        window.location.href = 'admin-login.html';
+        return;
+      }
+
+      adminSession = JSON.parse(session);
+      
+      // Check if session is still valid (24 hours)
+      const loginTime = new Date(adminSession.loginTime);
+      const now = new Date();
+      const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
+      
+      if (hoursDiff >= 24) {
+        logout();
+        return;
+      }
+
+      // Update admin info
+      document.getElementById('adminInfo').textContent = `Welcome, ${adminSession.name}`;
+      
+      // Load dashboard data
+      loadDashboard();
+      
+      // Start auto-refresh every 30 seconds
+      refreshInterval = setInterval(refreshQueue, 30000);
+    });
+
+    // Load dashboard data
+    async function loadDashboard() {
+      await Promise.all([
+        loadStatistics(),
+        loadCurrentQueue(),
+        loadRecentActivity()
+      ]);
+    }
+
+    // Load statistics
+    async function loadStatistics() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/stats/${adminSession.department}`);
+        if (response.ok) {
+          const stats = await response.json();
+          document.getElementById('totalToday').textContent = stats.totalToday || 0;
+          document.getElementById('currentQueue').textContent = stats.currentQueue || 0;
+          document.getElementById('completedToday').textContent = stats.completedToday || 0;
+          document.getElementById('avgWaitTime').textContent = `${stats.avgWaitTime || 0}m`;
+        }
+      } catch (error) {
+        console.error('Error loading statistics:', error);
+      }
+    }
+
+    // Load current queue
+    async function loadCurrentQueue() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/queue/${adminSession.department}`);
+        if (response.ok) {
+          const queues = await response.json();
+          displayQueue(queues);
+        } else {
+          displayQueue([]);
+        }
+      } catch (error) {
+        console.error('Error loading queue:', error);
+        displayQueue([]);
+      }
+    }
+
+    // Display queue items
+    function displayQueue(queues) {
+      const queueList = document.getElementById('queueList');
+      
+      if (queues.length === 0) {
+        queueList.innerHTML = `
+          <div class="no-queues">
+            <div class="no-queues-icon">📭</div>
+            <h5>No queues available</h5>
+            <p>All caught up! No one is waiting in your queue.</p>
+          </div>
+        `;
+        return;
+      }
+
+      queueList.innerHTML = queues.map(queue => `
+        <div class="queue-item" data-id="${queue.id}">
+          <div class="queue-number">${queue.number}</div>
+          <div class="queue-details">
+            <div class="queue-info">
+              <div class="queue-person">${queue.person}</div>
+              <div class="queue-meta">📅 ${queue.date} • ⏰ ${queue.time}</div>
+              <div class="queue-meta">Status: ${queue.status}</div>
+            </div>
+            <div class="queue-actions">
+              <button class="btn-priority" onclick="setPriority('${queue.id}')" title="Mark as Priority">
+                ⭐
+              </button>
+              <button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
+                📞 Call Queue
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Call queue function
+    async function callQueue(queueId, queueNumber) {
+      if (!confirm(`Call queue ${queueNumber}? This will remove it from the queue and mark as completed.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/call-queue/${queueId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            calledBy: adminSession.department,
+            calledAt: new Date().toISOString()
+          })
+        });
+
+        if (response.ok) {
+          // Show success message
+          alert(`Queue ${queueNumber} has been called and completed!`);
+          
+          // Refresh the dashboard
+          loadDashboard();
+        } else {
+          alert('Failed to call queue. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error calling queue:', error);
+        alert('Error calling queue. Please check your connection.');
+      }
+    }
+
+    // Set priority
+    async function setPriority(queueId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/priority/${queueId}`, {
+          method: 'POST'
+        });
+
+        if (response.ok) {
+          refreshQueue();
+        }
+      } catch (error) {
+        console.error('Error setting priority:', error);
+      }
+    }
+
+    // Load recent activity
+    async function loadRecentActivity() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/activity/${adminSession.department}`);
+        if (response.ok) {
+          const activities = await response.json();
+          displayRecentActivity(activities);
+        }
+      } catch (error) {
+        console.error('Error loading recent activity:', error);
+      }
+    }
+
+    // Display recent activity
+    function displayRecentActivity(activities) {
+      const activityContainer = document.getElementById('recentActivity');
+      
+      if (activities.length === 0) {
+        activityContainer.innerHTML = '<p class="text-muted">No recent activity</p>';
+        return;
+      }
+
+      activityContainer.innerHTML = activities.map(activity => `
+        <div class="queue-item">
+          <div class="queue-details">
+            <div class="queue-info">
+              <div class="queue-person">${activity.number} - ${activity.person}</div>
+              <div class="queue-meta">Completed: ${activity.completedAt}</div>
+            </div>
+          </div>
+        </div>
+      `).slice(0, 5).join('');
+    }
+
+    // Refresh queue
+    function refreshQueue() {
+      loadCurrentQueue();
+      loadStatistics();
+    }
+
+    // Set department status
+    function setStatus(status) {
+      // Update UI
+      document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      // TODO: Send status update to backend
+      console.log('Status set to:', status);
+    }
+
+    // Logout function
+    function logout() {
+      localStorage.removeItem('adminSession');
+      clearInterval(refreshInterval);
+      window.location.href = 'admin-login.html';
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+  </script>
+</body>
+</html>
