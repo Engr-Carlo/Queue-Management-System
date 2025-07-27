@@ -10,36 +10,60 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# PostgreSQL connection settings using environment variables
-conn = psycopg2.connect(
-    dbname=os.getenv('PGDATABASE', os.getenv('DB_NAME', 'queue_system')),
-    user=os.getenv('PGUSER', os.getenv('DB_USER', 'postgres')),
-    password=os.getenv('PGPASSWORD', os.getenv('DB_PASSWORD')),
-    host=os.getenv('PGHOST', os.getenv('DB_HOST', 'localhost')),
-    port=os.getenv('PGPORT', os.getenv('DB_PORT', '5432'))
-)
-cur = conn.cursor()
+# PostgreSQL connection settings using Railway's environment variables
+try:
+    conn = psycopg2.connect(
+        dbname=os.getenv('PGDATABASE', 'railway'),
+        user=os.getenv('PGUSER', 'postgres'),
+        password=os.getenv('PGPASSWORD'),
+        host=os.getenv('PGHOST', 'localhost'),
+        port=os.getenv('PGPORT', '5432')
+    )
+    cur = conn.cursor()
+    print("✅ Database connected successfully!")
+except Exception as e:
+    print(f"❌ Database connection failed: {e}")
+    conn = None
+    cur = None
+
+@app.route('/', methods=['GET'])
+def home():
+    return jsonify({
+        "message": "Queue Management System API is running!",
+        "status": "active",
+        "endpoints": {
+            "POST /queue": "Create new queue entry",
+            "GET /queue/<id>": "Get queue entry by ID",
+            "GET /test-db": "Test database connection"
+        }
+    })
 
 @app.route('/queue', methods=['POST'])
 def create_queue():
+    if not conn:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+    
     try:
         data = request.json
-        print(f"Received data: {data}")  # Debug logging
+        print(f"Received data: {data}")
         
         cur.execute(
             "INSERT INTO queue (id, number, person, date, time, status) VALUES (%s, %s, %s, %s, %s, %s)",
             (data['id'], data['number'], data['person'], data['date'], data['time'], data['status'])
         )
         conn.commit()
-        print("Data inserted successfully")  # Debug logging
+        print("Data inserted successfully")
         return jsonify({"success": True, "message": "Queue entry created"})
     except Exception as e:
-        conn.rollback()  # Rollback in case of error
-        print(f"Error inserting data: {e}")  # Debug logging
+        conn.rollback()
+        print(f"Error inserting data: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/queue/<queue_id>', methods=['GET'])
 def get_queue(queue_id):
+    if not conn:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+    
     cur.execute("SELECT * FROM queue WHERE id = %s", (queue_id,))
     row = cur.fetchone()
     if row:
@@ -56,6 +80,9 @@ def get_queue(queue_id):
 # Route to test database connection
 @app.route('/test-db', methods=['GET'])
 def test_db():
+    if not conn:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+    
     try:
         cur.execute('SELECT 1')
         result = cur.fetchone()
