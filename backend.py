@@ -449,15 +449,33 @@ def get_queue_status(queue_id):
         # Get admin status for this department
         admin_status = get_admin_status(department_prefix)
 
-        # Calculate estimated time (default 5 minutes, 999 if away, 8 if busy)
+        # Calculate position in queue for wait time estimation
+        cur.execute("""
+            SELECT COUNT(*) FROM queue 
+            WHERE number LIKE %s 
+            AND completed = FALSE 
+            AND created_at < %s
+            ORDER BY created_at ASC
+        """, (department_prefix + '%', created_at))
+        
+        queues_ahead = cur.fetchone()[0] or 0
+        position_in_queue = queues_ahead + 1
+        
+        print(f"Debug - Position in queue: {position_in_queue}, Queues ahead: {queues_ahead}")
+
+        # Calculate estimated time based on position and admin status
+        base_time_per_queue = 5  # 5 minutes per queue by default
+        
         if admin_status == 'away':
             estimated_minutes = 999  # Unknown time when admin is away
         elif is_called:
             estimated_minutes = 0  # They're being called now
         elif admin_status == 'busy':
-            estimated_minutes = 8  # Longer wait time when admin is busy
+            # When busy, each queue takes longer + position in line
+            estimated_minutes = max(8, (position_in_queue - 1) * 7 + 8)
         else:
-            estimated_minutes = 5  # Normal wait time when available
+            # When available, normal time + position in line
+            estimated_minutes = max(5, (position_in_queue - 1) * base_time_per_queue + 5)
 
         # Determine status based on actual conditions and admin status
         if admin_status == 'away':
@@ -488,7 +506,8 @@ def get_queue_status(queue_id):
             "admin_status": admin_status,
             "is_called": is_called,
             "created_at": created_at.isoformat() if created_at else None,
-            "queue_number": queue_number
+            "queue_number": queue_number,
+            "position_in_queue": position_in_queue
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
