@@ -404,6 +404,20 @@ def get_queue_status(queue_id):
         print(f"Debug - All active queues in {department_prefix}: {all_queues}")
         print(f"Debug - Current queue ID: {queue_id}, created_at: {created_at}")
         
+        # Get all active queues in this department, ordered by created_at and id
+        cur.execute("""
+            SELECT id FROM queue 
+            WHERE number LIKE %s AND completed = FALSE 
+            ORDER BY created_at ASC, id ASC
+        """, (department_prefix + '%',))
+        ordered_queues = [row[0] for row in cur.fetchall()]
+
+        # Determine user's position (1-based)
+        try:
+            position = ordered_queues.index(queue_id) + 1
+        except ValueError:
+            position = None
+
         # Get admin status for this department
         admin_status = get_admin_status(department_prefix)
 
@@ -416,7 +430,13 @@ def get_queue_status(queue_id):
             estimated_minutes = 5  # Default wait time
 
         # Determine status based on actual conditions and admin status
-        if admin_status == 'away':
+        if position is None:
+            status = {
+                "text": "❌ You are not currently in the queue.",
+                "class": "status-not-in-queue",
+                "priority": "none"
+            }
+        elif admin_status == 'away':
             status = {
                 "text": "⚪ Admin Away",
                 "class": "status-away",
@@ -430,7 +450,7 @@ def get_queue_status(queue_id):
             }
         else:
             status = {
-                "text": "🟡 Waiting",
+                "text": f"🟡 You are {position}{get_ordinal_suffix(position)} in line" if position else "❌ You are not currently in the queue.",
                 "class": "status-waiting",
                 "priority": "low"
             }
@@ -438,6 +458,7 @@ def get_queue_status(queue_id):
         conn.close()
 
         return jsonify({
+            "position": position,
             "estimated_minutes": estimated_minutes,
             "status": status,
             "department_prefix": department_prefix,
@@ -446,9 +467,22 @@ def get_queue_status(queue_id):
             "created_at": created_at.isoformat() if created_at else None,
             "queue_number": queue_number
         })
-        
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# Helper for ordinal suffix
+def get_ordinal_suffix(num):
+    if not isinstance(num, int):
+        return ''
+    j = num % 10
+    k = num % 100
+    if j == 1 and k != 11:
+        return 'st'
+    if j == 2 and k != 12:
+        return 'nd'
+    if j == 3 and k != 13:
+        return 'rd'
+    return 'th'
 
 # Admin status management
 admin_statuses = {}  # In-memory storage for admin statuses
