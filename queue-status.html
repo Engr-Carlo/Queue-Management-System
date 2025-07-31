@@ -608,6 +608,12 @@
         // Force countdown display to show "Your turn is now!"
         document.getElementById('countdownTimer').textContent = '⏰ Your turn is now!';
         document.getElementById('countdownTimer').style.color = '#ef4444';
+      } else {
+        // Reset styling if not called
+        const estimatedTimeSection = document.querySelector('.estimated-time');
+        estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+        estimatedTimeSection.querySelector('h3').textContent = '⏱️ Estimated Wait Time';
+        statusElement.style.animation = '';
       }
     }
 
@@ -667,10 +673,12 @@
       const countdownElement = document.getElementById('countdownTimer');
       
       if (estimatedSeconds <= 0) {
-        // Only show "Your turn is now!" if the user is actually called
-        // Otherwise, show that they're still waiting
+        // Check if user is actually called by looking at the status text
         const statusElement = document.getElementById('queueStatus');
-        if (statusElement.textContent.includes('being called')) {
+        const estimatedTimeSection = document.querySelector('.estimated-time');
+        const isCalledSection = estimatedTimeSection.querySelector('h3').textContent.includes('BEING CALLED');
+        
+        if (statusElement.textContent.includes('being called') || isCalledSection) {
           countdownElement.textContent = '⏰ Your turn is now!';
           countdownElement.style.color = '#ef4444';
           document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
@@ -749,25 +757,57 @@
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
+          
           // Update queue creation time if we have it
           if (statusData.created_at && !queueCreatedAt) {
             queueCreatedAt = new Date(statusData.created_at);
           }
-          // Only update display elements that don't affect countdown
+          
+          // Update admin status - this was broken
           updateAdminStatus(statusData.admin_status, statusData.department_prefix);
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-          // Update status
+          
+          // Update queue status
           const statusElement = document.getElementById('queueStatus');
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
-          // Handle called status
+          
+          // Handle called status - this was broken
           if (statusData.is_called) {
             statusElement.style.animation = 'pulse 1s infinite';
             const estimatedTimeSection = document.querySelector('.estimated-time');
             estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
             estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
             estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
+            
+            // Update countdown for called status
+            estimatedSeconds = 0;
             stopCountdown();
+            document.getElementById('countdownTimer').textContent = '⏰ Your turn is now!';
+            document.getElementById('countdownTimer').style.color = '#ef4444';
+            document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
+            
+          } else {
+            // Reset styling if not called anymore
+            const estimatedTimeSection = document.querySelector('.estimated-time');
+            estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+            estimatedTimeSection.querySelector('h3').textContent = '⏱️ Estimated Wait Time';
+            statusElement.style.animation = '';
+          }
+          
+          // Update estimated time based on admin status changes
+          const newEstimatedTime = statusData.estimated_minutes || 5;
+          if (newEstimatedTime !== lastEstimatedMinutes && !statusData.is_called) {
+            lastEstimatedMinutes = newEstimatedTime;
+            
+            if (statusData.admin_status === 'away') {
+              estimatedSeconds = 999 * 60;
+              document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
+            } else {
+              estimatedSeconds = newEstimatedTime * 60;
+              document.getElementById('estimatedTime').textContent = `~${newEstimatedTime} minutes`;
+              startCountdown();
+            }
           }
         }
       } catch (error) {
