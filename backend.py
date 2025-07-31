@@ -394,7 +394,7 @@ def get_queue_status(queue_id):
         
         # Debug: Show all active queues in this department
         cur.execute("""
-            SELECT number, created_at FROM queue 
+            SELECT number, created_at, id FROM queue 
             WHERE number LIKE %s 
             AND completed = FALSE 
             ORDER BY created_at ASC
@@ -402,20 +402,45 @@ def get_queue_status(queue_id):
         
         all_queues = cur.fetchall()
         print(f"Debug - All active queues in {department_prefix}: {all_queues}")
+        print(f"Debug - Current queue ID: {queue_id}, created_at: {created_at}")
         
         # Count queues ahead of this one in the same department (not completed and created before this one)
+        # FIXED: Use proper comparison and ensure we're excluding the current queue
         cur.execute("""
             SELECT COUNT(*) FROM queue 
             WHERE number LIKE %s 
             AND completed = FALSE 
-            AND created_at < %s
-        """, (department_prefix + '%', created_at))
+            AND id != %s
+            AND (created_at < %s OR (created_at = %s AND id < %s))
+        """, (department_prefix + '%', queue_id, created_at, created_at, queue_id))
         
         position_result = cur.fetchone()
         position = position_result[0] if position_result else 0
         
         # Debug: Print position calculation
-        print(f"Debug - Queues ahead: {position}, Filter: {department_prefix}%")
+        print(f"Debug - Queues ahead of {queue_id}: {position}, Filter: {department_prefix}%")
+        print(f"Debug - SQL query params: dept={department_prefix}%, current_id={queue_id}, created_at={created_at}")
+        
+        # Alternative position calculation: Find this queue's position in the ordered list
+        cur.execute("""
+            SELECT id FROM queue 
+            WHERE number LIKE %s 
+            AND completed = FALSE 
+            ORDER BY created_at ASC, id ASC
+        """, (department_prefix + '%',))
+        
+        ordered_queues = [row[0] for row in cur.fetchall()]
+        print(f"Debug - Ordered queue IDs: {ordered_queues}")
+        
+        try:
+            actual_position = ordered_queues.index(queue_id)
+            print(f"Debug - Queue {queue_id} is at index {actual_position} (0-based)")
+        except ValueError:
+            print(f"Debug - Queue {queue_id} not found in ordered list!")
+            actual_position = 0
+        
+        # Use the actual position from the ordered list
+        position = actual_position
         
         # Count total active queues in department
         cur.execute("""
