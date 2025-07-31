@@ -1,11 +1,4 @@
-    // Helper to get ordinal suffix (1st, 2nd, 3rd, etc.)
-    function getOrdinalSuffix(num) {
-      const j = num % 10, k = num % 100;
-      if (j == 1 && k != 11) return 'st';
-      if (j == 2 && k != 12) return 'nd';
-      if (j == 3 && k != 13) return 'rd';
-      return 'th';
-    }
+    // Removed getOrdinalSuffix helper, no longer needed
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,12 +438,7 @@
             </div>
             <div class="detail-value" id="queueTime">2:30 PM</div>
           </div>
-          <div class="detail-row">
-            <div class="detail-label">
-              <span>📊</span> Position
-            </div>
-            <div class="detail-value" id="queuePosition">5th in line</div>
-          </div>
+          <!-- Position row removed -->
         </div>
         
         <div class="estimated-time">
@@ -574,18 +562,8 @@
       // Store queue creation time
       queueCreatedAt = statusData.created_at ? new Date(statusData.created_at) : new Date();
 
-      // Always use backend position, never default to 1
-      let position = 1;
-      if (typeof statusData.position === 'number' && statusData.position > 0) {
-        position = statusData.position;
-      } else if (typeof statusData.position === 'string' && !isNaN(parseInt(statusData.position))) {
-        position = parseInt(statusData.position);
-      }
-      const ordinalSuffix = getOrdinalSuffix(position);
-      document.getElementById('queuePosition').textContent = `${position}${ordinalSuffix} in line`;
-
-      // Calculate proper estimated time based on position (5 minutes per position)
-      const totalWaitTime = position * 5; // Total wait time in minutes
+      // Calculate estimated time based on backend-provided estimated_minutes
+      const totalWaitTime = statusData.estimated_minutes || 5;
       
       // Calculate how much time has actually passed since queue creation
       const now = new Date();
@@ -786,53 +764,21 @@
       if (!queueId) return;
       
       try {
-        // Get real-time status and position
+        // Get real-time status
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
-        
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          
           // Update queue creation time if we have it
           if (statusData.created_at && !queueCreatedAt) {
             queueCreatedAt = new Date(statusData.created_at);
           }
-          
           // Only update display elements that don't affect countdown
           updateAdminStatus(statusData.admin_status, statusData.department_prefix);
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-          
           // Update status
           const statusElement = document.getElementById('queueStatus');
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
-          
-          // Always use backend position and update display, even if position is 1
-          // Always use backend position and update display, even if position is 1
-          let newPosition = 1;
-          if (typeof statusData.position === 'number' && statusData.position > 0) {
-            newPosition = statusData.position;
-          } else if (typeof statusData.position === 'string' && !isNaN(parseInt(statusData.position))) {
-            newPosition = parseInt(statusData.position);
-          }
-          // Always update the queue position display with correct ordinal
-          const ordinalSuffix = getOrdinalSuffix(newPosition);
-          document.getElementById('queuePosition').textContent = `${newPosition}${ordinalSuffix} in line`;
-          // Recalculate time based on new position and elapsed time
-          const totalWaitTime = newPosition * 5;
-          const now = new Date();
-          const elapsedMinutes = queueCreatedAt ? Math.floor((now - queueCreatedAt) / (1000 * 60)) : 0;
-          const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
-          lastEstimatedMinutes = totalWaitTime;
-          estimatedSeconds = remainingMinutes * 60;
-          if (remainingMinutes <= 0) {
-            document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-          } else if (statusData.admin_status === 'away') {
-            document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
-          } else {
-            document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
-          }
-          startCountdown(); // Always restart countdown with remaining time
-          
           // Handle called status
           if (statusData.is_called) {
             statusElement.style.animation = 'pulse 1s infinite';
@@ -843,7 +789,6 @@
             stopCountdown();
           }
         }
-        
       } catch (error) {
         console.error('Error in silent refresh:', error);
       }
