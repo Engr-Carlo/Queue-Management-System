@@ -371,19 +371,37 @@ def get_queue_status(queue_id):
         cur = conn.cursor()
         
         # Get the current queue details
-        cur.execute("SELECT number, person, created_at, called FROM queue WHERE id = %s", (queue_id,))
+        cur.execute("SELECT number, person, created_at, called FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
         current_queue = cur.fetchone()
         
         if not current_queue:
-            return jsonify({"error": "Queue not found"}), 404
+            return jsonify({"error": "Queue not found or already completed"}), 404
             
         queue_number = current_queue[0]
         person = current_queue[1]
         created_at = current_queue[2]
         is_called = current_queue[3] if len(current_queue) > 3 else False
         
+        # If created_at is None, use current time as fallback
+        if not created_at:
+            created_at = datetime.now()
+        
         # Extract department prefix from queue number (A, B, C, D, E)
         department_prefix = queue_number[0] if queue_number else 'A'
+        
+        # Debug: Print queue information
+        print(f"Debug - Queue: {queue_number}, Department: {department_prefix}, Created: {created_at}")
+        
+        # Debug: Show all active queues in this department
+        cur.execute("""
+            SELECT number, created_at FROM queue 
+            WHERE number LIKE %s 
+            AND completed = FALSE 
+            ORDER BY created_at ASC
+        """, (department_prefix + '%',))
+        
+        all_queues = cur.fetchall()
+        print(f"Debug - All active queues in {department_prefix}: {all_queues}")
         
         # Count queues ahead of this one in the same department (not completed and created before this one)
         cur.execute("""
@@ -391,11 +409,13 @@ def get_queue_status(queue_id):
             WHERE number LIKE %s 
             AND completed = FALSE 
             AND created_at < %s
-            ORDER BY created_at ASC
         """, (department_prefix + '%', created_at))
         
         position_result = cur.fetchone()
         position = position_result[0] if position_result else 0
+        
+        # Debug: Print position calculation
+        print(f"Debug - Queues ahead: {position}, Filter: {department_prefix}%")
         
         # Count total active queues in department
         cur.execute("""
@@ -472,7 +492,12 @@ def get_queue_status(queue_id):
             "admin_status": admin_status,
             "is_called": is_called,
             "created_at": created_at.isoformat() if created_at else None,
-            "queue_number": queue_number
+            "queue_number": queue_number,
+            "debug_info": {
+                "queues_ahead": position,
+                "department_filter": department_prefix + '%',
+                "created_at": created_at.isoformat() if created_at else None
+            }
         })
         
     except Exception as e:
