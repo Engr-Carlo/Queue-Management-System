@@ -798,50 +798,31 @@
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
           
-          // Always parse both as numbers and compare
-          const queuePositionText = document.getElementById('queuePosition').textContent;
-          const currentPosition = parseInt(queuePositionText);
+          // Always use backend position and update display, even if position is 1
           let newPosition = 1;
           if (typeof statusData.position === 'number' && statusData.position > 0) {
             newPosition = statusData.position;
           } else if (typeof statusData.position === 'string' && !isNaN(parseInt(statusData.position))) {
             newPosition = parseInt(statusData.position);
           }
-          if (newPosition !== currentPosition) {
-            // Position changed, update everything including countdown
-            const ordinalSuffix = getOrdinalSuffix(newPosition);
-            document.getElementById('queuePosition').textContent = `${newPosition}${ordinalSuffix} in line`;
-            // Recalculate time based on new position and elapsed time
-            const totalWaitTime = newPosition * 5;
-            const now = new Date();
-            const elapsedMinutes = queueCreatedAt ? Math.floor((now - queueCreatedAt) / (1000 * 60)) : 0;
-            const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
-            lastEstimatedMinutes = totalWaitTime;
-            estimatedSeconds = remainingMinutes * 60;
-            if (remainingMinutes <= 0) {
-              document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-            } else if (statusData.admin_status === 'away') {
-              document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
-            } else {
-              document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
-            }
-            startCountdown(); // Restart countdown with remaining time
+          // Always update the queue position display with correct ordinal
+          const ordinalSuffix = getOrdinalSuffix(newPosition);
+          document.getElementById('queuePosition').textContent = `${newPosition}${ordinalSuffix} in line`;
+          // Recalculate time based on new position and elapsed time
+          const totalWaitTime = newPosition * 5;
+          const now = new Date();
+          const elapsedMinutes = queueCreatedAt ? Math.floor((now - queueCreatedAt) / (1000 * 60)) : 0;
+          const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
+          lastEstimatedMinutes = totalWaitTime;
+          estimatedSeconds = remainingMinutes * 60;
+          if (remainingMinutes <= 0) {
+            document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
+          } else if (statusData.admin_status === 'away') {
+            document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
           } else {
-            // Position hasn't changed, but update remaining time for accuracy
-            if (queueCreatedAt && statusData.admin_status !== 'away') {
-              const totalWaitTime = newPosition * 5;
-              const now = new Date();
-              const elapsedMinutes = Math.floor((now - queueCreatedAt) / (1000 * 60));
-              const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
-              // Update estimated seconds for the countdown
-              estimatedSeconds = remainingMinutes * 60;
-              if (remainingMinutes <= 0) {
-                document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-              } else {
-                document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
-              }
-            }
+            document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
           }
+          startCountdown(); // Always restart countdown with remaining time
           
           // Handle called status
           if (statusData.is_called) {
