@@ -295,6 +295,17 @@
         </div>
       </div>
 
+      <!-- Dean-only Delete All Queues Section -->
+      <div id="deanControls" class="department-status" style="display: none; border: 2px solid #dc2626; background: rgba(239, 68, 68, 0.05);">
+        <h5 class="mb-3" style="color: #dc2626;">⚠️ Dean Administrative Controls</h5>
+        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 15px;">
+          <strong>Warning:</strong> This action will permanently delete ALL queues from the entire system across all departments.
+        </p>
+        <button class="btn btn-danger" onclick="showDeleteAllModal()">
+          🗑️ Delete All Queues (ALL DEPARTMENTS)
+        </button>
+      </div>
+
       <!-- Statistics Row -->
       <div class="row">
         <div class="col-md-3">
@@ -384,6 +395,9 @@
 
       // Update admin info
       document.getElementById('adminInfo').textContent = `Welcome, ${adminSession.name}`;
+      
+      // Check if user is dean and show dean controls
+      checkDeanAccess();
       
       // Load current admin status
       loadAdminStatus();
@@ -652,6 +666,109 @@
       }, 3000);
     }
 
+    // Show dean controls if user is dean
+    function checkDeanAccess() {
+      if (adminSession && adminSession.department === 'dean') {
+        document.getElementById('deanControls').style.display = 'block';
+      }
+    }
+
+    // Show delete all queues modal
+    function showDeleteAllModal() {
+      const modal = new bootstrap.Modal(document.getElementById('deleteAllModal'));
+      modal.show();
+      
+      // Reset form
+      document.getElementById('confirmationText').value = '';
+      document.getElementById('confirmDeleteBtn').disabled = true;
+      
+      // Enable/disable delete button based on confirmation text
+      document.getElementById('confirmationText').addEventListener('input', function() {
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const isValidText = this.value === 'DELETE_ALL_QUEUES_PERMANENTLY';
+        confirmBtn.disabled = !isValidText;
+        
+        if (isValidText) {
+          confirmBtn.style.background = '#dc2626';
+        } else {
+          confirmBtn.style.background = '#6b7280';
+        }
+      });
+    }
+
+    // Delete all queues from database
+    async function deleteAllQueues() {
+      const confirmationText = document.getElementById('confirmationText').value;
+      
+      if (confirmationText !== 'DELETE_ALL_QUEUES_PERMANENTLY') {
+        alert('Please type the exact confirmation text.');
+        return;
+      }
+      
+      // Final confirmation
+      const finalConfirm = confirm(
+        '🚨 FINAL CONFIRMATION 🚨\n\n' +
+        'This will PERMANENTLY DELETE ALL QUEUES from the entire system!\n\n' +
+        'Are you absolutely sure you want to proceed?\n\n' +
+        'Click OK to DELETE ALL QUEUES or Cancel to abort.'
+      );
+      
+      if (!finalConfirm) {
+        return;
+      }
+      
+      try {
+        // Show loading state
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '🔄 Deleting...';
+        deleteBtn.disabled = true;
+        
+        const response = await fetch(`${API_BASE_URL}/admin/delete-all-queues`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            department: adminSession.department,
+            confirmation: 'DELETE_ALL_QUEUES_PERMANENTLY'
+          })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('deleteAllModal'));
+          modal.hide();
+          
+          // Show success feedback
+          showFeedback(`✅ Successfully deleted all ${result.deleted_count} queues from the database`, 'success');
+          
+          // Refresh dashboard
+          setTimeout(() => {
+            loadDashboard();
+          }, 2000);
+          
+        } else {
+          alert(`Error: ${result.error}`);
+        }
+        
+        // Restore button
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+        
+      } catch (error) {
+        console.error('Error deleting all queues:', error);
+        alert('Network error occurred while deleting queues.');
+        
+        // Restore button
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        deleteBtn.innerHTML = '🗑️ DELETE ALL QUEUES';
+        deleteBtn.disabled = false;
+      }
+    }
+
     // Logout function
     function logout() {
       localStorage.removeItem('adminSession');
@@ -666,5 +783,49 @@
       }
     });
   </script>
+
+  <!-- Delete All Queues Modal -->
+  <div class="modal fade" id="deleteAllModal" tabindex="-1" aria-labelledby="deleteAllModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header bg-danger text-white">
+          <h5 class="modal-title" id="deleteAllModalLabel">⚠️ DELETE ALL QUEUES</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <strong>CRITICAL WARNING!</strong><br>
+            This action will <strong>PERMANENTLY DELETE</strong> all queues from the entire system across ALL departments.
+          </div>
+          
+          <p><strong>This will delete queues from:</strong></p>
+          <ul>
+            <li>Dean's Office</li>
+            <li>IE Department</li>
+            <li>CPE Department</li>
+            <li>ECE Department</li>
+            <li>Other Departments</li>
+          </ul>
+          
+          <p><strong>⚠️ This action cannot be undone!</strong></p>
+          
+          <div class="mt-4">
+            <label for="confirmationText" class="form-label">
+              To confirm, type: <code style="background: #f8f9fa; padding: 2px 4px; color: #dc2626;">DELETE_ALL_QUEUES_PERMANENTLY</code>
+            </label>
+            <input type="text" class="form-control" id="confirmationText" placeholder="Type confirmation text here">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="deleteAllQueues()" disabled>
+            🗑️ DELETE ALL QUEUES
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -585,6 +585,52 @@ def get_admin_status_endpoint(department):
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/admin/delete-all-queues', methods=['POST'])
+def delete_all_queues():
+    """Delete all queues from the database - DEAN ONLY"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        data = request.get_json()
+        department = data.get('department')
+        confirmation = data.get('confirmation')
+        
+        # Only dean can delete all queues
+        if department != 'dean':
+            return jsonify({"success": False, "error": "Unauthorized - Only Dean can delete all queues"}), 403
+            
+        # Require confirmation string
+        if confirmation != 'DELETE_ALL_QUEUES_PERMANENTLY':
+            return jsonify({"success": False, "error": "Invalid confirmation"}), 400
+        
+        cur = conn.cursor()
+        
+        # Get count before deletion
+        cur.execute("SELECT COUNT(*) FROM queue")
+        total_count = cur.fetchone()[0] or 0
+        
+        # Delete all queues
+        cur.execute("DELETE FROM queue")
+        deleted_count = cur.rowcount
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"ADMIN ACTION: Dean deleted all queues. Total deleted: {deleted_count}")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Successfully deleted all {deleted_count} queues from the database",
+            "deleted_count": deleted_count,
+            "total_count": total_count
+        })
+        
+    except Exception as e:
+        print(f"Error deleting all queues: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Queue Management System API...")
