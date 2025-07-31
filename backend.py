@@ -74,7 +74,6 @@ def create_queue():
                 completed BOOLEAN DEFAULT FALSE,
                 completed_at TIMESTAMP DEFAULT NULL,
                 completed_by VARCHAR(255) DEFAULT NULL,
-                priority BOOLEAN DEFAULT FALSE,
                 created_at TIMESTAMP DEFAULT NOW(),
                 called BOOLEAN DEFAULT FALSE,
                 called_at TIMESTAMP DEFAULT NULL,
@@ -192,7 +191,6 @@ def get_admin_queue(department):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_by VARCHAR(255) DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS priority BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()")
             conn.commit()
         except Exception:
@@ -209,12 +207,12 @@ def get_admin_queue(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get current queue (not completed) for this department, ordered by priority and creation time
+        # Get current queue (not completed) for this department, ordered by creation time
         cur.execute("""
-            SELECT id, number, person, date, time, status, priority, created_at 
+            SELECT id, number, person, date, time, status, created_at 
             FROM queue 
             WHERE person LIKE %s AND (completed IS NULL OR completed = FALSE)
-            ORDER BY priority DESC, created_at ASC
+            ORDER BY created_at ASC
         """, (person_filter,))
         
         rows = cur.fetchall()
@@ -229,8 +227,7 @@ def get_admin_queue(department):
                 "date": row[3],
                 "time": row[4],
                 "status": row[5],
-                "priority": row[6] if row[6] is not None else False,
-                "created_at": row[7].isoformat() if row[7] else None
+                "created_at": row[6].isoformat() if row[6] else None
             })
         
         return jsonify(queues)
@@ -319,26 +316,6 @@ def call_queue(queue_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/admin/priority/<queue_id>', methods=['POST'])
-def set_priority(queue_id):
-    """Set queue as priority"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Toggle priority
-        cur.execute("UPDATE queue SET priority = NOT COALESCE(priority, FALSE) WHERE id = %s", (queue_id,))
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({"success": True, "message": "Priority updated"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route('/admin/activity/<department>')
 def get_recent_activity(department):
     """Get recent completed queues for a department"""
@@ -394,7 +371,7 @@ def get_queue_status(queue_id):
         cur = conn.cursor()
         
         # Get the current queue details
-        cur.execute("SELECT number, person, created_at, called, priority FROM queue WHERE id = %s", (queue_id,))
+        cur.execute("SELECT number, person, created_at, called FROM queue WHERE id = %s", (queue_id,))
         current_queue = cur.fetchone()
         
         if not current_queue:
@@ -404,7 +381,6 @@ def get_queue_status(queue_id):
         person = current_queue[1]
         created_at = current_queue[2]
         is_called = current_queue[3] if len(current_queue) > 3 else False
-        is_priority = current_queue[4] if len(current_queue) > 4 else False
         
         # Extract department prefix from queue number (A, B, C, D, E)
         department_prefix = queue_number[0] if queue_number else 'A'
@@ -460,12 +436,6 @@ def get_queue_status(queue_id):
                 "class": "status-called",
                 "priority": "high"
             }
-        elif is_priority:
-            status = {
-                "text": "⭐ Priority Queue - Ready Soon",
-                "class": "status-priority", 
-                "priority": "medium"
-            }
         elif position <= 0:
             status = {
                 "text": "🟢 You're Next!",
@@ -501,7 +471,8 @@ def get_queue_status(queue_id):
             "department_prefix": department_prefix,
             "admin_status": admin_status,
             "is_called": is_called,
-            "is_priority": is_priority
+            "created_at": created_at.isoformat() if created_at else None,
+            "queue_number": queue_number
         })
         
     except Exception as e:

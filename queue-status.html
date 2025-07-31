@@ -104,13 +104,6 @@
       animation: pulse 1s infinite;
     }
     
-    .status-priority {
-      background: rgba(245, 158, 11, 0.1);
-      color: #d97706;
-      border: 2px solid rgba(245, 158, 11, 0.3);
-      animation: glow 2s infinite;
-    }
-    
     .status-queued {
       background: rgba(156, 163, 175, 0.1);
       color: #6b7280;
@@ -120,11 +113,6 @@
     @keyframes pulse {
       0%, 100% { transform: scale(1); }
       50% { transform: scale(1.05); }
-    }
-    
-    @keyframes glow {
-      0%, 100% { box-shadow: 0 0 5px rgba(245, 158, 11, 0.5); }
-      50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
     }
 
     .status-waiting {
@@ -567,6 +555,7 @@
     let countdownInterval = null;
     let estimatedSeconds = 0;
     let lastEstimatedMinutes = 0; // Track last estimated time to prevent resets
+    let queueCreatedAt = null; // Store when queue was created
 
     function updateDisplay(queueData, statusData) {
       document.getElementById('queueNumber').textContent = queueData.number;
@@ -574,30 +563,56 @@
       document.getElementById('queueDate').textContent = queueData.date;
       document.getElementById('queueTime').textContent = queueData.time;
       
+      // Store queue creation time
+      queueCreatedAt = statusData.created_at ? new Date(statusData.created_at) : new Date();
+      
       // Update position with real data
       const position = statusData.position;
       const ordinalSuffix = getOrdinalSuffix(position);
       document.getElementById('queuePosition').textContent = `${position}${ordinalSuffix} in line`;
       
       // Calculate proper estimated time based on position (5 minutes per position)
-      const waitTime = position * 5; // 5 minutes per position ahead
+      const totalWaitTime = position * 5; // Total wait time in minutes
+      
+      // Calculate how much time has actually passed since queue creation
+      const now = new Date();
+      const elapsedMinutes = Math.floor((now - queueCreatedAt) / (1000 * 60));
+      
+      // Calculate remaining time
+      const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
       
       // Only update countdown if position changed or it's the first load
-      if (waitTime !== lastEstimatedMinutes || lastEstimatedMinutes === 0) {
-        lastEstimatedMinutes = waitTime;
-        estimatedSeconds = waitTime * 60; // Convert to seconds
+      if (totalWaitTime !== lastEstimatedMinutes || lastEstimatedMinutes === 0) {
+        lastEstimatedMinutes = totalWaitTime;
+        estimatedSeconds = remainingMinutes * 60; // Convert remaining time to seconds
         
         // Update the display text
-        if (waitTime <= 0) {
+        if (remainingMinutes <= 0) {
           document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
         } else if (statusData.admin_status === 'away') {
           document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
+          estimatedSeconds = 999 * 60; // Set to high value for away status
         } else {
-          document.getElementById('estimatedTime').textContent = `~${waitTime} minutes`;
+          document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
         }
         
-        // Restart countdown with new time
+        // Restart countdown with remaining time
         startCountdown();
+      } else {
+        // Position hasn't changed, but recalculate remaining time to account for page refresh
+        const currentRemainingMinutes = Math.max(0, totalWaitTime - Math.floor((now - queueCreatedAt) / (1000 * 60)));
+        estimatedSeconds = currentRemainingMinutes * 60;
+        
+        if (currentRemainingMinutes <= 0) {
+          document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
+        } else if (statusData.admin_status !== 'away') {
+          document.getElementById('estimatedTime').textContent = `~${currentRemainingMinutes} minutes`;
+        }
+        
+        // Update countdown to show correct remaining time
+        if (!countdownInterval) {
+          startCountdown();
+        }
       }
       
       // Update admin status
@@ -764,6 +779,11 @@
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
           
+          // Update queue creation time if we have it
+          if (statusData.created_at && !queueCreatedAt) {
+            queueCreatedAt = new Date(statusData.created_at);
+          }
+          
           // Only update display elements that don't affect countdown
           updateAdminStatus(statusData.admin_status, statusData.department_prefix);
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
@@ -780,20 +800,41 @@
             const ordinalSuffix = getOrdinalSuffix(statusData.position);
             document.getElementById('queuePosition').textContent = `${statusData.position}${ordinalSuffix} in line`;
             
-            // Recalculate time based on new position
-            const waitTime = statusData.position * 5;
-            lastEstimatedMinutes = waitTime;
-            estimatedSeconds = waitTime * 60;
+            // Recalculate time based on new position and elapsed time
+            const totalWaitTime = statusData.position * 5;
+            const now = new Date();
+            const elapsedMinutes = queueCreatedAt ? Math.floor((now - queueCreatedAt) / (1000 * 60)) : 0;
+            const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
             
-            if (waitTime <= 0) {
+            lastEstimatedMinutes = totalWaitTime;
+            estimatedSeconds = remainingMinutes * 60;
+            
+            if (remainingMinutes <= 0) {
               document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
             } else if (statusData.admin_status === 'away') {
               document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
             } else {
-              document.getElementById('estimatedTime').textContent = `~${waitTime} minutes`;
+              document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
             }
             
-            startCountdown(); // Restart countdown with new time
+            startCountdown(); // Restart countdown with remaining time
+          } else {
+            // Position hasn't changed, but update remaining time for accuracy
+            if (queueCreatedAt && statusData.admin_status !== 'away') {
+              const totalWaitTime = statusData.position * 5;
+              const now = new Date();
+              const elapsedMinutes = Math.floor((now - queueCreatedAt) / (1000 * 60));
+              const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
+              
+              // Update estimated seconds for the countdown
+              estimatedSeconds = remainingMinutes * 60;
+              
+              if (remainingMinutes <= 0) {
+                document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
+              } else {
+                document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
+              }
+            }
           }
           
           // Handle called status

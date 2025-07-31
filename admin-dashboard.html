@@ -193,20 +193,6 @@
       box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
     }
 
-    .btn-priority {
-      background: #fbbf24;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 15px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    .btn-priority:hover {
-      background: #f59e0b;
-    }
-
     .status-indicator {
       display: inline-block;
       padding: 4px 12px;
@@ -475,9 +461,6 @@
               <div class="queue-meta">Status: ${queue.status}</div>
             </div>
             <div class="queue-actions">
-              <button class="btn-priority" onclick="setPriority('${queue.id}')" title="Mark as Priority">
-                ⭐
-              </button>
               <button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
                 📞 Call Queue
               </button>
@@ -517,21 +500,6 @@
       } catch (error) {
         console.error('Error calling queue:', error);
         alert('Error calling queue. Please check your connection.');
-      }
-    }
-
-    // Set priority
-    async function setPriority(queueId) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/priority/${queueId}`, {
-          method: 'POST'
-        });
-
-        if (response.ok) {
-          refreshQueue();
-        }
-      } catch (error) {
-        console.error('Error setting priority:', error);
       }
     }
 
