@@ -193,6 +193,22 @@
       box-shadow: 0 8px 25px rgba(34, 197, 94, 0.3);
     }
 
+    .btn-complete {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-complete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+
     .status-indicator {
       display: inline-block;
       padding: 4px 12px;
@@ -475,9 +491,14 @@
               <div class="queue-meta">Status: ${queue.status}</div>
             </div>
             <div class="queue-actions">
-              <button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
-                📞 Call Queue
-              </button>
+              ${queue.status === 'called' ? 
+                `<button class="btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')">
+                  ✅ Complete Queue
+                </button>` :
+                `<button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
+                  📞 Call Queue
+                </button>`
+              }
             </div>
           </div>
         </div>
@@ -486,7 +507,7 @@
 
     // Call queue function
     async function callQueue(queueId, queueNumber) {
-      if (!confirm(`Call queue ${queueNumber}? This will remove it from the queue and mark as completed.`)) {
+      if (!confirm(`Call queue ${queueNumber}? This will notify the user that they are being called.`)) {
         return;
       }
 
@@ -504,7 +525,7 @@
 
         if (response.ok) {
           // Show success message
-          alert(`Queue ${queueNumber} has been called and completed!`);
+          alert(`Queue ${queueNumber} has been called! The user will see they are being called.`);
           
           // Refresh the dashboard
           loadDashboard();
@@ -514,6 +535,39 @@
       } catch (error) {
         console.error('Error calling queue:', error);
         alert('Error calling queue. Please check your connection.');
+      }
+    }
+
+    // Complete queue function
+    async function completeQueue(queueId, queueNumber) {
+      if (!confirm(`Complete queue ${queueNumber}? This will mark the queue as completed and remove it from the list.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/complete-queue/${queueId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            completedBy: adminSession.department,
+            completedAt: new Date().toISOString()
+          })
+        });
+
+        if (response.ok) {
+          // Show success message
+          alert(`Queue ${queueNumber} has been completed!`);
+          
+          // Refresh the dashboard
+          loadDashboard();
+        } else {
+          alert('Failed to complete queue. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error completing queue:', error);
+        alert('Error completing queue. Please check your connection.');
       }
     }
 

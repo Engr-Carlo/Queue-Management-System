@@ -293,7 +293,45 @@ def get_admin_stats(department):
 
 @app.route('/admin/call-queue/<queue_id>', methods=['POST'])
 def call_queue(queue_id):
-    """Call a queue (mark as completed)"""
+    """Call a queue (mark as called, not completed yet)"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        data = request.json
+        cur = conn.cursor()
+        
+        # Add missing columns if they don't exist
+        try:
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called_by VARCHAR(255) DEFAULT NULL")
+            conn.commit()
+        except Exception:
+            pass
+        
+        # Mark queue as called (not completed yet)
+        cur.execute("""
+            UPDATE queue 
+            SET called = TRUE, called_at = NOW(), called_by = %s, status = 'called'
+            WHERE id = %s AND completed = FALSE
+        """, (data.get('calledBy'), queue_id))
+        
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found or already completed"}), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"success": True, "message": "Queue called successfully", "status": "called"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/complete-queue/<queue_id>', methods=['POST'])
+def complete_queue(queue_id):
+    """Complete a queue (mark as completed after being called)"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -306,13 +344,17 @@ def call_queue(queue_id):
         cur.execute("""
             UPDATE queue 
             SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed'
-            WHERE id = %s
-        """, (data.get('calledBy'), queue_id))
+            WHERE id = %s AND called = TRUE
+        """, (data.get('completedBy'), queue_id))
+        
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found, not called yet, or already completed"}), 404
         
         conn.commit()
         conn.close()
         
-        return jsonify({"success": True, "message": "Queue called and completed"})
+        return jsonify({"success": True, "message": "Queue completed successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -404,20 +446,6 @@ def get_queue_status(queue_id):
         print(f"Debug - All active queues in {department_prefix}: {all_queues}")
         print(f"Debug - Current queue ID: {queue_id}, created_at: {created_at}")
         
-        # Get all active queues in this department, ordered by created_at and id
-        cur.execute("""
-            SELECT id FROM queue 
-            WHERE number LIKE %s AND completed = FALSE 
-            ORDER BY created_at ASC, id ASC
-        """, (department_prefix + '%',))
-        ordered_queues = [row[0] for row in cur.fetchall()]
-
-        # Determine user's position (1-based)
-        try:
-            position = ordered_queues.index(queue_id) + 1
-        except ValueError:
-            position = None
-
         # Get admin status for this department
         admin_status = get_admin_status(department_prefix)
 
@@ -430,13 +458,7 @@ def get_queue_status(queue_id):
             estimated_minutes = 5  # Default wait time
 
         # Determine status based on actual conditions and admin status
-        if position is None:
-            status = {
-                "text": "❌ You are not currently in the queue.",
-                "class": "status-not-in-queue",
-                "priority": "none"
-            }
-        elif admin_status == 'away':
+        if admin_status == 'away':
             status = {
                 "text": "⚪ Admin Away",
                 "class": "status-away",
@@ -450,7 +472,7 @@ def get_queue_status(queue_id):
             }
         else:
             status = {
-                "text": f"🟡 You are {position}{get_ordinal_suffix(position)} in line" if position else "❌ You are not currently in the queue.",
+                "text": "🟡 Waiting",
                 "class": "status-waiting",
                 "priority": "low"
             }
@@ -458,7 +480,6 @@ def get_queue_status(queue_id):
         conn.close()
 
         return jsonify({
-            "position": position,
             "estimated_minutes": estimated_minutes,
             "status": status,
             "department_prefix": department_prefix,
@@ -469,20 +490,6 @@ def get_queue_status(queue_id):
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-# Helper for ordinal suffix
-def get_ordinal_suffix(num):
-    if not isinstance(num, int):
-        return ''
-    j = num % 10
-    k = num % 100
-    if j == 1 and k != 11:
-        return 'st'
-    if j == 2 and k != 12:
-        return 'nd'
-    if j == 3 and k != 13:
-        return 'rd'
-    return 'th'
 
 # Admin status management
 admin_statuses = {}  # In-memory storage for admin statuses

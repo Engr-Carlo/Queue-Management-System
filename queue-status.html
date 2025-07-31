@@ -438,12 +438,6 @@
             </div>
             <div class="detail-value" id="queueTime">2:30 PM</div>
           </div>
-          <div class="detail-row">
-            <div class="detail-label">
-              <span>📊</span> Position
-            </div>
-            <div class="detail-value" id="queuePosition">Loading...</div>
-          </div>
         </div>
         
         <div class="estimated-time">
@@ -559,14 +553,6 @@
     let queueCreatedAt = null; // Store when queue was created
 
     function updateDisplay(queueData, statusData) {
-      // Show position in queue
-      if (typeof statusData.position === 'number' && statusData.position > 0) {
-        document.getElementById('queuePosition').textContent = `You are ${statusData.position}${getOrdinalSuffix(statusData.position)} in line`;
-      } else if (statusData.position === null || statusData.position === undefined) {
-        document.getElementById('queuePosition').textContent = 'You are not currently in the queue.';
-      } else {
-        document.getElementById('queuePosition').textContent = 'Loading...';
-      }
       document.getElementById('queueNumber').textContent = queueData.number;
       document.getElementById('selectedPerson').textContent = queueData.person;
       document.getElementById('queueDate').textContent = queueData.date;
@@ -726,17 +712,6 @@
       } else {
         countdownElement.style.color = '#667eea'; // Blue - more than 5 minutes
       }
-    }
-    
-    // Get ordinal suffix (1st, 2nd, 3rd, etc.)
-    function getOrdinalSuffix(num) {
-      if (typeof num !== 'number') return '';
-      const j = num % 10;
-      const k = num % 100;
-      if (j == 1 && k != 11) return 'st';
-      if (j == 2 && k != 12) return 'nd';
-      if (j == 3 && k != 13) return 'rd';
-      return 'th';
     }
     
     // Show content area
