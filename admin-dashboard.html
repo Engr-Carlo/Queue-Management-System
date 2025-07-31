@@ -422,7 +422,10 @@
       loadDashboard();
       
       // Start auto-refresh every 30 seconds
-      refreshInterval = setInterval(refreshQueue, 30000);
+      refreshInterval = setInterval(() => {
+        refreshQueue();
+        loadAdminStatus(); // Also refresh admin status
+      }, 30000);
     });
 
     // Load dashboard data
@@ -657,7 +660,7 @@
     }
 
     async function setStatus(status) {
-      // Update UI
+      // Update UI immediately for better user experience
       document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
       event.target.classList.add('active');
       
@@ -679,14 +682,29 @@
           const result = await response.json();
           console.log('Status updated successfully:', result);
           
-          // Show success feedback
-          showStatusFeedback(`Status set to: ${status}`, 'success');
+          // Show success feedback with status-specific message
+          const statusMessages = {
+            'available': '🟢 You are now Available - Users will see shorter wait times',
+            'busy': '🟡 You are now Busy - Users will see longer wait times',
+            'away': '🔴 You are now Away - Users will see "Admin Away" status'
+          };
+          
+          showStatusFeedback(statusMessages[status] || `Status set to: ${status}`, 'success');
+          
+          // Force refresh queue data to show updated status effect
+          setTimeout(() => {
+            loadCurrentQueue();
+          }, 1000);
+          
         } else {
           throw new Error('Failed to update status');
         }
       } catch (error) {
         console.error('Error updating status:', error);
-        showStatusFeedback('Failed to update status', 'error');
+        showStatusFeedback('❌ Failed to update status - Check your connection', 'error');
+        
+        // Revert UI changes on error
+        loadAdminStatus();
       }
     }
 
