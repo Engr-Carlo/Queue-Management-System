@@ -518,29 +518,25 @@
     
     // Generate unique queue number
     function generateQueueNumber() {
+      // Use selectedPersonName for display, but selectedPerson for prefix logic
       const person = localStorage.getItem('selectedPerson') || 'dean';
       const now = new Date();
-      
-      // Get person prefix
       let prefix = 'A'; // Default for Dean
-      switch(person) {
-        case 'ie-chair': prefix = 'B'; break;
-        case 'cpe-chair': prefix = 'C'; break;
-        case 'ece-chair': prefix = 'D'; break;
-        case 'others': prefix = 'E'; break;
-      }
-      
+      // Map all possible person strings to correct prefix
+      if (person.toLowerCase().includes('dean')) prefix = 'A';
+      else if (person.toLowerCase().includes('ie')) prefix = 'B';
+      else if (person.toLowerCase().includes('cpe')) prefix = 'C';
+      else if (person.toLowerCase().includes('ece')) prefix = 'D';
+      else prefix = 'E';
+
       // Generate sequential number (simulate from localStorage or use timestamp)
       const savedCounters = JSON.parse(localStorage.getItem('queueCounters') || '{}');
       const todayKey = now.toDateString();
-      
       if (!savedCounters[todayKey]) {
         savedCounters[todayKey] = { A: 0, B: 0, C: 0, D: 0, E: 0 };
       }
-      
       savedCounters[todayKey][prefix]++;
       localStorage.setItem('queueCounters', JSON.stringify(savedCounters));
-      
       const number = savedCounters[todayKey][prefix].toString().padStart(3, '0');
       return prefix + number;
     }

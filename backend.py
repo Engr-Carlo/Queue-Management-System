@@ -387,7 +387,7 @@ def get_queue_status(queue_id):
             created_at = datetime.now()
         
         # Extract department prefix from queue number (A, B, C, D, E)
-        department_prefix = queue_number[0] if queue_number else 'A'
+        department_prefix = queue_number[0].upper() if queue_number and len(queue_number) > 0 else 'A'
         
         # Debug: Print queue information
         print(f"Debug - Queue: {queue_number}, Department: {department_prefix}, Created: {created_at}")
