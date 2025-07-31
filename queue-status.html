@@ -799,6 +799,7 @@
           statusElement.className = `queue-status ${statusData.status.class}`;
           
           // Always use backend position and update display, even if position is 1
+          // Always use backend position and update display, even if position is 1
           let newPosition = 1;
           if (typeof statusData.position === 'number' && statusData.position > 0) {
             newPosition = statusData.position;

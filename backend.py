@@ -421,26 +421,23 @@ def get_queue_status(queue_id):
         print(f"Debug - Queues ahead of {queue_id}: {position}, Filter: {department_prefix}%")
         print(f"Debug - SQL query params: dept={department_prefix}%, current_id={queue_id}, created_at={created_at}")
         
-        # Alternative position calculation: Find this queue's position in the ordered list
+        # Find this queue's position in the sorted list (0-based index)
         cur.execute("""
             SELECT id FROM queue 
             WHERE number LIKE %s 
             AND completed = FALSE 
             ORDER BY created_at ASC, id ASC
         """, (department_prefix + '%',))
-        
         ordered_queues = [row[0] for row in cur.fetchall()]
         print(f"Debug - Ordered queue IDs: {ordered_queues}")
-        
         try:
-            actual_position = ordered_queues.index(queue_id)
-            print(f"Debug - Queue {queue_id} is at index {actual_position} (0-based)")
+            actual_index = ordered_queues.index(queue_id)
+            print(f"Debug - Queue {queue_id} is at index {actual_index} (0-based)")
         except ValueError:
             print(f"Debug - Queue {queue_id} not found in ordered list!")
-            actual_position = 0
-        
-        # Use the actual position from the ordered list
-        position = actual_position
+            actual_index = 0
+        # 1-based position for display
+        position = actual_index + 1
         
         # Count total active queues in department
         cur.execute("""
@@ -509,7 +506,7 @@ def get_queue_status(queue_id):
         conn.close()
         
         return jsonify({
-            "position": position + 1,  # 1-based position
+            "position": position,  # 1-based position
             "total_in_department": total_in_department,
             "estimated_minutes": estimated_minutes,
             "status": status,
@@ -519,7 +516,8 @@ def get_queue_status(queue_id):
             "created_at": created_at.isoformat() if created_at else None,
             "queue_number": queue_number,
             "debug_info": {
-                "queues_ahead": position,
+                "ordered_queue_ids": ordered_queues,
+                "your_index": position,
                 "department_filter": department_prefix + '%',
                 "created_at": created_at.isoformat() if created_at else None
             }
