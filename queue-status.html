@@ -562,15 +562,20 @@
       document.getElementById('selectedPerson').textContent = queueData.person;
       document.getElementById('queueDate').textContent = queueData.date;
       document.getElementById('queueTime').textContent = queueData.time;
-      
+
       // Store queue creation time
       queueCreatedAt = statusData.created_at ? new Date(statusData.created_at) : new Date();
-      
-      // Update position with real data
-      const position = statusData.position;
+
+      // Always use backend position, never default to 1
+      let position = 1;
+      if (typeof statusData.position === 'number' && statusData.position > 0) {
+        position = statusData.position;
+      } else if (typeof statusData.position === 'string' && !isNaN(parseInt(statusData.position))) {
+        position = parseInt(statusData.position);
+      }
       const ordinalSuffix = getOrdinalSuffix(position);
       document.getElementById('queuePosition').textContent = `${position}${ordinalSuffix} in line`;
-      
+
       // Calculate proper estimated time based on position (5 minutes per position)
       const totalWaitTime = position * 5; // Total wait time in minutes
       
