@@ -434,13 +434,18 @@ def get_queue_status(queue_id):
         # Get admin status for this department
         admin_status = get_admin_status(department_prefix)
         
-        # Calculate estimated time based on position and admin status
+        # Calculate estimated time based on position (5 minutes per position)
         if admin_status == 'away':
             estimated_minutes = 999  # Unknown time when admin is away
-        elif admin_status == 'busy':
-            estimated_minutes = (position * 5) + 10  # Longer time when busy
-        else:  # available
-            estimated_minutes = (position * 3) + 2 if position > 0 else 2
+        elif position <= 0:
+            estimated_minutes = 0  # They're being called now
+        else:
+            # 5 minutes per position ahead
+            base_time = position * 5
+            if admin_status == 'busy':
+                estimated_minutes = base_time + 5  # Add 5 minutes when busy
+            else:  # available
+                estimated_minutes = base_time
         
         # Determine status based on actual conditions and admin status
         if admin_status == 'away':
