@@ -576,28 +576,9 @@
         lastEstimatedMinutes = totalWaitTime;
         estimatedSeconds = remainingMinutes * 60; // Convert remaining time to seconds
         
-        // Update the display text
-        if (remainingMinutes <= 0) {
-          document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-        } else if (statusData.admin_status === 'away') {
-          document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
-          estimatedSeconds = 999 * 60; // Set to high value for away status
-        } else {
-          document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
-        }
         
-        // Restart countdown with remaining time
-        startCountdown();
-      } else {
-        // Position hasn't changed, but recalculate remaining time to account for page refresh
-        const currentRemainingMinutes = Math.max(0, totalWaitTime - Math.floor((now - queueCreatedAt) / (1000 * 60)));
-        estimatedSeconds = currentRemainingMinutes * 60;
-        
-        if (currentRemainingMinutes <= 0) {
-          document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-        } else if (statusData.admin_status !== 'away') {
-          document.getElementById('estimatedTime').textContent = `~${currentRemainingMinutes} minutes`;
-        }
+        document.getElementById('estimatedTime').textContent = 'Your Queue Number will be called soon';
+
         
         // Update countdown to show correct remaining time
         if (!countdownInterval) {
