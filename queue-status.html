@@ -400,8 +400,8 @@
       }
     }
 
-    /* Vibration Indicator Styles */
-    .vibration-indicator {
+    /* Audio Alert Indicator Styles */
+    .audio-indicator {
       position: fixed;
       top: 20px;
       right: 20px;
@@ -412,11 +412,11 @@
       font-size: 0.9rem;
       font-weight: 600;
       z-index: 1001;
-      animation: vibrationAlert 0.5s ease-in-out;
+      animation: audioAlert 0.5s ease-in-out;
       box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
     }
 
-    @keyframes vibrationAlert {
+    @keyframes audioAlert {
       0% { transform: translateX(100%) scale(0.8); opacity: 0; }
       100% { transform: translateX(0) scale(1); opacity: 1; }
     }
@@ -426,8 +426,8 @@
       to { opacity: 0; transform: scale(0.8); }
     }
 
-    /* Test Vibration Button */
-    .test-vibration-btn {
+    /* Test Sound Button */
+    .test-sound-btn {
       position: fixed;
       bottom: 20px;
       left: 20px;
@@ -444,12 +444,12 @@
       transition: all 0.3s ease;
     }
 
-    .test-vibration-btn:hover {
+    .test-sound-btn:hover {
       background: rgba(34, 197, 94, 1);
       transform: scale(1.05);
     }
 
-    .test-vibration-btn:active {
+    .test-sound-btn:active {
       transform: scale(0.95);
     }
   </style>
@@ -534,96 +534,94 @@
     </div>
   </div>
 
-  <!-- Test Vibration Button -->
-  <button class="test-vibration-btn" onclick="testVibration()" title="Test if vibration works on your device">
-    📳 Test Vibration
+  <!-- Test Sound Button -->
+  <button class="test-sound-btn" onclick="testSound()" title="Test if sound works on your device">
+    � Test Sound
   </button>
+  
+  <!-- Audio element for alarm sound -->
+  <audio id="alarmSound" preload="auto">
+    <source src="Sounds/alarm.wav" type="audio/wav">
+    Your browser does not support the audio element.
+  </audio>
   
   <script>
     let queueId = null;
     let autoRefreshInterval = null;
     let lastCalledStatus = false; // Track previous called status
     
-    // Vibration functionality
-    const vibrationPatterns = {
-      called: [800, 300, 800, 300, 1200], // Stronger called pattern
-      urgent: [200, 100, 200, 100, 200, 100, 1000], // More urgent pattern
-      gentle: [300, 300, 300] // Gentle reminder pattern
-    };
-
-    let vibrationEnabled = false; // Track if vibration is enabled
+    // Audio functionality
+    let audioEnabled = false; // Track if audio is enabled
     let userHasInteracted = false; // Track if user has interacted with page
 
-    // Enable vibration after user interaction
-    function enableVibration() {
-      vibrationEnabled = true;
+    // Enable audio after user interaction
+    function enableAudio() {
+      audioEnabled = true;
       userHasInteracted = true;
-      console.log('✅ Vibration enabled after user interaction');
+      console.log('✅ Audio enabled after user interaction');
     }
 
-    // Vibration function for when queue is called
-    function vibrateOnCall() {
-      console.log('🔔 Attempting to vibrate...');
+    // Play alarm sound when queue is called
+    function playAlarmSound() {
+      console.log('🔔 Attempting to play alarm sound...');
       
-      // Check if device supports vibration
-      if (!('vibrate' in navigator)) {
-        console.log('❌ Vibration API not supported on this device');
-        showVibrationIndicator('⚠️ Vibration not supported on this device');
+      const audio = document.getElementById('alarmSound');
+      if (!audio) {
+        console.log('❌ Audio element not found');
+        showAudioIndicator('⚠️ Audio element not found');
         return;
       }
 
       // Check if user has interacted with the page (required by browsers)
       if (!userHasInteracted) {
-        console.log('⚠️ User interaction required for vibration');
-        showVibrationIndicator('📳 Tap screen to enable vibration');
+        console.log('⚠️ User interaction required for audio');
+        showAudioIndicator('🔊 Tap screen to enable sound');
         return;
       }
 
       try {
-        // Try multiple vibration attempts for better compatibility
-        const pattern = vibrationPatterns.called;
-        console.log('📳 Vibrating with pattern:', pattern);
+        // Reset audio to beginning
+        audio.currentTime = 0;
         
-        // Primary vibration attempt
-        const result = navigator.vibrate(pattern);
-        console.log('Vibration result:', result);
+        // Set volume to maximum
+        audio.volume = 1.0;
         
-        // Fallback: Try simple vibration if pattern fails
-        if (!result) {
-          navigator.vibrate(1000);
-          console.log('📳 Fallback: Simple vibration attempted');
+        // Play the alarm sound
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log('🔊 Alarm sound playing successfully');
+            showAudioIndicator('🔊 ALARM - You are being called!');
+          }).catch((error) => {
+            console.error('❌ Audio playback failed:', error);
+            showAudioIndicator('⚠️ Audio playback failed - Check permissions');
+          });
         }
         
-        // Show vibration indicator
-        showVibrationIndicator('📳 VIBRATING - You are being called!');
-        
-        // Additional attempts for better reliability
-        setTimeout(() => navigator.vibrate(500), 100);
-        setTimeout(() => navigator.vibrate(500), 600);
-        
       } catch (error) {
-        console.error('❌ Vibration error:', error);
-        showVibrationIndicator('⚠️ Vibration failed - Check permissions');
+        console.error('❌ Audio error:', error);
+        showAudioIndicator('⚠️ Audio failed - Check file path');
       }
     }
 
-    // Show vibration indicator
-    function showVibrationIndicator(message = '📳 Vibrating - You are being called!') {
+    // Show audio indicator
+    function showAudioIndicator(message = '🔊 Playing alarm - You are being called!') {
       // Remove existing indicator if present
-      const existingIndicator = document.querySelector('.vibration-indicator');
+      const existingIndicator = document.querySelector('.audio-indicator');
       if (existingIndicator) {
         existingIndicator.remove();
       }
       
-      // Create new vibration indicator
+      // Create new audio indicator
       const indicator = document.createElement('div');
-      indicator.className = 'vibration-indicator';
+      indicator.className = 'audio-indicator';
       indicator.innerHTML = message;
       document.body.appendChild(indicator);
       
       // Make it more prominent with animation
       indicator.style.transform = 'scale(1.1)';
-      indicator.style.animation = 'vibrationAlert 0.5s ease-in-out, pulse 2s infinite 0.5s';
+      indicator.style.animation = 'audioAlert 0.5s ease-in-out, pulse 2s infinite 0.5s';
       
       // Remove after 8 seconds
       setTimeout(() => {
@@ -634,51 +632,39 @@
       }, 8000);
     }
 
-    // Test vibration function for user to enable
-    function testVibration() {
-      console.log('🧪 Testing vibration...');
-      enableVibration();
+    // Test sound function for user to enable
+    function testSound() {
+      console.log('🧪 Testing sound...');
+      enableAudio();
       
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]);
-        showVibrationIndicator('✅ Vibration test - Your phone should vibrate!');
+      const audio = document.getElementById('alarmSound');
+      if (audio) {
+        audio.currentTime = 0;
+        audio.volume = 1.0;
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            showAudioIndicator('✅ Sound test - Your device should play alarm!');
+          }).catch((error) => {
+            showAudioIndicator('❌ Sound test failed - Check audio file');
+            console.error('Test sound error:', error);
+          });
+        }
       } else {
-        showVibrationIndicator('❌ Vibration not supported on this device');
+        showAudioIndicator('❌ Audio element not found');
       }
     }
 
-    // Request vibration permission (for some browsers)
-    function requestVibrationPermission() {
-      if ('permissions' in navigator) {
-        navigator.permissions.query({name: 'vibrate'}).then(function(result) {
-          console.log('Vibration permission:', result.state);
-        }).catch(function(error) {
-          console.log('Vibration permission check not available');
-        });
-      }
+    // Request audio permission and setup interaction listeners
+    function setupAudioPermission() {
+      // Add user interaction listeners to enable audio
+      document.addEventListener('click', enableAudio, { once: false });
+      document.addEventListener('touchstart', enableAudio, { once: false });
+      document.addEventListener('touchend', enableAudio, { once: false });
+      document.addEventListener('keydown', enableAudio, { once: false });
       
-      // Add user interaction listeners to enable vibration
-      document.addEventListener('click', enableVibration, { once: false });
-      document.addEventListener('touchstart', enableVibration, { once: false });
-      document.addEventListener('touchend', enableVibration, { once: false });
-      document.addEventListener('keydown', enableVibration, { once: false });
-      
-      console.log('👆 Vibration will be enabled after user interaction');
-    }
-
-    // Vibrate with specific pattern
-    function vibrateWithPattern(patternName = 'called') {
-      if (!userHasInteracted) {
-        console.log('⚠️ User interaction required for vibration');
-        showVibrationIndicator('📳 Tap anywhere to enable vibration');
-        return;
-      }
-      
-      if ('vibrate' in navigator) {
-        const pattern = vibrationPatterns[patternName] || vibrationPatterns.called;
-        navigator.vibrate(pattern);
-        showVibrationIndicator(`📳 Vibrating with ${patternName} pattern`);
-      }
+      console.log('👆 Audio will be enabled after user interaction');
     }
     
     // Get queue ID from URL parameters
@@ -772,9 +758,9 @@
       if (statusData.is_called) {
         statusElement.style.animation = 'pulse 1s infinite';
         
-        // VIBRATE WHEN CALLED! - Only if status changed to called
+        // PLAY ALARM WHEN CALLED! - Only if status changed to called
         if (!lastCalledStatus && statusData.is_called) {
-          vibrateOnCall();
+          playAlarmSound();
         }
         
         // Change estimated time section for called status
@@ -887,9 +873,9 @@
             estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
             estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
             
-            // Only vibrate if status changed from not called to called
+            // Only play sound if status changed from not called to called
             if (!wasCalledBefore && isCalledNow) {
-              vibrateOnCall();
+              playAlarmSound();
             }
           } else {
             // Reset styling if not called
@@ -910,8 +896,8 @@
     
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
-      // Request vibration permission
-      requestVibrationPermission();
+      // Setup audio permission
+      setupAudioPermission();
       
       // Show portal loading screen first
       showPortalLoading();
