@@ -1,3 +1,4 @@
+    // Removed getOrdinalSuffix helper, no longer needed
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -560,28 +561,48 @@
       // Store queue creation time
       queueCreatedAt = statusData.created_at ? new Date(statusData.created_at) : new Date();
 
-      // Get the estimated wait time from backend (this considers admin status and queue position)
+      // Calculate estimated time based on backend-provided estimated_minutes
       const totalWaitTime = statusData.estimated_minutes || 5;
       
-      // Only update countdown based on backend data, don't subtract elapsed time for new queues
+      // Calculate how much time has actually passed since queue creation
+      const now = new Date();
+      const elapsedMinutes = Math.floor((now - queueCreatedAt) / (1000 * 60));
+      
+      // Calculate remaining time
+      const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
+      
+      // Only update countdown if position changed or it's the first load
       if (totalWaitTime !== lastEstimatedMinutes || lastEstimatedMinutes === 0) {
         lastEstimatedMinutes = totalWaitTime;
+        estimatedSeconds = remainingMinutes * 60; // Convert remaining time to seconds
         
-        // For called queues, set to 0. For away status, set to high value. Otherwise use backend estimate.
-        if (statusData.is_called) {
-          estimatedSeconds = 0;
+        // Update the display text
+        if (remainingMinutes <= 0) {
           document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
         } else if (statusData.admin_status === 'away') {
-          estimatedSeconds = 999 * 60; // Set to high value for away status
           document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
+          estimatedSeconds = 999 * 60; // Set to high value for away status
         } else {
-          // Use the backend estimated time directly without subtracting elapsed time
-          estimatedSeconds = totalWaitTime * 60;
-          document.getElementById('estimatedTime').textContent = `~${totalWaitTime} minutes`;
+          document.getElementById('estimatedTime').textContent = `~${remainingMinutes} minutes`;
         }
         
-        // Restart countdown with the correct time
+        // Restart countdown with remaining time
         startCountdown();
+      } else {
+        // Position hasn't changed, but recalculate remaining time to account for page refresh
+        const currentRemainingMinutes = Math.max(0, totalWaitTime - Math.floor((now - queueCreatedAt) / (1000 * 60)));
+        estimatedSeconds = currentRemainingMinutes * 60;
+        
+        if (currentRemainingMinutes <= 0) {
+          document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
+        } else if (statusData.admin_status !== 'away') {
+          document.getElementById('estimatedTime').textContent = `~${currentRemainingMinutes} minutes`;
+        }
+        
+        // Update countdown to show correct remaining time
+        if (!countdownInterval) {
+          startCountdown();
+        }
       }
       
       // Update admin status
@@ -595,7 +616,7 @@
       statusElement.textContent = statusData.status.text;
       statusElement.className = `queue-status ${statusData.status.class}`;
       
-      // If called, make it more prominent and override countdown
+      // If called, make it more prominent
       if (statusData.is_called) {
         statusElement.style.animation = 'pulse 1s infinite';
         // Change estimated time section for called status
@@ -603,17 +624,7 @@
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
         estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
         estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
-        estimatedSeconds = 0;
         stopCountdown();
-        // Force countdown display to show "Your turn is now!"
-        document.getElementById('countdownTimer').textContent = '⏰ Your turn is now!';
-        document.getElementById('countdownTimer').style.color = '#ef4444';
-      } else {
-        // Reset styling if not called
-        const estimatedTimeSection = document.querySelector('.estimated-time');
-        estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-        estimatedTimeSection.querySelector('h3').textContent = '⏱️ Estimated Wait Time';
-        statusElement.style.animation = '';
       }
     }
 
@@ -673,21 +684,10 @@
       const countdownElement = document.getElementById('countdownTimer');
       
       if (estimatedSeconds <= 0) {
-        // Check if user is actually called by looking at the status text
-        const statusElement = document.getElementById('queueStatus');
-        const estimatedTimeSection = document.querySelector('.estimated-time');
-        const isCalledSection = estimatedTimeSection.querySelector('h3').textContent.includes('BEING CALLED');
-        
-        if (statusElement.textContent.includes('being called') || isCalledSection) {
-          countdownElement.textContent = '⏰ Your turn is now!';
-          countdownElement.style.color = '#ef4444';
-          document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-        } else {
-          // User is not called yet, show waiting message
-          countdownElement.textContent = '⏳ Waiting...';
-          countdownElement.style.color = '#f59e0b';
-          document.getElementById('estimatedTime').textContent = 'Waiting for your turn';
-        }
+        countdownElement.textContent = '⏰ Your turn is now!';
+        countdownElement.style.color = '#ef4444';
+        // Also update the estimated time text
+        document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
         return;
       }
       
@@ -757,57 +757,25 @@
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          
           // Update queue creation time if we have it
           if (statusData.created_at && !queueCreatedAt) {
             queueCreatedAt = new Date(statusData.created_at);
           }
-          
-          // Update admin status - this was broken
+          // Only update display elements that don't affect countdown
           updateAdminStatus(statusData.admin_status, statusData.department_prefix);
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-          
-          // Update queue status
+          // Update status
           const statusElement = document.getElementById('queueStatus');
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
-          
-          // Handle called status - this was broken
+          // Handle called status
           if (statusData.is_called) {
             statusElement.style.animation = 'pulse 1s infinite';
             const estimatedTimeSection = document.querySelector('.estimated-time');
             estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
             estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
             estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
-            
-            // Update countdown for called status
-            estimatedSeconds = 0;
             stopCountdown();
-            document.getElementById('countdownTimer').textContent = '⏰ Your turn is now!';
-            document.getElementById('countdownTimer').style.color = '#ef4444';
-            document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-            
-          } else {
-            // Reset styling if not called anymore
-            const estimatedTimeSection = document.querySelector('.estimated-time');
-            estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-            estimatedTimeSection.querySelector('h3').textContent = '⏱️ Estimated Wait Time';
-            statusElement.style.animation = '';
-          }
-          
-          // Update estimated time based on admin status changes
-          const newEstimatedTime = statusData.estimated_minutes || 5;
-          if (newEstimatedTime !== lastEstimatedMinutes && !statusData.is_called) {
-            lastEstimatedMinutes = newEstimatedTime;
-            
-            if (statusData.admin_status === 'away') {
-              estimatedSeconds = 999 * 60;
-              document.getElementById('estimatedTime').textContent = 'Admin Away - Unknown time';
-            } else {
-              estimatedSeconds = newEstimatedTime * 60;
-              document.getElementById('estimatedTime').textContent = `~${newEstimatedTime} minutes`;
-              startCountdown();
-            }
           }
         }
       } catch (error) {
