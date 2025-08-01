@@ -18,12 +18,13 @@
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       color: #1a1a1a;
       margin: 0;
-      padding: 20px;
+      padding: 10px;
       overflow-x: hidden;
     }
     
     .container {
-      max-width: 500px;
+      max-width: 95%;
+      width: 100%;
       margin: 0 auto;
       padding: 0;
     }
@@ -32,7 +33,7 @@
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
       border-radius: 20px 20px 0 0;
-      padding: 30px;
+      padding: 40px 30px;
       text-align: center;
       border-bottom: 2px solid rgba(0, 0, 0, 0.1);
     }
@@ -67,9 +68,10 @@
     .queue-status-card {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(10px);
-      padding: 30px;
+      padding: 40px 30px;
       border-radius: 0 0 20px 20px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      min-height: 70vh;
     }
     
     .queue-number {
@@ -78,23 +80,23 @@
     }
     
     .queue-number-display {
-      font-size: 4rem;
+      font-size: 5rem;
       font-weight: 900;
       background: linear-gradient(135deg, #dc2626, #b91c1c);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
       letter-spacing: -0.02em;
     }
     
     .queue-status {
       display: inline-block;
-      padding: 8px 20px;
+      padding: 12px 25px;
       border-radius: 25px;
       font-weight: 600;
-      font-size: 1rem;
-      margin-bottom: 20px;
+      font-size: 1.2rem;
+      margin-bottom: 25px;
     }
     
     .status-called {
@@ -157,10 +159,11 @@
 
     .admin-status {
       background: rgba(255, 255, 255, 0.1);
-      border-radius: 10px;
-      padding: 15px;
-      margin: 15px 0;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
       text-align: center;
+      font-size: 1.1rem;
     }
 
     .admin-available {
@@ -178,15 +181,15 @@
     .queue-details {
       background: rgba(243, 244, 246, 0.8);
       border-radius: 15px;
-      padding: 20px;
-      margin: 20px 0;
+      padding: 25px;
+      margin: 25px 0;
     }
     
     .detail-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
+      padding: 15px 0;
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
     }
     
@@ -199,34 +202,37 @@
       color: #4b5563;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
+      font-size: 1.1rem;
     }
     
     .detail-value {
       font-weight: 600;
       color: #1a1a1a;
       text-align: right;
+      font-size: 1.1rem;
     }
     
     .estimated-time {
       background: linear-gradient(135deg, #3b82f6, #1d4ed8);
       color: white;
       border-radius: 15px;
-      padding: 20px;
+      padding: 30px 25px;
       text-align: center;
-      margin: 20px 0;
+      margin: 25px 0;
     }
     
     .estimated-time h3 {
-      font-size: 1.2rem;
-      margin: 0 0 10px 0;
+      font-size: 1.4rem;
+      margin: 0 0 15px 0;
       opacity: 0.9;
     }
     
     .estimated-time .time {
-      font-size: 2rem;
-      font-weight: 800;
+      font-size: 1.3rem;
+      font-weight: 600;
       margin: 0;
+      line-height: 1.4;
     }
     
     .refresh-btn {
@@ -234,13 +240,13 @@
       background: linear-gradient(135deg, #667eea, #764ba2);
       color: white;
       border: none;
-      border-radius: 12px;
-      padding: 15px;
-      font-size: 1.1rem;
+      border-radius: 15px;
+      padding: 18px;
+      font-size: 1.2rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.3s ease;
-      margin-top: 20px;
+      margin-top: 25px;
     }
     
     .refresh-btn:hover {
@@ -595,11 +601,11 @@
           break;
         case 'busy':
           adminStatusElement.classList.add('admin-busy');
-          adminStatusText.textContent = '� Busy';
+          adminStatusText.textContent = '🟡 Busy';
           break;
         case 'away':
           adminStatusElement.classList.add('admin-away');
-          adminStatusText.textContent = '� Away';
+          adminStatusText.textContent = '🔴 Away';
           break;
         default:
           adminStatusElement.classList.add('admin-available');
