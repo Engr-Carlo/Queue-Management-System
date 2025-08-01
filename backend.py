@@ -449,14 +449,6 @@ def get_queue_status(queue_id):
         # Get admin status for this department
         admin_status = get_admin_status(department_prefix)
 
-        # Calculate estimated time (default 5 minutes, 999 if away)
-        if admin_status == 'away':
-            estimated_minutes = 999  # Unknown time when admin is away
-        elif is_called:
-            estimated_minutes = 0  # They're being called now
-        else:
-            estimated_minutes = 5  # Default wait time
-
         # Determine status based on actual conditions and admin status
         if admin_status == 'away':
             status = {
@@ -480,12 +472,10 @@ def get_queue_status(queue_id):
         conn.close()
 
         return jsonify({
-            "estimated_minutes": estimated_minutes,
             "status": status,
             "department_prefix": department_prefix,
             "admin_status": admin_status,
             "is_called": is_called,
-            "created_at": created_at.isoformat() if created_at else None,
             "queue_number": queue_number
         })
     except Exception as e:

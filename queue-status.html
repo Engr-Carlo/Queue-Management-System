@@ -441,9 +441,8 @@
         </div>
         
         <div class="estimated-time">
-          <h3>⏱️ Estimated Wait Time</h3>
-          <div class="countdown-timer" id="countdownTimer">~15 minutes</div>
-          <p class="time" id="estimatedTime">Loading...</p>
+          <h3>📢 Queue Information</h3>
+          <p class="time" id="waitMessage">Please wait for your queue number to be called</p>
         </div>
 
         <div class="admin-status" id="adminStatus">
@@ -547,45 +546,12 @@
     }
     
     // Update display with queue data
-    let countdownInterval = null;
-    let estimatedSeconds = 0;
-    let lastEstimatedMinutes = 0; // Track last estimated time to prevent resets
-    let queueCreatedAt = null; // Store when queue was created
-
     function updateDisplay(queueData, statusData) {
       document.getElementById('queueNumber').textContent = queueData.number;
       document.getElementById('selectedPerson').textContent = queueData.person;
       document.getElementById('queueDate').textContent = queueData.date;
       document.getElementById('queueTime').textContent = queueData.time;
 
-      // Store queue creation time
-      queueCreatedAt = statusData.created_at ? new Date(statusData.created_at) : new Date();
-
-      // Calculate estimated time based on backend-provided estimated_minutes
-      const totalWaitTime = statusData.estimated_minutes || 5;
-      
-      // Calculate how much time has actually passed since queue creation
-      const now = new Date();
-      const elapsedMinutes = Math.floor((now - queueCreatedAt) / (1000 * 60));
-      
-      // Calculate remaining time
-      const remainingMinutes = Math.max(0, totalWaitTime - elapsedMinutes);
-      
-      // Only update countdown if position changed or it's the first load
-      if (totalWaitTime !== lastEstimatedMinutes || lastEstimatedMinutes === 0) {
-        lastEstimatedMinutes = totalWaitTime;
-        estimatedSeconds = remainingMinutes * 60; // Convert remaining time to seconds
-        
-        
-        document.getElementById('estimatedTime').textContent = 'Your Queue Number will be called soon';
-
-        
-        // Update countdown to show correct remaining time
-        if (!countdownInterval) {
-          startCountdown();
-        }
-      }
-      
       // Update admin status
       updateAdminStatus(statusData.admin_status, statusData.department_prefix);
       
@@ -605,7 +571,13 @@
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
         estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
         estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
-        stopCountdown();
+      } else {
+        // Reset styling if not called
+        const estimatedTimeSection = document.querySelector('.estimated-time');
+        estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+        estimatedTimeSection.querySelector('h3').textContent = '📢 Queue Information';
+        estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
+        statusElement.style.animation = '';
       }
     }
 
@@ -636,65 +608,6 @@
       }
     }
 
-    // Start countdown timer
-    function startCountdown() {
-      stopCountdown(); // Clear any existing interval
-      
-      countdownInterval = setInterval(() => {
-        if (estimatedSeconds > 0) {
-          estimatedSeconds--;
-          updateCountdownDisplay();
-        } else {
-          stopCountdown();
-        }
-      }, 1000);
-      
-      updateCountdownDisplay();
-    }
-
-    // Stop countdown timer
-    function stopCountdown() {
-      if (countdownInterval) {
-        clearInterval(countdownInterval);
-        countdownInterval = null;
-      }
-    }
-
-    // Update countdown display
-    function updateCountdownDisplay() {
-      const countdownElement = document.getElementById('countdownTimer');
-      
-      if (estimatedSeconds <= 0) {
-        countdownElement.textContent = '⏰ Your turn is now!';
-        countdownElement.style.color = '#ef4444';
-        // Also update the estimated time text
-        document.getElementById('estimatedTime').textContent = '~Now - You\'re being called!';
-        return;
-      }
-      
-      const hours = Math.floor(estimatedSeconds / 3600);
-      const minutes = Math.floor((estimatedSeconds % 3600) / 60);
-      const seconds = estimatedSeconds % 60;
-      
-      let timeString = '';
-      if (hours > 0) {
-        timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      } else {
-        timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      }
-      
-      countdownElement.textContent = timeString;
-      
-      // Color coding based on time remaining
-      if (estimatedSeconds <= 60) {
-        countdownElement.style.color = '#ef4444'; // Red - less than 1 minute
-      } else if (estimatedSeconds <= 300) {
-        countdownElement.style.color = '#f59e0b'; // Orange - less than 5 minutes
-      } else {
-        countdownElement.style.color = '#667eea'; // Blue - more than 5 minutes
-      }
-    }
-    
     // Show content area
     function showContent() {
       document.getElementById('loadingArea').style.display = 'none';
@@ -738,10 +651,6 @@
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          // Update queue creation time if we have it
-          if (statusData.created_at && !queueCreatedAt) {
-            queueCreatedAt = new Date(statusData.created_at);
-          }
           // Only update display elements that don't affect countdown
           updateAdminStatus(statusData.admin_status, statusData.department_prefix);
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
@@ -756,7 +665,6 @@
             estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
             estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
             estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
-            stopCountdown();
           }
         }
       } catch (error) {
