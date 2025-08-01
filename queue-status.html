@@ -420,6 +420,38 @@
       0% { transform: translateX(100%) scale(0.8); opacity: 0; }
       100% { transform: translateX(0) scale(1); opacity: 1; }
     }
+
+    @keyframes fadeOut {
+      from { opacity: 1; transform: scale(1); }
+      to { opacity: 0; transform: scale(0.8); }
+    }
+
+    /* Test Vibration Button */
+    .test-vibration-btn {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background: rgba(34, 197, 94, 0.9);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      padding: 12px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 1002;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+      transition: all 0.3s ease;
+    }
+
+    .test-vibration-btn:hover {
+      background: rgba(34, 197, 94, 1);
+      transform: scale(1.05);
+    }
+
+    .test-vibration-btn:active {
+      transform: scale(0.95);
+    }
   </style>
 </head>
 <body>
@@ -501,6 +533,11 @@
       </div>
     </div>
   </div>
+
+  <!-- Test Vibration Button -->
+  <button class="test-vibration-btn" onclick="testVibration()" title="Test if vibration works on your device">
+    📳 Test Vibration
+  </button>
   
   <script>
     let queueId = null;
@@ -509,28 +546,69 @@
     
     // Vibration functionality
     const vibrationPatterns = {
-      called: [500, 200, 500, 200, 1000], // Called pattern
+      called: [800, 300, 800, 300, 1200], // Stronger called pattern
       urgent: [200, 100, 200, 100, 200, 100, 1000], // More urgent pattern
       gentle: [300, 300, 300] // Gentle reminder pattern
     };
 
+    let vibrationEnabled = false; // Track if vibration is enabled
+    let userHasInteracted = false; // Track if user has interacted with page
+
+    // Enable vibration after user interaction
+    function enableVibration() {
+      vibrationEnabled = true;
+      userHasInteracted = true;
+      console.log('✅ Vibration enabled after user interaction');
+    }
+
     // Vibration function for when queue is called
     function vibrateOnCall() {
+      console.log('🔔 Attempting to vibrate...');
+      
       // Check if device supports vibration
-      if ('vibrate' in navigator) {
-        // Vibration pattern: 500ms vibrate, 200ms pause, 500ms vibrate, 200ms pause, 1000ms long vibrate
-        navigator.vibrate(vibrationPatterns.called);
+      if (!('vibrate' in navigator)) {
+        console.log('❌ Vibration API not supported on this device');
+        showVibrationIndicator('⚠️ Vibration not supported on this device');
+        return;
+      }
+
+      // Check if user has interacted with the page (required by browsers)
+      if (!userHasInteracted) {
+        console.log('⚠️ User interaction required for vibration');
+        showVibrationIndicator('📳 Tap screen to enable vibration');
+        return;
+      }
+
+      try {
+        // Try multiple vibration attempts for better compatibility
+        const pattern = vibrationPatterns.called;
+        console.log('📳 Vibrating with pattern:', pattern);
+        
+        // Primary vibration attempt
+        const result = navigator.vibrate(pattern);
+        console.log('Vibration result:', result);
+        
+        // Fallback: Try simple vibration if pattern fails
+        if (!result) {
+          navigator.vibrate(1000);
+          console.log('📳 Fallback: Simple vibration attempted');
+        }
         
         // Show vibration indicator
-        showVibrationIndicator();
-        console.log('📳 Queue called - Device vibrating!');
-      } else {
-        console.log('Vibration API not supported on this device');
+        showVibrationIndicator('📳 VIBRATING - You are being called!');
+        
+        // Additional attempts for better reliability
+        setTimeout(() => navigator.vibrate(500), 100);
+        setTimeout(() => navigator.vibrate(500), 600);
+        
+      } catch (error) {
+        console.error('❌ Vibration error:', error);
+        showVibrationIndicator('⚠️ Vibration failed - Check permissions');
       }
     }
 
     // Show vibration indicator
-    function showVibrationIndicator() {
+    function showVibrationIndicator(message = '📳 Vibrating - You are being called!') {
       // Remove existing indicator if present
       const existingIndicator = document.querySelector('.vibration-indicator');
       if (existingIndicator) {
@@ -540,15 +618,33 @@
       // Create new vibration indicator
       const indicator = document.createElement('div');
       indicator.className = 'vibration-indicator';
-      indicator.innerHTML = '📳 Vibrating - You are being called!';
+      indicator.innerHTML = message;
       document.body.appendChild(indicator);
       
-      // Remove after 5 seconds
+      // Make it more prominent with animation
+      indicator.style.transform = 'scale(1.1)';
+      indicator.style.animation = 'vibrationAlert 0.5s ease-in-out, pulse 2s infinite 0.5s';
+      
+      // Remove after 8 seconds
       setTimeout(() => {
         if (indicator && indicator.parentNode) {
-          indicator.remove();
+          indicator.style.animation = 'fadeOut 0.5s ease-out';
+          setTimeout(() => indicator.remove(), 500);
         }
-      }, 5000);
+      }, 8000);
+    }
+
+    // Test vibration function for user to enable
+    function testVibration() {
+      console.log('🧪 Testing vibration...');
+      enableVibration();
+      
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+        showVibrationIndicator('✅ Vibration test - Your phone should vibrate!');
+      } else {
+        showVibrationIndicator('❌ Vibration not supported on this device');
+      }
     }
 
     // Request vibration permission (for some browsers)
@@ -560,14 +656,28 @@
           console.log('Vibration permission check not available');
         });
       }
+      
+      // Add user interaction listeners to enable vibration
+      document.addEventListener('click', enableVibration, { once: false });
+      document.addEventListener('touchstart', enableVibration, { once: false });
+      document.addEventListener('touchend', enableVibration, { once: false });
+      document.addEventListener('keydown', enableVibration, { once: false });
+      
+      console.log('👆 Vibration will be enabled after user interaction');
     }
 
     // Vibrate with specific pattern
     function vibrateWithPattern(patternName = 'called') {
+      if (!userHasInteracted) {
+        console.log('⚠️ User interaction required for vibration');
+        showVibrationIndicator('📳 Tap anywhere to enable vibration');
+        return;
+      }
+      
       if ('vibrate' in navigator) {
         const pattern = vibrationPatterns[patternName] || vibrationPatterns.called;
         navigator.vibrate(pattern);
-        showVibrationIndicator();
+        showVibrationIndicator(`📳 Vibrating with ${patternName} pattern`);
       }
     }
     
@@ -671,7 +781,7 @@
         const estimatedTimeSection = document.querySelector('.estimated-time');
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
         estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
-        estimatedTimeSection.querySelector('.time').textContent = 'Please come now - Your phone vibrated! 📳';
+        estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
       } else {
         // Reset styling if not called
         const estimatedTimeSection = document.querySelector('.estimated-time');
@@ -775,7 +885,7 @@
             const estimatedTimeSection = document.querySelector('.estimated-time');
             estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
             estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
-            estimatedTimeSection.querySelector('.time').textContent = 'Please come now - Your phone vibrated! 📳';
+            estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
             
             // Only vibrate if status changed from not called to called
             if (!wasCalledBefore && isCalledNow) {
