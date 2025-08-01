@@ -399,6 +399,27 @@
         transform: translateY(0);
       }
     }
+
+    /* Vibration Indicator Styles */
+    .vibration-indicator {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      padding: 10px 15px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      z-index: 1001;
+      animation: vibrationAlert 0.5s ease-in-out;
+      box-shadow: 0 4px 15px rgba(220, 38, 38, 0.3);
+    }
+
+    @keyframes vibrationAlert {
+      0% { transform: translateX(100%) scale(0.8); opacity: 0; }
+      100% { transform: translateX(0) scale(1); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -484,6 +505,71 @@
   <script>
     let queueId = null;
     let autoRefreshInterval = null;
+    let lastCalledStatus = false; // Track previous called status
+    
+    // Vibration functionality
+    const vibrationPatterns = {
+      called: [500, 200, 500, 200, 1000], // Called pattern
+      urgent: [200, 100, 200, 100, 200, 100, 1000], // More urgent pattern
+      gentle: [300, 300, 300] // Gentle reminder pattern
+    };
+
+    // Vibration function for when queue is called
+    function vibrateOnCall() {
+      // Check if device supports vibration
+      if ('vibrate' in navigator) {
+        // Vibration pattern: 500ms vibrate, 200ms pause, 500ms vibrate, 200ms pause, 1000ms long vibrate
+        navigator.vibrate(vibrationPatterns.called);
+        
+        // Show vibration indicator
+        showVibrationIndicator();
+        console.log('📳 Queue called - Device vibrating!');
+      } else {
+        console.log('Vibration API not supported on this device');
+      }
+    }
+
+    // Show vibration indicator
+    function showVibrationIndicator() {
+      // Remove existing indicator if present
+      const existingIndicator = document.querySelector('.vibration-indicator');
+      if (existingIndicator) {
+        existingIndicator.remove();
+      }
+      
+      // Create new vibration indicator
+      const indicator = document.createElement('div');
+      indicator.className = 'vibration-indicator';
+      indicator.innerHTML = '📳 Vibrating - You are being called!';
+      document.body.appendChild(indicator);
+      
+      // Remove after 5 seconds
+      setTimeout(() => {
+        if (indicator && indicator.parentNode) {
+          indicator.remove();
+        }
+      }, 5000);
+    }
+
+    // Request vibration permission (for some browsers)
+    function requestVibrationPermission() {
+      if ('permissions' in navigator) {
+        navigator.permissions.query({name: 'vibrate'}).then(function(result) {
+          console.log('Vibration permission:', result.state);
+        }).catch(function(error) {
+          console.log('Vibration permission check not available');
+        });
+      }
+    }
+
+    // Vibrate with specific pattern
+    function vibrateWithPattern(patternName = 'called') {
+      if ('vibrate' in navigator) {
+        const pattern = vibrationPatterns[patternName] || vibrationPatterns.called;
+        navigator.vibrate(pattern);
+        showVibrationIndicator();
+      }
+    }
     
     // Get queue ID from URL parameters
     function getQueueId() {
@@ -572,14 +658,20 @@
       statusElement.textContent = statusData.status.text;
       statusElement.className = `queue-status ${statusData.status.class}`;
       
-      // If called, make it more prominent
+      // Check if user is being called and trigger vibration
       if (statusData.is_called) {
         statusElement.style.animation = 'pulse 1s infinite';
+        
+        // VIBRATE WHEN CALLED! - Only if status changed to called
+        if (!lastCalledStatus && statusData.is_called) {
+          vibrateOnCall();
+        }
+        
         // Change estimated time section for called status
         const estimatedTimeSection = document.querySelector('.estimated-time');
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
         estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
-        estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
+        estimatedTimeSection.querySelector('.time').textContent = 'Please come now - Your phone vibrated! 📳';
       } else {
         // Reset styling if not called
         const estimatedTimeSection = document.querySelector('.estimated-time');
@@ -588,6 +680,9 @@
         estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
         statusElement.style.animation = '';
       }
+      
+      // Update last called status for next comparison
+      lastCalledStatus = statusData.is_called;
     }
 
     // Update admin status display
@@ -660,21 +755,43 @@
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
+          
+          // Store previous called status to detect changes
+          const wasCalledBefore = lastCalledStatus;
+          const isCalledNow = statusData.is_called;
+          
           // Only update display elements that don't affect countdown
           updateAdminStatus(statusData.admin_status, statusData.department_prefix);
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+          
           // Update status
           const statusElement = document.getElementById('queueStatus');
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
-          // Handle called status
-          if (statusData.is_called) {
+          
+          // Handle called status with vibration
+          if (isCalledNow) {
             statusElement.style.animation = 'pulse 1s infinite';
             const estimatedTimeSection = document.querySelector('.estimated-time');
             estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
             estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
-            estimatedTimeSection.querySelector('.time').textContent = 'Please come now';
+            estimatedTimeSection.querySelector('.time').textContent = 'Please come now - Your phone vibrated! 📳';
+            
+            // Only vibrate if status changed from not called to called
+            if (!wasCalledBefore && isCalledNow) {
+              vibrateOnCall();
+            }
+          } else {
+            // Reset styling if not called
+            const estimatedTimeSection = document.querySelector('.estimated-time');
+            estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+            estimatedTimeSection.querySelector('h3').textContent = '📢 Queue Information';
+            estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
+            statusElement.style.animation = '';
           }
+          
+          // Update last called status for next comparison
+          lastCalledStatus = isCalledNow;
         }
       } catch (error) {
         console.error('Error in silent refresh:', error);
@@ -683,6 +800,9 @@
     
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', function() {
+      // Request vibration permission
+      requestVibrationPermission();
+      
       // Show portal loading screen first
       showPortalLoading();
       
