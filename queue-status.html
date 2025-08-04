@@ -540,8 +540,10 @@
   </button>
   
   <!-- Audio element for alarm sound -->
-  <audio id="alarmSound" preload="auto">
+  <audio id="alarmSound" preload="auto" crossorigin="anonymous">
     <source src="Sounds/alarm.wav" type="audio/wav">
+    <source src="Sounds/alarm.mp3" type="audio/mpeg">
+    <source src="Sounds/alarm.ogg" type="audio/ogg">
     Your browser does not support the audio element.
   </audio>
   
@@ -553,16 +555,26 @@
     // Audio functionality
     let audioEnabled = false; // Track if audio is enabled
     let userHasInteracted = false; // Track if user has interacted with page
+    let pendingAlarmCall = false; // Track if alarm should play when audio is enabled
 
     // Enable audio after user interaction
     function enableAudio() {
-      audioEnabled = true;
-      userHasInteracted = true;
-      console.log('✅ Audio enabled after user interaction');
+      if (!userHasInteracted) {
+        audioEnabled = true;
+        userHasInteracted = true;
+        console.log('✅ Audio enabled after user interaction');
+        
+        // If there was a pending alarm call, play it now
+        if (pendingAlarmCall) {
+          console.log('🔔 Playing pending alarm after interaction');
+          pendingAlarmCall = false;
+          playAlarmSound(true); // Force play even without interaction check
+        }
+      }
     }
 
     // Play alarm sound when queue is called
-    function playAlarmSound() {
+    function playAlarmSound(forcePlay = false) {
       console.log('🔔 Attempting to play alarm sound...');
       
       const audio = document.getElementById('alarmSound');
@@ -572,13 +584,23 @@
         return;
       }
 
-      // Check if user has interacted with the page (required by browsers)
-      if (!userHasInteracted) {
-        console.log('⚠️ User interaction required for audio');
-        showAudioIndicator('🔊 Tap screen to enable sound');
+      // If user hasn't interacted yet and it's not a forced play, mark as pending
+      if (!userHasInteracted && !forcePlay) {
+        console.log('⚠️ User interaction required - marking alarm as pending');
+        pendingAlarmCall = true;
+        showAudioIndicator('🔊 Alarm ready - Touch screen to enable sound notifications');
+        
+        // Try to play anyway (might work on some browsers/devices)
+        tryPlayAlarm(audio);
         return;
       }
 
+      // Play the alarm
+      tryPlayAlarm(audio);
+    }
+
+    // Attempt to play the alarm sound
+    function tryPlayAlarm(audio) {
       try {
         // Reset audio to beginning
         audio.currentTime = 0;
@@ -593,9 +615,15 @@
           playPromise.then(() => {
             console.log('🔊 Alarm sound playing successfully');
             showAudioIndicator('🔊 ALARM - You are being called!');
+            pendingAlarmCall = false; // Clear pending status
           }).catch((error) => {
             console.error('❌ Audio playback failed:', error);
-            showAudioIndicator('⚠️ Audio playback failed - Check permissions');
+            if (!userHasInteracted) {
+              showAudioIndicator('🔊 Alarm ready - Touch anywhere to enable sound');
+              pendingAlarmCall = true;
+            } else {
+              showAudioIndicator('⚠️ Audio playback failed - Check permissions');
+            }
           });
         }
         
@@ -639,18 +667,8 @@
       
       const audio = document.getElementById('alarmSound');
       if (audio) {
-        audio.currentTime = 0;
-        audio.volume = 1.0;
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            showAudioIndicator('✅ Sound test - Your device should play alarm!');
-          }).catch((error) => {
-            showAudioIndicator('❌ Sound test failed - Check audio file');
-            console.error('Test sound error:', error);
-          });
-        }
+        tryPlayAlarm(audio);
+        showAudioIndicator('✅ Sound test - Audio notifications are now enabled!');
       } else {
         showAudioIndicator('❌ Audio element not found');
       }
@@ -658,13 +676,40 @@
 
     // Request audio permission and setup interaction listeners
     function setupAudioPermission() {
-      // Add user interaction listeners to enable audio
-      document.addEventListener('click', enableAudio, { once: false });
-      document.addEventListener('touchstart', enableAudio, { once: false });
-      document.addEventListener('touchend', enableAudio, { once: false });
-      document.addEventListener('keydown', enableAudio, { once: false });
+      // Add user interaction listeners to enable audio (more comprehensive)
+      const events = ['click', 'touchstart', 'touchend', 'touchmove', 'keydown', 'scroll', 'mousemove', 'mousedown'];
       
-      console.log('👆 Audio will be enabled after user interaction');
+      events.forEach(eventType => {
+        document.addEventListener(eventType, enableAudio, { once: false, passive: true });
+      });
+      
+      // Also listen on window for broader coverage
+      window.addEventListener('click', enableAudio, { once: false });
+      window.addEventListener('touchstart', enableAudio, { once: false, passive: true });
+      
+      console.log('👆 Audio will be enabled after any user interaction (tap, scroll, click, etc.)');
+      
+      // Try to preload and prepare audio
+      const audio = document.getElementById('alarmSound');
+      if (audio) {
+        audio.load(); // Preload the audio
+        audio.volume = 1.0; // Set volume to max
+        
+        // Try silent play to "unlock" audio (some browsers allow this)
+        audio.muted = true;
+        const silentPlay = audio.play();
+        if (silentPlay !== undefined) {
+          silentPlay.then(() => {
+            console.log('� Silent audio unlock successful');
+            audio.pause();
+            audio.currentTime = 0;
+            audio.muted = false;
+          }).catch(() => {
+            console.log('🔇 Silent audio unlock failed (expected on most browsers)');
+            audio.muted = false;
+          });
+        }
+      }
     }
     
     // Get queue ID from URL parameters
