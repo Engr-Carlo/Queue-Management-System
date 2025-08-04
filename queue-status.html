@@ -425,33 +425,6 @@
       from { opacity: 1; transform: scale(1); }
       to { opacity: 0; transform: scale(0.8); }
     }
-
-    /* Test Sound Button */
-    .test-sound-btn {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(34, 197, 94, 0.9);
-      color: white;
-      border: none;
-      border-radius: 50px;
-      padding: 12px 20px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      cursor: pointer;
-      z-index: 1002;
-      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
-      transition: all 0.3s ease;
-    }
-
-    .test-sound-btn:hover {
-      background: rgba(34, 197, 94, 1);
-      transform: scale(1.05);
-    }
-
-    .test-sound-btn:active {
-      transform: scale(0.95);
-    }
   </style>
 </head>
 <body>
@@ -534,11 +507,6 @@
     </div>
   </div>
 
-  <!-- Test Sound Button -->
-  <button class="test-sound-btn" onclick="testSound()" title="Test if sound works on your device">
-    � Test Sound
-  </button>
-  
   <!-- Audio element for alarm sound -->
   <audio id="alarmSound" preload="auto" crossorigin="anonymous">
     <source src="Sounds/alarm.wav" type="audio/wav">
@@ -570,6 +538,14 @@
           pendingAlarmCall = false;
           playAlarmSound(true); // Force play even without interaction check
         }
+        
+        // Remove event listeners after first interaction to prevent multiple triggers
+        const events = ['click', 'touchstart', 'touchend', 'touchmove', 'keydown', 'scroll', 'mousemove', 'mousedown'];
+        events.forEach(eventType => {
+          document.removeEventListener(eventType, enableAudio);
+        });
+        window.removeEventListener('click', enableAudio);
+        window.removeEventListener('touchstart', enableAudio);
       }
     }
 
@@ -588,7 +564,7 @@
       if (!userHasInteracted && !forcePlay) {
         console.log('⚠️ User interaction required - marking alarm as pending');
         pendingAlarmCall = true;
-        showAudioIndicator('🔊 Alarm ready - Touch screen to enable sound notifications');
+        showAudioIndicator('🔊 Touch screen to enable sound - You will be notified when called');
         
         // Try to play anyway (might work on some browsers/devices)
         tryPlayAlarm(audio);
@@ -658,20 +634,6 @@
           setTimeout(() => indicator.remove(), 500);
         }
       }, 8000);
-    }
-
-    // Test sound function for user to enable
-    function testSound() {
-      console.log('🧪 Testing sound...');
-      enableAudio();
-      
-      const audio = document.getElementById('alarmSound');
-      if (audio) {
-        tryPlayAlarm(audio);
-        showAudioIndicator('✅ Sound test - Audio notifications are now enabled!');
-      } else {
-        showAudioIndicator('❌ Audio element not found');
-      }
     }
 
     // Request audio permission and setup interaction listeners
