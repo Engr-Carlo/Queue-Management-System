@@ -517,11 +517,11 @@
     let qrScanCheckInterval = null;
     
     // Generate unique queue number
-    function generateQueueNumber() {
+    async function generateQueueNumber() {
       // Use selectedPersonName for display, but selectedPerson for prefix logic
       const person = localStorage.getItem('selectedPerson') || 'dean';
-      const now = new Date();
       let prefix = 'A'; // Default for Dean
+      
       // Map all possible person strings to correct prefix
       if (person.toLowerCase().includes('dean')) prefix = 'A';
       else if (person.toLowerCase().includes('ie')) prefix = 'B';
@@ -529,16 +529,29 @@
       else if (person.toLowerCase().includes('ece')) prefix = 'D';
       else prefix = 'E';
 
-      // Generate sequential number (simulate from localStorage or use timestamp)
-      const savedCounters = JSON.parse(localStorage.getItem('queueCounters') || '{}');
-      const todayKey = now.toDateString();
-      if (!savedCounters[todayKey]) {
-        savedCounters[todayKey] = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+      try {
+        // Get next queue number from backend API
+        const response = await fetch(`${API_BASE_URL}/queue/next-number/${prefix}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to generate queue number');
+        }
+        
+        const result = await response.json();
+        console.log('Generated queue number:', result.queue_number);
+        return result.queue_number;
+        
+      } catch (error) {
+        console.error('Error generating queue number:', error);
+        
+        // Fallback: use timestamp-based number if API fails
+        const now = new Date();
+        const fallbackNum = (now.getTime() % 999) + 1;
+        const fallbackNumber = prefix + fallbackNum.toString().padStart(3, '0');
+        console.warn('Using fallback queue number:', fallbackNumber);
+        return fallbackNumber;
       }
-      savedCounters[todayKey][prefix]++;
-      localStorage.setItem('queueCounters', JSON.stringify(savedCounters));
-      const number = savedCounters[todayKey][prefix].toString().padStart(3, '0');
-      return prefix + number;
     }
     
     // Generate unique queue ID
@@ -596,30 +609,32 @@
     // Initialize queue data
     async function initializeQueue() {
       const selectedPerson = localStorage.getItem('selectedPersonName') || 'Dean - College of Engineering';
-      const queueNumber = generateQueueNumber();
-      const queueId = generateQueueId();
-      const now = new Date();
       
-      queueData = {
-        id: queueId,
-        number: queueNumber,
-        person: selectedPerson,
-        date: now.toLocaleDateString('en-US', { 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
-        }),
-        time: now.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        }),
-        timestamp: now.toISOString(),
-        status: 'waiting'
-      };
-
-      // Send data directly to database via backend API
       try {
+        // Generate queue number from backend
+        const queueNumber = await generateQueueNumber();
+        const queueId = generateQueueId();
+        const now = new Date();
+        
+        queueData = {
+          id: queueId,
+          number: queueNumber,
+          person: selectedPerson,
+          date: now.toLocaleDateString('en-US', { 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          }),
+          time: now.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+          }),
+          timestamp: now.toISOString(),
+          status: 'waiting'
+        };
+
+        // Send data directly to database via backend API
         const response = await fetch(`${API_BASE_URL}/queue`, {
           method: 'POST',
           headers: {
@@ -642,11 +657,13 @@
           }, 3000); // Wait 3 seconds before starting to monitor
         } else {
           console.error('Failed to save queue data to database:', result.error);
-          alert('Failed to save queue data. Please try again.');
+          alert('Failed to create queue. Please try again.');
         }
+        
       } catch (error) {
-        console.error('Error sending data to backend:', error);
-        alert('Cannot connect to server. Please check if the backend is running.');
+        console.error('Error creating queue:', error);
+        alert('Network error. Please check your connection and try again.');
+        return;
       }
     }
     

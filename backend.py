@@ -50,6 +50,54 @@ def test_db():
     except Exception as e:
         return jsonify({"db_connected": False, "error": str(e)}), 500
 
+@app.route('/queue/next-number/<department>', methods=['GET'])
+def get_next_queue_number(department):
+    """Generate the next sequential queue number for a department"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Get current date for daily reset
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Get the highest number for this department today
+        cur.execute("""
+            SELECT MAX(CAST(SUBSTRING(number FROM 2) AS INTEGER)) as max_num
+            FROM queue 
+            WHERE number LIKE %s 
+            AND DATE(created_at) = %s
+        """, (f"{department}%", today))
+        
+        result = cur.fetchone()
+        max_num = result[0] if result[0] is not None else 0
+        
+        # Generate next number (max 999)
+        next_num = max_num + 1
+        if next_num > 999:
+            conn.close()
+            return jsonify({
+                "success": False, 
+                "error": f"Maximum queue numbers reached for department {department} today (999)"
+            }), 400
+        
+        # Format as A001, B001, etc.
+        queue_number = f"{department}{str(next_num).zfill(3)}"
+        
+        conn.close()
+        return jsonify({
+            "success": True,
+            "queue_number": queue_number,
+            "sequence": next_num,
+            "department": department
+        })
+        
+    except Exception as e:
+        print(f"Error generating queue number: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/queue', methods=['POST'])
 def create_queue():
     conn = get_db_connection()
