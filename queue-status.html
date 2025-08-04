@@ -540,7 +540,7 @@
     let audioBuffer = null;
     let forceInteractionTimer = null;
 
-    // FORCE USER INTERACTION - Show persistent overlay
+    // Professional interaction prompt for audio permissions
     function forceUserInteraction() {
       if (!userHasInteracted) {
         const overlay = document.createElement('div');
@@ -551,38 +551,43 @@
           left: 0;
           width: 100%;
           height: 100%;
-          background: rgba(220, 38, 38, 0.9);
+          background: rgba(0, 0, 0, 0.85);
+          backdrop-filter: blur(5px);
           z-index: 10000;
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           color: white;
-          font-size: 2rem;
-          font-weight: 900;
+          font-family: 'Inter', sans-serif;
           text-align: center;
-          animation: urgentPulse 0.5s infinite;
           cursor: pointer;
         `;
         
         overlay.innerHTML = `
-          <div style="margin-bottom: 30px; font-size: 4rem;">🚨</div>
-          <div style="margin-bottom: 30px;">URGENT!</div>
-          <div style="margin-bottom: 30px; font-size: 1.5rem;">TOUCH SCREEN TO ENABLE SOUND ALERTS</div>
-          <div style="font-size: 1.2rem;">Your queue notifications depend on this!</div>
-          <div style="margin-top: 30px; font-size: 1rem; animation: blink 1s infinite;">👆 TAP ANYWHERE TO CONTINUE 👆</div>
+          <div style="background: rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 40px; max-width: 400px; backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.2);">
+            <div style="font-size: 3rem; margin-bottom: 20px;">🔔</div>
+            <h2 style="font-size: 1.5rem; font-weight: 600; margin: 0 0 15px 0; color: #ffffff;">Enable Audio Notifications</h2>
+            <p style="font-size: 1rem; line-height: 1.5; margin: 0 0 25px 0; color: rgba(255, 255, 255, 0.9);">
+              To receive important queue updates and alerts, please tap anywhere to enable audio notifications.
+            </p>
+            <div style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 10px; padding: 15px; margin-bottom: 25px;">
+              <p style="font-size: 0.9rem; margin: 0; color: rgba(255, 255, 255, 0.8);">
+                📱 This ensures you'll be notified when your queue number is called
+              </p>
+            </div>
+            <div style="font-size: 1rem; font-weight: 500; color: #3b82f6; animation: gentlePulse 2s infinite;">
+              👆 Tap anywhere to continue
+            </div>
+          </div>
         `;
         
-        // Add urgent pulse animation
+        // Add gentle pulse animation
         const style = document.createElement('style');
         style.textContent = `
-          @keyframes urgentPulse {
-            0%, 100% { transform: scale(1); background: rgba(220, 38, 38, 0.9); }
-            50% { transform: scale(1.02); background: rgba(220, 38, 38, 0.95); }
-          }
-          @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
+          @keyframes gentlePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
           }
         `;
         document.head.appendChild(style);
@@ -598,7 +603,7 @@
       }
     }
 
-    // ULTRA AGGRESSIVE enableAudio function
+    // Enhanced enableAudio function with browser notification permission
     function enableAudio() {
       if (!userHasInteracted) {
         audioEnabled = true;
@@ -613,18 +618,35 @@
         initWebAudio();
         initMultipleAudioElements();
         
+        // Request browser notification permission
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              showAudioIndicator('✅ Audio & Notifications Enabled Successfully!');
+              // Show a test notification
+              setTimeout(() => {
+                new Notification('Queue Management System', {
+                  body: 'Notifications are now enabled! You will be alerted when your queue is called.',
+                  icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="0.9em" font-size="90">🔔</text></svg>',
+                  tag: 'setup-complete'
+                });
+              }, 1000);
+            } else {
+              showAudioIndicator('✅ Audio Enabled - Notifications Blocked');
+            }
+          });
+        } else if (Notification.permission === 'granted') {
+          showAudioIndicator('✅ Audio & Notifications Already Enabled!');
+        } else {
+          showAudioIndicator('✅ Audio Enabled - Notifications Blocked');
+        }
+        
         // If there was a pending alarm call, play it now with ALL methods
         if (pendingAlarmCall) {
           console.log('🔔 Playing pending alarm with ALL METHODS');
           pendingAlarmCall = false;
           setTimeout(() => playUltraAggressiveAlarm(), 100);
         }
-        
-        // Show success message
-        showAudioIndicator('✅ AUDIO ENABLED - Testing all sound methods now!');
-        
-        // Test sound immediately to confirm it works
-        setTimeout(() => testAllSoundMethods(), 500);
         
         // Remove ALL event listeners after first interaction
         removeAllEventListeners();
