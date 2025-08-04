@@ -425,6 +425,18 @@
       from { opacity: 1; transform: scale(1); }
       to { opacity: 0; transform: scale(0.8); }
     }
+
+    @keyframes strongPulse {
+      0%, 100% { transform: scale(1.2) rotate(0deg); }
+      25% { transform: scale(1.3) rotate(1deg); }
+      50% { transform: scale(1.2) rotate(0deg); }
+      75% { transform: scale(1.3) rotate(-1deg); }
+    }
+
+    @keyframes flashAlert {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -520,26 +532,34 @@
     let autoRefreshInterval = null;
     let lastCalledStatus = false; // Track previous called status
     
-    // Audio functionality
-    let audioEnabled = false; // Track if audio is enabled
-    let userHasInteracted = false; // Track if user has interacted with page
-    let pendingAlarmCall = false; // Track if alarm should play when audio is enabled
+    // Audio functionality - AGGRESSIVE APPROACH
+    let audioEnabled = false;
+    let userHasInteracted = false;
+    let pendingAlarmCall = false;
+    let audioContext = null;
+    let audioBuffer = null;
 
-    // Enable audio after user interaction
+    // CREATIVE SOLUTION: Multiple audio triggering methods
     function enableAudio() {
       if (!userHasInteracted) {
         audioEnabled = true;
         userHasInteracted = true;
         console.log('✅ Audio enabled after user interaction');
         
+        // Initialize Web Audio API as backup
+        initWebAudio();
+        
         // If there was a pending alarm call, play it now
         if (pendingAlarmCall) {
           console.log('🔔 Playing pending alarm after interaction');
           pendingAlarmCall = false;
-          playAlarmSound(true); // Force play even without interaction check
+          setTimeout(() => playAlarmSound(true), 100); // Small delay for audio context
         }
         
-        // Remove event listeners after first interaction to prevent multiple triggers
+        // Show success message
+        showAudioIndicator('✅ Audio notifications enabled - You will hear alerts!');
+        
+        // Remove event listeners after first interaction
         const events = ['click', 'touchstart', 'touchend', 'touchmove', 'keydown', 'scroll', 'mousemove', 'mousedown'];
         events.forEach(eventType => {
           document.removeEventListener(eventType, enableAudio);
@@ -549,67 +569,179 @@
       }
     }
 
-    // Play alarm sound when queue is called
-    function playAlarmSound(forcePlay = false) {
-      console.log('🔔 Attempting to play alarm sound...');
-      
-      const audio = document.getElementById('alarmSound');
-      if (!audio) {
-        console.log('❌ Audio element not found');
-        showAudioIndicator('⚠️ Audio element not found');
-        return;
+    // Initialize Web Audio API as backup
+    function initWebAudio() {
+      try {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        console.log('🎵 Web Audio API initialized');
+      } catch (error) {
+        console.log('⚠️ Web Audio API not available:', error);
       }
+    }
 
+    // CREATIVE BEEP SOUND - Generate sound programmatically if file fails
+    function generateBeepSound() {
+      if (!audioContext) return;
+      
+      try {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        
+        // Create alarm-like beep pattern
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.2);
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime + 0.4);
+        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime + 0.6);
+        
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime + 1);
+        
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 1);
+        
+        console.log('🔊 Generated beep sound played');
+        showAudioIndicator('🔊 BEEP ALARM - You are being called!');
+        
+        return true;
+      } catch (error) {
+        console.error('❌ Generated sound failed:', error);
+        return false;
+      }
+    }
+
+    // MULTIPLE AUDIO METHODS - Try everything!
+    function playAlarmSound(forcePlay = false) {
+      console.log('🔔 Attempting to play alarm sound with MULTIPLE methods...');
+      
       // If user hasn't interacted yet and it's not a forced play, mark as pending
       if (!userHasInteracted && !forcePlay) {
         console.log('⚠️ User interaction required - marking alarm as pending');
         pendingAlarmCall = true;
-        showAudioIndicator('🔊 Touch screen to enable sound - You will be notified when called');
-        
-        // Try to play anyway (might work on some browsers/devices)
-        tryPlayAlarm(audio);
+        showAudioIndicator('🚨 TOUCH ANYWHERE ON SCREEN TO ENABLE SOUND ALERTS! 🚨');
+        makeScreenFlash(); // Visual alert
         return;
       }
 
-      // Play the alarm
-      tryPlayAlarm(audio);
+      let soundPlayed = false;
+
+      // METHOD 1: Try HTML5 audio first
+      const audio = document.getElementById('alarmSound');
+      if (audio) {
+        tryPlayHTMLAudio(audio).then(success => {
+          if (success) {
+            soundPlayed = true;
+            showAudioIndicator('🔊 ALARM SOUND - You are being called!');
+          } else {
+            // METHOD 2: Try generated beep sound
+            console.log('🔄 HTML audio failed, trying generated beep...');
+            if (generateBeepSound()) {
+              soundPlayed = true;
+            } else {
+              // METHOD 3: Try speech synthesis as last resort
+              console.log('🔄 Generated beep failed, trying speech...');
+              playSpeechAlert();
+            }
+          }
+        });
+      } else {
+        // METHOD 2: No audio element, try generated sound
+        if (generateBeepSound()) {
+          soundPlayed = true;
+        } else {
+          // METHOD 3: Try speech synthesis
+          playSpeechAlert();
+        }
+      }
+
+      // Always show visual alert
+      makeScreenFlash();
+      pendingAlarmCall = false;
     }
 
-    // Attempt to play the alarm sound
-    function tryPlayAlarm(audio) {
-      try {
-        // Reset audio to beginning
-        audio.currentTime = 0;
-        
-        // Set volume to maximum
-        audio.volume = 1.0;
-        
-        // Play the alarm sound
-        const playPromise = audio.play();
-        
-        if (playPromise !== undefined) {
-          playPromise.then(() => {
-            console.log('🔊 Alarm sound playing successfully');
-            showAudioIndicator('🔊 ALARM - You are being called!');
-            pendingAlarmCall = false; // Clear pending status
-          }).catch((error) => {
-            console.error('❌ Audio playback failed:', error);
-            if (!userHasInteracted) {
-              showAudioIndicator('🔊 Alarm ready - Touch anywhere to enable sound');
-              pendingAlarmCall = true;
-            } else {
-              showAudioIndicator('⚠️ Audio playback failed - Check permissions');
-            }
-          });
+    // METHOD 1: Enhanced HTML5 audio
+    function tryPlayHTMLAudio(audio) {
+      return new Promise((resolve) => {
+        try {
+          audio.currentTime = 0;
+          audio.volume = 1.0;
+          
+          const playPromise = audio.play();
+          
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              console.log('🔊 HTML5 audio playing successfully');
+              resolve(true);
+            }).catch((error) => {
+              console.error('❌ HTML5 audio playback failed:', error);
+              resolve(false);
+            });
+          } else {
+            resolve(false);
+          }
+        } catch (error) {
+          console.error('❌ HTML5 audio error:', error);
+          resolve(false);
         }
-        
-      } catch (error) {
-        console.error('❌ Audio error:', error);
-        showAudioIndicator('⚠️ Audio failed - Check file path');
+      });
+    }
+
+    // METHOD 3: Speech Synthesis as backup
+    function playSpeechAlert() {
+      if ('speechSynthesis' in window) {
+        try {
+          const utterance = new SpeechSynthesisUtterance('Attention! Your queue number is being called! Please proceed to the office!');
+          utterance.rate = 1.2;
+          utterance.pitch = 1.1;
+          utterance.volume = 1.0;
+          
+          speechSynthesis.speak(utterance);
+          console.log('🗣️ Speech synthesis alert played');
+          showAudioIndicator('🗣️ VOICE ALERT - You are being called!');
+        } catch (error) {
+          console.error('❌ Speech synthesis failed:', error);
+          showAudioIndicator('⚠️ Unable to play sound - Check manually!');
+        }
+      } else {
+        showAudioIndicator('⚠️ Audio not supported - Check screen for updates!');
       }
     }
 
-    // Show audio indicator
+    // VISUAL FLASH EFFECT for attention
+    function makeScreenFlash() {
+      const flashDiv = document.createElement('div');
+      flashDiv.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(220, 38, 38, 0.3);
+        z-index: 9999;
+        pointer-events: none;
+        animation: flashAlert 0.5s ease-in-out 3;
+      `;
+      
+      // Add flash animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes flashAlert {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(flashDiv);
+      
+      setTimeout(() => {
+        flashDiv.remove();
+        style.remove();
+      }, 1500);
+    }
+
+    // Show audio indicator with more prominent styling
     function showAudioIndicator(message = '🔊 Playing alarm - You are being called!') {
       // Remove existing indicator if present
       const existingIndicator = document.querySelector('.audio-indicator');
@@ -623,17 +755,21 @@
       indicator.innerHTML = message;
       document.body.appendChild(indicator);
       
-      // Make it more prominent with animation
-      indicator.style.transform = 'scale(1.1)';
-      indicator.style.animation = 'audioAlert 0.5s ease-in-out, pulse 2s infinite 0.5s';
+      // Make it MUCH more prominent with stronger animation
+      indicator.style.transform = 'scale(1.2)';
+      indicator.style.animation = 'audioAlert 0.5s ease-in-out, strongPulse 1s infinite 0.5s';
+      indicator.style.fontSize = '1rem';
+      indicator.style.fontWeight = '800';
+      indicator.style.background = 'rgba(220, 38, 38, 0.95)';
+      indicator.style.boxShadow = '0 8px 30px rgba(220, 38, 38, 0.6)';
       
-      // Remove after 8 seconds
+      // Remove after 10 seconds instead of 8
       setTimeout(() => {
         if (indicator && indicator.parentNode) {
           indicator.style.animation = 'fadeOut 0.5s ease-out';
           setTimeout(() => indicator.remove(), 500);
         }
-      }, 8000);
+      }, 10000);
     }
 
     // Request audio permission and setup interaction listeners
@@ -905,6 +1041,13 @@
     document.addEventListener('DOMContentLoaded', function() {
       // Setup audio permission
       setupAudioPermission();
+      
+      // Show immediate interaction prompt after 2 seconds
+      setTimeout(() => {
+        if (!userHasInteracted) {
+          showAudioIndicator('🚨 TAP ANYWHERE ON SCREEN TO ENABLE SOUND ALERTS! 🚨');
+        }
+      }, 2000);
       
       // Show portal loading screen first
       showPortalLoading();
