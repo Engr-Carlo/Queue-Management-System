@@ -532,51 +532,293 @@
     let autoRefreshInterval = null;
     let lastCalledStatus = false; // Track previous called status
     
-    // Audio functionality - AGGRESSIVE APPROACH
+    // DESPERATE AUDIO SOLUTION - MOST AGGRESSIVE APPROACH POSSIBLE
     let audioEnabled = false;
     let userHasInteracted = false;
     let pendingAlarmCall = false;
     let audioContext = null;
     let audioBuffer = null;
+    let forceInteractionTimer = null;
 
-    // CREATIVE SOLUTION: Multiple audio triggering methods
+    // FORCE USER INTERACTION - Show persistent overlay
+    function forceUserInteraction() {
+      if (!userHasInteracted) {
+        const overlay = document.createElement('div');
+        overlay.id = 'forceInteractionOverlay';
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(220, 38, 38, 0.9);
+          z-index: 10000;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 2rem;
+          font-weight: 900;
+          text-align: center;
+          animation: urgentPulse 0.5s infinite;
+          cursor: pointer;
+        `;
+        
+        overlay.innerHTML = `
+          <div style="margin-bottom: 30px; font-size: 4rem;">🚨</div>
+          <div style="margin-bottom: 30px;">URGENT!</div>
+          <div style="margin-bottom: 30px; font-size: 1.5rem;">TOUCH SCREEN TO ENABLE SOUND ALERTS</div>
+          <div style="font-size: 1.2rem;">Your queue notifications depend on this!</div>
+          <div style="margin-top: 30px; font-size: 1rem; animation: blink 1s infinite;">👆 TAP ANYWHERE TO CONTINUE 👆</div>
+        `;
+        
+        // Add urgent pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes urgentPulse {
+            0%, 100% { transform: scale(1); background: rgba(220, 38, 38, 0.9); }
+            50% { transform: scale(1.02); background: rgba(220, 38, 38, 0.95); }
+          }
+          @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+          }
+        `;
+        document.head.appendChild(style);
+        
+        overlay.onclick = () => {
+          enableAudio();
+          overlay.remove();
+          style.remove();
+          clearTimeout(forceInteractionTimer);
+        };
+        
+        document.body.appendChild(overlay);
+      }
+    }
+
+    // ULTRA AGGRESSIVE enableAudio function
     function enableAudio() {
       if (!userHasInteracted) {
         audioEnabled = true;
         userHasInteracted = true;
         console.log('✅ Audio enabled after user interaction');
         
-        // Initialize Web Audio API as backup
-        initWebAudio();
+        // Remove force interaction overlay if present
+        const overlay = document.getElementById('forceInteractionOverlay');
+        if (overlay) overlay.remove();
         
-        // If there was a pending alarm call, play it now
+        // Initialize ALL audio systems
+        initWebAudio();
+        initMultipleAudioElements();
+        
+        // If there was a pending alarm call, play it now with ALL methods
         if (pendingAlarmCall) {
-          console.log('🔔 Playing pending alarm after interaction');
+          console.log('🔔 Playing pending alarm with ALL METHODS');
           pendingAlarmCall = false;
-          setTimeout(() => playAlarmSound(true), 100); // Small delay for audio context
+          setTimeout(() => playUltraAggressiveAlarm(), 100);
         }
         
         // Show success message
-        showAudioIndicator('✅ Audio notifications enabled - You will hear alerts!');
+        showAudioIndicator('✅ AUDIO ENABLED - Testing all sound methods now!');
         
-        // Remove event listeners after first interaction
-        const events = ['click', 'touchstart', 'touchend', 'touchmove', 'keydown', 'scroll', 'mousemove', 'mousedown'];
-        events.forEach(eventType => {
-          document.removeEventListener(eventType, enableAudio);
-        });
-        window.removeEventListener('click', enableAudio);
-        window.removeEventListener('touchstart', enableAudio);
+        // Test sound immediately to confirm it works
+        setTimeout(() => testAllSoundMethods(), 500);
+        
+        // Remove ALL event listeners after first interaction
+        removeAllEventListeners();
       }
     }
 
-    // Initialize Web Audio API as backup
+    // Initialize multiple audio elements for redundancy
+    function initMultipleAudioElements() {
+      // Create multiple audio elements with different sources
+      const audioSources = [
+        'Sounds/alarm.wav',
+        'Sounds/alarm.mp3',
+        'Sounds/alarm.ogg',
+        'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmAaByqKzt'
+      ];
+      
+      audioSources.forEach((src, index) => {
+        const audio = document.createElement('audio');
+        audio.id = `alarmSound${index}`;
+        audio.preload = 'auto';
+        audio.volume = 1.0;
+        audio.src = src;
+        document.body.appendChild(audio);
+      });
+    }
+
+    // Initialize Web Audio API with multiple contexts
     function initWebAudio() {
       try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
         console.log('🎵 Web Audio API initialized');
+        
+        // Resume context if suspended
+        if (audioContext.state === 'suspended') {
+          audioContext.resume();
+        }
       } catch (error) {
         console.log('⚠️ Web Audio API not available:', error);
       }
+    }
+
+    // ULTRA AGGRESSIVE sound generation
+    function generateUltraLoudBeep() {
+      if (!audioContext) return false;
+      
+      try {
+        // Create multiple oscillators for louder sound
+        for (let i = 0; i < 3; i++) {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          
+          // Different frequencies for each oscillator
+          const frequencies = [800, 1000, 1200];
+          oscillator.frequency.setValueAtTime(frequencies[i], audioContext.currentTime);
+          
+          // Loud volume
+          gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+          gainNode.gain.setValueAtTime(0, audioContext.currentTime + 2);
+          
+          oscillator.start(audioContext.currentTime + (i * 0.1));
+          oscillator.stop(audioContext.currentTime + 2);
+        }
+        
+        console.log('🔊 Ultra loud beep generated');
+        return true;
+      } catch (error) {
+        console.error('❌ Ultra beep failed:', error);
+        return false;
+      }
+    }
+
+    // PLAY ALL SOUND METHODS SIMULTANEOUSLY
+    function playUltraAggressiveAlarm() {
+      console.log('🚨 PLAYING ULTRA AGGRESSIVE ALARM WITH ALL METHODS!');
+      
+      let soundPlayed = false;
+      
+      // METHOD 1: Try all HTML5 audio elements
+      for (let i = 0; i < 4; i++) {
+        const audio = document.getElementById(`alarmSound${i}`) || document.getElementById('alarmSound');
+        if (audio) {
+          audio.currentTime = 0;
+          audio.volume = 1.0;
+          const playPromise = audio.play();
+          if (playPromise) {
+            playPromise.then(() => {
+              console.log(`🔊 HTML5 audio ${i} playing`);
+              soundPlayed = true;
+            }).catch(err => console.log(`Audio ${i} failed:`, err));
+          }
+        }
+      }
+      
+      // METHOD 2: Generate multiple beep sounds
+      if (generateUltraLoudBeep()) {
+        soundPlayed = true;
+      }
+      
+      // METHOD 3: Speech synthesis with multiple voices
+      playMultipleSpeechAlerts();
+      
+      // METHOD 4: Try browser notification sound
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          if (permission === 'granted') {
+            new Notification('🚨 QUEUE ALERT!', {
+              body: 'Your queue number is being called!',
+              icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHRleHQgeD0iMTYiIHk9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxNiI+🚨PC90ZXh0Pgo8L3N2Zz4K',
+              requireInteraction: true
+            });
+          }
+        });
+      }
+      
+      // METHOD 5: Visual effects
+      makeUltraScreenFlash();
+      showAudioIndicator('🚨 ULTRA ALARM ACTIVATED - YOU ARE BEING CALLED!');
+      
+      return soundPlayed;
+    }
+
+    // Multiple speech synthesis voices
+    function playMultipleSpeechAlerts() {
+      if ('speechSynthesis' in window) {
+        const messages = [
+          'ATTENTION! Your queue number is being called!',
+          'URGENT! Please proceed to the office immediately!',
+          'QUEUE ALERT! Your turn has arrived!'
+        ];
+        
+        messages.forEach((message, index) => {
+          setTimeout(() => {
+            const utterance = new SpeechSynthesisUtterance(message);
+            utterance.rate = 1.5;
+            utterance.pitch = 1.2;
+            utterance.volume = 1.0;
+            speechSynthesis.speak(utterance);
+          }, index * 1000);
+        });
+        
+        console.log('🗣️ Multiple speech alerts triggered');
+      }
+    }
+
+    // Ultra screen flash effect
+    function makeUltraScreenFlash() {
+      const flashDiv = document.createElement('div');
+      flashDiv.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(220, 38, 38, 0.8);
+        z-index: 9999;
+        pointer-events: none;
+        animation: ultraFlash 0.3s ease-in-out 6;
+      `;
+      
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes ultraFlash {
+          0%, 100% { opacity: 0; background: rgba(220, 38, 38, 0.8); }
+          50% { opacity: 1; background: rgba(255, 255, 255, 0.9); }
+        }
+      `;
+      document.head.appendChild(style);
+      document.body.appendChild(flashDiv);
+      
+      setTimeout(() => {
+        flashDiv.remove();
+        style.remove();
+      }, 2000);
+    }
+
+    // Test all sound methods to verify they work
+    function testAllSoundMethods() {
+      console.log('🧪 Testing all sound methods...');
+      
+      // Quick test with all methods
+      setTimeout(() => playUltraAggressiveAlarm(), 100);
+    }
+
+    // Remove all event listeners after activation
+    function removeAllEventListeners() {
+      const events = ['click', 'touchstart', 'touchend', 'touchmove', 'keydown', 'scroll', 'mousemove', 'mousedown', 'focus', 'mouseenter'];
+      events.forEach(eventType => {
+        document.removeEventListener(eventType, enableAudio);
+      });
+      window.removeEventListener('click', enableAudio);
+      window.removeEventListener('touchstart', enableAudio);
     }
 
     // CREATIVE BEEP SOUND - Generate sound programmatically if file fails
@@ -612,52 +854,21 @@
       }
     }
 
-    // MULTIPLE AUDIO METHODS - Try everything!
+    // DESPERATE PLAYALARMSOUND - Use ultra aggressive method
     function playAlarmSound(forcePlay = false) {
-      console.log('🔔 Attempting to play alarm sound with MULTIPLE methods...');
+      console.log('� DESPERATE ALARM SOUND ATTEMPT!');
       
-      // If user hasn't interacted yet and it's not a forced play, mark as pending
+      // If user hasn't interacted, FORCE interaction with overlay
       if (!userHasInteracted && !forcePlay) {
-        console.log('⚠️ User interaction required - marking alarm as pending');
+        console.log('⚠️ FORCING USER INTERACTION WITH OVERLAY');
         pendingAlarmCall = true;
-        showAudioIndicator('🚨 TOUCH ANYWHERE ON SCREEN TO ENABLE SOUND ALERTS! 🚨');
-        makeScreenFlash(); // Visual alert
+        forceUserInteraction();
+        makeUltraScreenFlash();
         return;
       }
 
-      let soundPlayed = false;
-
-      // METHOD 1: Try HTML5 audio first
-      const audio = document.getElementById('alarmSound');
-      if (audio) {
-        tryPlayHTMLAudio(audio).then(success => {
-          if (success) {
-            soundPlayed = true;
-            showAudioIndicator('🔊 ALARM SOUND - You are being called!');
-          } else {
-            // METHOD 2: Try generated beep sound
-            console.log('🔄 HTML audio failed, trying generated beep...');
-            if (generateBeepSound()) {
-              soundPlayed = true;
-            } else {
-              // METHOD 3: Try speech synthesis as last resort
-              console.log('🔄 Generated beep failed, trying speech...');
-              playSpeechAlert();
-            }
-          }
-        });
-      } else {
-        // METHOD 2: No audio element, try generated sound
-        if (generateBeepSound()) {
-          soundPlayed = true;
-        } else {
-          // METHOD 3: Try speech synthesis
-          playSpeechAlert();
-        }
-      }
-
-      // Always show visual alert
-      makeScreenFlash();
+      // Use ultra aggressive alarm method
+      playUltraAggressiveAlarm();
       pendingAlarmCall = false;
     }
 
@@ -904,6 +1115,50 @@
         // PLAY ALARM WHEN CALLED! - Only if status changed to called
         if (!lastCalledStatus && statusData.is_called) {
           playAlarmSound();
+          
+          // DESPERATE SOLUTION: Open external audio player window
+          try {
+            const audioPlayerWindow = window.open(
+              `audio-player.html?number=${statusData.queue_number || 'Your Number'}`,
+              'audioPlayer',
+              'width=800,height=600,left=100,top=100,resizable=yes,scrollbars=yes,alwaysRaise=yes'
+            );
+            
+            // Try to focus the window and make it visible
+            if (audioPlayerWindow) {
+              audioPlayerWindow.focus();
+              console.log('🚨 EXTERNAL AUDIO PLAYER OPENED! 🚨');
+              // Try to bring window to front multiple times
+              setTimeout(() => audioPlayerWindow.focus(), 500);
+              setTimeout(() => audioPlayerWindow.focus(), 1000);
+            }
+          } catch (e) {
+            console.log('Failed to open external audio player:', e);
+          }
+          
+          // Also show alert dialog as backup
+          setTimeout(() => {
+            try {
+              alert('🚨 QUEUE ALERT! 🚨\n\nYour queue number is being called!\n\nPlease proceed to the office immediately!');
+            } catch (e) {
+              console.log('Alert dialog failed:', e);
+            }
+          }, 2000);
+          
+          // ULTIMATE BACKUP: Try to trigger Python emergency audio
+          try {
+            fetch('/emergency-audio', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                queue_number: statusData.queue_number || 'Unknown'
+              })
+            }).catch(e => console.log('Emergency audio request failed:', e));
+          } catch (e) {
+            console.log('Emergency audio fetch failed:', e);
+          }
         }
         
         // Change estimated time section for called status
@@ -1037,17 +1292,17 @@
       }
     }
     
-    // Initialize when page loads
+    // Initialize when page loads - DESPERATE MODE
     document.addEventListener('DOMContentLoaded', function() {
       // Setup audio permission
       setupAudioPermission();
       
-      // Show immediate interaction prompt after 2 seconds
+      // FORCE USER INTERACTION IMMEDIATELY after 0.5 seconds
       setTimeout(() => {
         if (!userHasInteracted) {
-          showAudioIndicator('🚨 TAP ANYWHERE ON SCREEN TO ENABLE SOUND ALERTS! 🚨');
+          forceUserInteraction();
         }
-      }, 2000);
+      }, 500);
       
       // Show portal loading screen first
       showPortalLoading();

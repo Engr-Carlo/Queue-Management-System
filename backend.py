@@ -584,6 +584,54 @@ def delete_all_queues():
         print(f"Error deleting all queues: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
+@app.route('/emergency-audio', methods=['POST'])
+def emergency_audio():
+    """Emergency audio alert endpoint - triggers external sound player"""
+    try:
+        import subprocess
+        import sys
+        
+        data = request.json
+        queue_number = data.get('queue_number', 'Unknown')
+        
+        print(f"🚨 EMERGENCY AUDIO TRIGGERED FOR QUEUE {queue_number}! 🚨")
+        
+        # Try to run the Python emergency audio script
+        try:
+            # Run the emergency audio script in background
+            subprocess.Popen([
+                sys.executable,
+                'emergency_audio.py',
+                str(queue_number)
+            ], cwd=os.path.dirname(os.path.abspath(__file__)))
+            
+            print(f"✅ Emergency audio script launched for queue {queue_number}")
+            return jsonify({
+                "success": True,
+                "message": f"Emergency audio triggered for queue {queue_number}"
+            })
+            
+        except FileNotFoundError:
+            print("❌ emergency_audio.py not found")
+            return jsonify({
+                "success": False,
+                "error": "Emergency audio script not found"
+            }), 404
+            
+        except Exception as script_error:
+            print(f"❌ Emergency audio script error: {script_error}")
+            return jsonify({
+                "success": False,
+                "error": f"Script execution error: {str(script_error)}"
+            }), 500
+            
+    except Exception as e:
+        print(f"❌ Emergency audio endpoint error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Queue Management System API...")
