@@ -1204,6 +1204,7 @@
       let displayStatus = '';
       
       console.log(`🔍 Updating current queue - User: ${userQueueNumber}, Position: ${statusData.position}, Last Completed: ${statusData.last_completed_queue}`);
+      console.log('🔍 Full statusData:', JSON.stringify(statusData, null, 2));
       
       // Method 1: Check if backend provides last_completed_queue (most accurate)
       if (statusData.last_completed_queue) {
@@ -1395,6 +1396,7 @@
 
     // Refresh current queue display specifically
     async function refreshCurrentQueue() {
+      console.log('🔄 Manual refresh triggered');
       const refreshButton = document.querySelector('button[onclick="refreshCurrentQueue()"]');
       const currentQueueNumber = document.getElementById('currentQueueNumber');
       const currentQueueStatus = document.getElementById('currentQueueStatus');
@@ -1409,32 +1411,52 @@
           throw new Error('No queue ID available');
         }
         
+        console.log(`🔄 Fetching data for queue ID: ${queueId}`);
+        console.log(`🔄 API Base URL: ${API_BASE_URL}`);
+        
         // Fetch fresh data from backend
         const queueResponse = await fetch(`${API_BASE_URL}/queue/${queueId}`);
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
+        
+        console.log(`🔄 Queue response status: ${queueResponse.status}`);
+        console.log(`🔄 Status response status: ${statusResponse.status}`);
         
         if (queueResponse.ok && statusResponse.ok) {
           const queueData = await queueResponse.json();
           const statusData = await statusResponse.json();
           
+          console.log('🔄 Queue data:', queueData);
+          console.log('🔄 Status data:', statusData);
+          
           // Get department from queue data
           const department = queueData.number.substring(0, 1);
+          console.log(`🔄 Department: ${department}`);
           
           // Fetch last completed queue specifically
           try {
-            const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
+            const lastCompletedUrl = `${API_BASE_URL}/queue/last-completed/${department}`;
+            console.log(`🔄 Fetching last completed from: ${lastCompletedUrl}`);
+            
+            const lastCompletedResponse = await fetch(lastCompletedUrl);
+            console.log(`🔄 Last completed response status: ${lastCompletedResponse.status}`);
+            
             if (lastCompletedResponse.ok) {
               const lastCompletedData = await lastCompletedResponse.json();
+              console.log('🔄 Last completed data:', lastCompletedData);
+              
               if (lastCompletedData.queue_number) {
                 statusData.last_completed_queue = lastCompletedData.queue_number;
                 console.log(`🔄 Manual refresh: Last completed queue for ${department}: ${lastCompletedData.queue_number}`);
               }
+            } else {
+              console.log(`🔄 Last completed API returned ${lastCompletedResponse.status}`);
             }
           } catch (error) {
             console.log('Could not fetch last completed queue in manual refresh:', error);
           }
           
           // Update current queue display with fresh data
+          console.log('🔄 Updating current queue with fresh data');
           updateCurrentQueue(statusData);
           
           // Success feedback
@@ -1445,7 +1467,7 @@
           }, 1500);
           
         } else {
-          throw new Error('Failed to fetch queue data');
+          throw new Error(`Failed to fetch queue data - Queue: ${queueResponse.status}, Status: ${statusResponse.status}`);
         }
         
       } catch (error) {
@@ -1453,7 +1475,7 @@
         
         // Error feedback
         refreshButton.innerHTML = '❌ Error';
-        currentQueueStatus.textContent = 'Failed to refresh - please try again';
+        currentQueueStatus.textContent = `Failed to refresh: ${error.message}`;
         
         setTimeout(() => {
           refreshButton.innerHTML = '🔄 Refresh';
