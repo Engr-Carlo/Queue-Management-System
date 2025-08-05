@@ -1170,13 +1170,24 @@
       const currentQueueNumber = document.getElementById('currentQueueNumber');
       const currentQueueStatus = document.getElementById('currentQueueStatus');
       
-      // Get user's queue information
-      const userQueueNumber = document.getElementById('queueNumber').textContent;
+      // Get user's queue information with fallback handling
+      const userQueueElement = document.getElementById('queueNumber');
+      const userQueueNumber = userQueueElement ? userQueueElement.textContent : null;
+      
+      if (!userQueueNumber || userQueueNumber === 'A001') {
+        // If we don't have valid user queue data, show loading state
+        currentQueueNumber.textContent = '---';
+        currentQueueStatus.textContent = 'Loading queue information...';
+        return;
+      }
+      
       const prefix = userQueueNumber.substring(0, 1); // Get letter prefix (A, B, C, etc.)
       const userNumber = parseInt(userQueueNumber.substring(1)); // Remove letter prefix and convert to number
       
       let displayNumber = null;
       let displayStatus = '';
+      
+      console.log(`🔍 Updating current queue - User: ${userQueueNumber}, Position: ${statusData.position}, Last Completed: ${statusData.last_completed_queue}`);
       
       // Method 1: Check if backend provides last_completed_queue (most accurate)
       if (statusData.last_completed_queue) {
@@ -1187,16 +1198,19 @@
         if (statusData.position === 1) {
           displayStatus = '✅ Last completed - You are NEXT!';
         }
+        console.log(`✅ Using last completed queue: ${displayNumber}`);
       }
       // Method 2: Check if backend provides current_serving
       else if (statusData.current_serving) {
         displayNumber = statusData.current_serving;
         displayStatus = '🔄 Currently being served';
+        console.log(`🔄 Using current serving: ${displayNumber}`);
       }
       // Method 3: If user is being called, show their number as current
       else if (statusData.is_called) {
         displayNumber = userQueueNumber;
         displayStatus = '📢 YOU are being called NOW!';
+        console.log(`📢 User is being called: ${displayNumber}`);
       }
       // Method 4: Calculate based on user's position - show what should be currently active
       else if (statusData.position && statusData.position > 0) {
@@ -1205,11 +1219,13 @@
           const estimatedCurrent = Math.max(1, userNumber - 1);
           displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
           displayStatus = '🎯 You are NEXT in line!';
+          console.log(`🎯 User is next, estimated current: ${displayNumber}`);
         } else {
           // Calculate estimated current queue: user's number minus their position plus 1
           const estimatedCurrent = Math.max(1, userNumber - statusData.position + 1);
           displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
           displayStatus = `📊 Estimated current (${statusData.position - 1} ahead of you)`;
+          console.log(`📊 Calculated current based on position: ${displayNumber}`);
         }
       }
       // Method 5: Use admin status as fallback
@@ -1218,23 +1234,26 @@
         const estimatedCurrent = Math.max(1, userNumber - 5);
         displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
         displayStatus = '🔄 Admin is currently processing';
+        console.log(`🔄 Admin busy fallback: ${displayNumber}`);
       }
       else if (statusData.admin_status === 'available') {
         // If admin is available, they might be ready for the user or close to it
         const estimatedCurrent = Math.max(1, userNumber - 2);
         displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
         displayStatus = '✅ Admin is available - your turn soon!';
+        console.log(`✅ Admin available fallback: ${displayNumber}`);
       }
       // Method 6: Simple fallback - show a number below user's number
       else {
         const estimatedCurrent = Math.max(1, userNumber - 10);
         displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
         displayStatus = '⏳ Queue is progressing...';
+        console.log(`⏳ Default fallback: ${displayNumber}`);
       }
       
       // Update the display with animation if number changed
       const currentDisplayedNumber = currentQueueNumber.textContent;
-      if (currentDisplayedNumber !== displayNumber) {
+      if (currentDisplayedNumber !== displayNumber && displayNumber) {
         // Add a brief highlight animation when the number changes
         currentQueueNumber.style.animation = 'pulse 0.5s ease-in-out';
         setTimeout(() => {
@@ -1397,6 +1416,14 @@
       if (!queueId) return;
       
       try {
+        // First, fetch the queue data to ensure we have the user's queue information
+        const queueResponse = await fetch(`${API_BASE_URL}/queue/${queueId}`);
+        let queueData = null;
+        
+        if (queueResponse.ok) {
+          queueData = await queueResponse.json();
+        }
+        
         // Get real-time status
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         if (statusResponse.ok) {
@@ -1404,13 +1431,27 @@
           
           // Try to get the last completed queue for real-time updates
           try {
-            const userQueueNumber = document.getElementById('queueNumber').textContent;
-            const department = userQueueNumber.substring(0, 1); // Get department prefix
-            const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
-            if (lastCompletedResponse.ok) {
-              const lastCompletedData = await lastCompletedResponse.json();
-              if (lastCompletedData.queue_number) {
-                statusData.last_completed_queue = lastCompletedData.queue_number;
+            let department = null;
+            
+            // First try to get department from queue data
+            if (queueData && queueData.number) {
+              department = queueData.number.substring(0, 1);
+            } else {
+              // Fallback: get from existing display element
+              const userQueueNumber = document.getElementById('queueNumber').textContent;
+              if (userQueueNumber && userQueueNumber !== 'A001') {
+                department = userQueueNumber.substring(0, 1);
+              }
+            }
+            
+            if (department) {
+              const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
+              if (lastCompletedResponse.ok) {
+                const lastCompletedData = await lastCompletedResponse.json();
+                if (lastCompletedData.queue_number) {
+                  statusData.last_completed_queue = lastCompletedData.queue_number;
+                  console.log(`🔄 Silent update: Last completed queue for ${department}: ${lastCompletedData.queue_number}`);
+                }
               }
             }
           } catch (error) {
