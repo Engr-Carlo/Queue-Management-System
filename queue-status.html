@@ -152,6 +152,39 @@
       border: 2px solid rgba(239, 68, 68, 0.3);
     }
 
+    .current-queue-section {
+      background: rgba(59, 130, 246, 0.1);
+      border: 2px solid rgba(59, 130, 246, 0.3);
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+
+    .current-queue-label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1d4ed8;
+      margin: 0 0 10px 0;
+    }
+
+    .current-queue-number {
+      font-size: 2.5rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .current-queue-status {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin: 5px 0 0 0;
+    }
+
     .countdown-timer {
       font-size: 2.5rem;
       font-weight: 800;
@@ -447,6 +480,13 @@
         <div class="queue-number">
           <div class="queue-number-display" id="queueNumber">A001</div>
           <div class="queue-status status-waiting" id="queueStatus">Waiting</div>
+        </div>
+        
+        <!-- Current Queue Being Processed -->
+        <div class="current-queue-section">
+          <div class="current-queue-label">📍 Currently Being Processed</div>
+          <div class="current-queue-number" id="currentQueueNumber">A001</div>
+          <div class="current-queue-status" id="currentQueueStatus">Processing in office...</div>
         </div>
         
         <div class="queue-details">
@@ -1031,6 +1071,9 @@
       statusElement.textContent = statusData.status.text;
       statusElement.className = `queue-status ${statusData.status.class}`;
       
+      // Update current queue being processed
+      updateCurrentQueue(statusData);
+      
       // Check if queue is completed or cleared - show feedback button
       if (statusData.status.class === 'status-completed' || statusData.is_cleared) {
         showFeedbackButton();
@@ -1106,6 +1149,29 @@
       
       // Update last called status for next comparison
       lastCalledStatus = statusData.is_called;
+    }
+
+    // Update current queue being processed display
+    function updateCurrentQueue(statusData) {
+      const currentQueueNumber = document.getElementById('currentQueueNumber');
+      const currentQueueStatus = document.getElementById('currentQueueStatus');
+      
+      if (statusData.current_queue && statusData.current_queue.number) {
+        // Show the current queue being processed
+        currentQueueNumber.textContent = statusData.current_queue.number;
+        
+        if (statusData.current_queue.status === 'processing') {
+          currentQueueStatus.textContent = '🔄 Processing in office...';
+        } else if (statusData.current_queue.status === 'called') {
+          currentQueueStatus.textContent = '📢 Called - waiting for response';
+        } else {
+          currentQueueStatus.textContent = 'In progress...';
+        }
+      } else {
+        // No current queue or waiting for next
+        currentQueueNumber.textContent = '---';
+        currentQueueStatus.textContent = '⏳ Waiting for next queue...';
+      }
     }
 
     // Show feedback button when transaction is completed
@@ -1260,6 +1326,9 @@
           const statusElement = document.getElementById('queueStatus');
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
+          
+          // Update current queue being processed
+          updateCurrentQueue(statusData);
           
           // Handle called status with vibration
           if (isCalledNow) {
