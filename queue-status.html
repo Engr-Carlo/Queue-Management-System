@@ -402,24 +402,22 @@
     
     /* Developer Credit Footer */
     .developer-credit {
-      position: fixed;
-      bottom: 10px;
-      right: 15px;
+      text-align: center;
       font-size: 0.95rem;
       color: #6b7280;
       opacity: 0.6;
-      z-index: 1001;
-      pointer-events: none;
+      margin-top: 20px;
+      padding: 15px 0;
       font-family: 'Inter', sans-serif;
       font-weight: 400;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      border-top: 1px solid rgba(107, 114, 128, 0.2);
     }
     
     @media (max-width: 768px) {
       .developer-credit {
         font-size: 0.85rem;
-        bottom: 8px;
-        right: 12px;
+        padding: 12px 0;
       }
     }
   </style>
@@ -494,12 +492,22 @@
         <div class="last-updated">
           Last updated: <span id="lastUpdated">Just now</span>
         </div>
+        
+        <!-- Developer Credit -->
+        <div class="developer-credit">
+          Developed By: Engr. Carlo Cimacio
+        </div>
       </div>
       
       <div id="errorArea" class="error-message" style="display: none;">
         <h3>❌ Queue Not Found</h3>
         <p>Sorry, we couldn't find your queue. The queue may have expired or the link is invalid.</p>
         <button class="refresh-btn" onclick="window.location.reload()">Try Again</button>
+        
+        <!-- Developer Credit -->
+        <div class="developer-credit">
+          Developed By: Engr. Carlo Cimacio
+        </div>
       </div>
     </div>
   </div>
@@ -1023,11 +1031,9 @@
       statusElement.textContent = statusData.status.text;
       statusElement.className = `queue-status ${statusData.status.class}`;
       
-      // Check if queue is completed or cleared - redirect to feedback
+      // Check if queue is completed or cleared - show feedback button
       if (statusData.status.class === 'status-completed' || statusData.is_cleared) {
-        setTimeout(() => {
-          showCompletionMessage();
-        }, 1000);
+        showFeedbackButton();
         return;
       }
       
@@ -1102,95 +1108,62 @@
       lastCalledStatus = statusData.is_called;
     }
 
-    // Show completion message and redirect to feedback
-    function showCompletionMessage() {
+    // Show feedback button when transaction is completed
+    function showFeedbackButton() {
       // Stop auto refresh
       if (autoRefreshInterval) {
         clearInterval(autoRefreshInterval);
         autoRefreshInterval = null;
       }
       
-      // Create completion overlay
-      const completionOverlay = document.createElement('div');
-      completionOverlay.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, #10b981, #059669);
-        z-index: 10000;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-family: 'Inter', sans-serif;
+      // Update status to show completion
+      const statusElement = document.getElementById('queueStatus');
+      statusElement.textContent = '✅ Completed';
+      statusElement.className = 'queue-status status-completed';
+      
+      // Update estimated time section to show completion message
+      const estimatedTimeSection = document.querySelector('.estimated-time');
+      estimatedTimeSection.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+      estimatedTimeSection.querySelector('h3').textContent = '🎉 Transaction Complete!';
+      estimatedTimeSection.querySelector('.time').textContent = 'Your transaction has been processed successfully';
+      
+      // Add feedback button to the page
+      const feedbackButtonContainer = document.createElement('div');
+      feedbackButtonContainer.style.cssText = `
+        margin: 20px 0;
         text-align: center;
-        animation: slideIn 0.5s ease-out;
+        padding: 20px;
+        background: rgba(16, 185, 129, 0.1);
+        border-radius: 15px;
+        border: 2px solid rgba(16, 185, 129, 0.3);
       `;
       
-      completionOverlay.innerHTML = `
-        <div style="max-width: 400px; padding: 40px;">
-          <div style="font-size: 4rem; margin-bottom: 20px; animation: bounce 2s infinite;">✅</div>
-          <h2 style="font-size: 2rem; font-weight: 700; margin: 0 0 15px 0;">Transaction Complete!</h2>
-          <p style="font-size: 1.2rem; margin: 0 0 30px 0; opacity: 0.9;">
-            Thank you for using our Queue Management System. Your transaction has been processed successfully.
-          </p>
-          <div style="background: rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; margin: 20px 0;">
-            <p style="font-size: 1rem; margin: 0 0 10px 0;">
-              🌟 Help us improve our service
-            </p>
-            <p style="font-size: 0.9rem; margin: 0; opacity: 0.8;">
-              You will be redirected to our feedback form in <span id="redirectCountdown">5</span> seconds
-            </p>
-          </div>
-          <button onclick="redirectToFeedback()" style="
-            background: rgba(255, 255, 255, 0.2);
-            border: 2px solid rgba(255, 255, 255, 0.5);
-            color: white;
-            border-radius: 10px;
-            padding: 12px 25px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 20px;
-          " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
-            Give Feedback Now
-          </button>
-        </div>
+      feedbackButtonContainer.innerHTML = `
+        <h4 style="margin: 0 0 15px 0; color: #059669; font-size: 1.2rem; font-weight: 600;">
+          🌟 Help Us Improve
+        </h4>
+        <p style="margin: 0 0 20px 0; color: #6b7280; font-size: 1rem;">
+          Share your experience to help us serve you better
+        </p>
+        <button onclick="redirectToFeedback()" style="
+          background: linear-gradient(135deg, #10b981, #059669);
+          color: white;
+          border: none;
+          border-radius: 10px;
+          padding: 15px 30px;
+          font-size: 1.1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(16, 185, 129, 0.4)'" 
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16, 185, 129, 0.3)'">
+          📝 Go to Feedback
+        </button>
       `;
       
-      // Add animation styles
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(100%); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes bounce {
-          0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-          40% { transform: translateY(-10px); }
-          60% { transform: translateY(-5px); }
-        }
-      `;
-      document.head.appendChild(style);
-      document.body.appendChild(completionOverlay);
-      
-      // Start countdown
-      let countdown = 5;
-      const countdownElement = document.getElementById('redirectCountdown');
-      const countdownInterval = setInterval(() => {
-        countdown--;
-        if (countdownElement) {
-          countdownElement.textContent = countdown;
-        }
-        if (countdown <= 0) {
-          clearInterval(countdownInterval);
-          redirectToFeedback();
-        }
-      }, 1000);
+      // Insert the feedback button after the estimated time section
+      estimatedTimeSection.parentNode.insertBefore(feedbackButtonContainer, estimatedTimeSection.nextSibling);
     }
 
     // Redirect to feedback website
@@ -1273,9 +1246,9 @@
           const wasCalledBefore = lastCalledStatus;
           const isCalledNow = statusData.is_called;
           
-          // Check if queue is completed or cleared - redirect to feedback
+          // Check if queue is completed or cleared - show feedback button
           if (statusData.status.class === 'status-completed' || statusData.is_cleared) {
-            showCompletionMessage();
+            showFeedbackButton();
             return;
           }
           
@@ -1418,10 +1391,5 @@
       pullDistance = 0;
     });
   </script>
-  
-  <!-- Developer Credit -->
-  <div class="developer-credit">
-    Developed By: Engr. Carlo Cimacio
-  </div>
 </body>
 </html>
