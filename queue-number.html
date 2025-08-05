@@ -437,6 +437,29 @@
         height: 80px;
       }
     }
+    
+    /* Developer Credit Footer */
+    .developer-credit {
+      position: fixed;
+      bottom: 10px;
+      right: 15px;
+      font-size: 0.8rem;
+      color: #6b7280;
+      opacity: 0.6;
+      z-index: 1001;
+      pointer-events: none;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+      .developer-credit {
+        font-size: 0.7rem;
+        bottom: 8px;
+        right: 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -510,6 +533,11 @@
       <div id="printQrcode" style="margin: 20px 0;"></div>
       <p style="font-size: 0.9rem; margin: 10px 0;">Scan QR code to track your queue status</p>
     </div>
+  </div>
+  
+  <!-- Developer Credit -->
+  <div class="developer-credit">
+    Developed By: Engr. Carlo Cimacio
   </div>
   
   <script>
