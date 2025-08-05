@@ -1178,29 +1178,41 @@
       let displayNumber = null;
       let displayStatus = '';
       
-      // Method 1: Check if backend provides last_completed_queue
+      // Method 1: Check if backend provides last_completed_queue (most accurate)
       if (statusData.last_completed_queue) {
         displayNumber = statusData.last_completed_queue;
         displayStatus = '✅ Last completed queue';
+        
+        // If user's position is 1, they should be next after the last completed
+        if (statusData.position === 1) {
+          displayStatus = '✅ Last completed - You are NEXT!';
+        }
       }
       // Method 2: Check if backend provides current_serving
       else if (statusData.current_serving) {
         displayNumber = statusData.current_serving;
         displayStatus = '🔄 Currently being served';
       }
-      // Method 3: Calculate based on user's position - show what should be currently active
+      // Method 3: If user is being called, show their number as current
+      else if (statusData.is_called) {
+        displayNumber = userQueueNumber;
+        displayStatus = '📢 YOU are being called NOW!';
+      }
+      // Method 4: Calculate based on user's position - show what should be currently active
       else if (statusData.position && statusData.position > 0) {
         if (statusData.position === 1) {
-          displayNumber = userQueueNumber;
-          displayStatus = '🎯 You are next in line!';
+          // User is next, so show the number just before them
+          const estimatedCurrent = Math.max(1, userNumber - 1);
+          displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+          displayStatus = '🎯 You are NEXT in line!';
         } else {
           // Calculate estimated current queue: user's number minus their position plus 1
           const estimatedCurrent = Math.max(1, userNumber - statusData.position + 1);
           displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-          displayStatus = `📊 Estimated current queue (${statusData.position - 1} ahead of you)`;
+          displayStatus = `📊 Estimated current (${statusData.position - 1} ahead of you)`;
         }
       }
-      // Method 4: Use admin status as fallback
+      // Method 5: Use admin status as fallback
       else if (statusData.admin_status === 'busy') {
         // If admin is busy, show a number slightly below user's number
         const estimatedCurrent = Math.max(1, userNumber - 5);
@@ -1213,26 +1225,44 @@
         displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
         displayStatus = '✅ Admin is available - your turn soon!';
       }
-      // Method 5: Simple fallback - show a number below user's number
+      // Method 6: Simple fallback - show a number below user's number
       else {
         const estimatedCurrent = Math.max(1, userNumber - 10);
         displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
         displayStatus = '⏳ Queue is progressing...';
       }
       
-      // Update the display
+      // Update the display with animation if number changed
+      const currentDisplayedNumber = currentQueueNumber.textContent;
+      if (currentDisplayedNumber !== displayNumber) {
+        // Add a brief highlight animation when the number changes
+        currentQueueNumber.style.animation = 'pulse 0.5s ease-in-out';
+        setTimeout(() => {
+          currentQueueNumber.style.animation = '';
+        }, 500);
+        
+        console.log(`🔄 Current queue updated: ${currentDisplayedNumber} → ${displayNumber}`);
+      }
+      
       currentQueueNumber.textContent = displayNumber || '---';
       currentQueueStatus.textContent = displayStatus || 'Checking queue status...';
       
-      // Add some visual feedback based on how close user is
+      // Add visual feedback based on how close user is and if they're being called
       const currentQueueSection = document.querySelector('.current-queue-section');
-      if (statusData.position === 1) {
+      if (statusData.is_called) {
+        // User is being called - make it red/urgent
+        currentQueueSection.style.background = 'rgba(239, 68, 68, 0.1)';
+        currentQueueSection.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+      } else if (statusData.position === 1) {
+        // User is next - make it green
         currentQueueSection.style.background = 'rgba(34, 197, 94, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(34, 197, 94, 0.3)';
       } else if (statusData.position <= 3) {
+        // User is in top 3 - make it yellow
         currentQueueSection.style.background = 'rgba(245, 158, 11, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(245, 158, 11, 0.3)';
       } else {
+        // Normal waiting - blue
         currentQueueSection.style.background = 'rgba(59, 130, 246, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(59, 130, 246, 0.3)';
       }
@@ -1372,6 +1402,21 @@
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
           
+          // Try to get the last completed queue for real-time updates
+          try {
+            const userQueueNumber = document.getElementById('queueNumber').textContent;
+            const department = userQueueNumber.substring(0, 1); // Get department prefix
+            const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
+            if (lastCompletedResponse.ok) {
+              const lastCompletedData = await lastCompletedResponse.json();
+              if (lastCompletedData.queue_number) {
+                statusData.last_completed_queue = lastCompletedData.queue_number;
+              }
+            }
+          } catch (error) {
+            console.log('Could not fetch last completed queue in silent update:', error);
+          }
+          
           // Store previous called status to detect changes
           const wasCalledBefore = lastCalledStatus;
           const isCalledNow = statusData.is_called;
@@ -1391,7 +1436,7 @@
           statusElement.textContent = statusData.status.text;
           statusElement.className = `queue-status ${statusData.status.class}`;
           
-          // Update current queue being processed
+          // IMPORTANT: Update current queue being processed in real-time
           updateCurrentQueue(statusData);
           
           // Handle called status with vibration
