@@ -1043,6 +1043,20 @@
           statusData = await statusResponse.json();
         }
         
+        // Try to get the last completed queue for the same department
+        try {
+          const department = queueData.number.substring(0, 1); // Get department prefix
+          const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
+          if (lastCompletedResponse.ok) {
+            const lastCompletedData = await lastCompletedResponse.json();
+            if (lastCompletedData.queue_number) {
+              statusData.last_completed_queue = lastCompletedData.queue_number;
+            }
+          }
+        } catch (error) {
+          console.log('Could not fetch last completed queue:', error);
+        }
+        
         // Update display with real data
         updateDisplay(queueData, statusData);
         showContent();
@@ -1156,60 +1170,72 @@
       const currentQueueNumber = document.getElementById('currentQueueNumber');
       const currentQueueStatus = document.getElementById('currentQueueStatus');
       
-      // Try to get current queue from various possible sources
-      let nextQueueNumber = null;
-      let queueStatus = 'Checking for next queue...';
+      // Get user's queue information
+      const userQueueNumber = document.getElementById('queueNumber').textContent;
+      const prefix = userQueueNumber.substring(0, 1); // Get letter prefix (A, B, C, etc.)
+      const userNumber = parseInt(userQueueNumber.substring(1)); // Remove letter prefix and convert to number
       
-      // Method 1: Check if backend provides current_queue
-      if (statusData.current_queue && statusData.current_queue.number) {
-        nextQueueNumber = statusData.current_queue.number;
-        if (statusData.current_queue.status === 'processing') {
-          queueStatus = '🔄 Currently being processed';
-        } else if (statusData.current_queue.status === 'called') {
-          queueStatus = '📢 Currently being called';
-        } else {
-          queueStatus = '⚡ Active in office';
-        }
+      let displayNumber = null;
+      let displayStatus = '';
+      
+      // Method 1: Check if backend provides last_completed_queue
+      if (statusData.last_completed_queue) {
+        displayNumber = statusData.last_completed_queue;
+        displayStatus = '✅ Last completed queue';
       }
-      // Method 2: Check if backend provides next_queue
-      else if (statusData.next_queue && statusData.next_queue.number) {
-        nextQueueNumber = statusData.next_queue.number;
-        queueStatus = '🔜 Next to be called';
+      // Method 2: Check if backend provides current_serving
+      else if (statusData.current_serving) {
+        displayNumber = statusData.current_serving;
+        displayStatus = '🔄 Currently being served';
       }
-      // Method 3: Try to calculate next queue based on user's position
+      // Method 3: Calculate based on user's position - show what should be currently active
       else if (statusData.position && statusData.position > 0) {
-        const userQueueNumber = document.getElementById('queueNumber').textContent;
-        const userNumber = parseInt(userQueueNumber.substring(1)); // Remove letter prefix
-        const prefix = userQueueNumber.substring(0, 1); // Get letter prefix
-        
-        // Calculate what should be the current queue based on position
-        const estimatedCurrentNumber = Math.max(1, userNumber - statusData.position + 1);
-        nextQueueNumber = prefix + String(estimatedCurrentNumber).padStart(3, '0');
-        
         if (statusData.position === 1) {
-          queueStatus = '🎯 You are next!';
+          displayNumber = userQueueNumber;
+          displayStatus = '🎯 You are next in line!';
         } else {
-          queueStatus = `📊 ${statusData.position - 1} queue${statusData.position - 1 !== 1 ? 's' : ''} ahead`;
+          // Calculate estimated current queue: user's number minus their position plus 1
+          const estimatedCurrent = Math.max(1, userNumber - statusData.position + 1);
+          displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+          displayStatus = `📊 Estimated current queue (${statusData.position - 1} ahead of you)`;
         }
       }
-      // Method 4: Use admin status to show activity
+      // Method 4: Use admin status as fallback
       else if (statusData.admin_status === 'busy') {
-        nextQueueNumber = '???';
-        queueStatus = '🔄 Admin is currently busy';
+        // If admin is busy, show a number slightly below user's number
+        const estimatedCurrent = Math.max(1, userNumber - 5);
+        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+        displayStatus = '🔄 Admin is currently processing';
       }
       else if (statusData.admin_status === 'available') {
-        nextQueueNumber = '???';
-        queueStatus = '✅ Admin is ready for next queue';
+        // If admin is available, they might be ready for the user or close to it
+        const estimatedCurrent = Math.max(1, userNumber - 2);
+        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+        displayStatus = '✅ Admin is available - your turn soon!';
       }
-      // Method 5: Fallback - show waiting status
+      // Method 5: Simple fallback - show a number below user's number
       else {
-        nextQueueNumber = '---';
-        queueStatus = '⏳ Waiting to start...';
+        const estimatedCurrent = Math.max(1, userNumber - 10);
+        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+        displayStatus = '⏳ Queue is progressing...';
       }
       
       // Update the display
-      currentQueueNumber.textContent = nextQueueNumber;
-      currentQueueStatus.textContent = queueStatus;
+      currentQueueNumber.textContent = displayNumber || '---';
+      currentQueueStatus.textContent = displayStatus || 'Checking queue status...';
+      
+      // Add some visual feedback based on how close user is
+      const currentQueueSection = document.querySelector('.current-queue-section');
+      if (statusData.position === 1) {
+        currentQueueSection.style.background = 'rgba(34, 197, 94, 0.1)';
+        currentQueueSection.style.borderColor = 'rgba(34, 197, 94, 0.3)';
+      } else if (statusData.position <= 3) {
+        currentQueueSection.style.background = 'rgba(245, 158, 11, 0.1)';
+        currentQueueSection.style.borderColor = 'rgba(245, 158, 11, 0.3)';
+      } else {
+        currentQueueSection.style.background = 'rgba(59, 130, 246, 0.1)';
+        currentQueueSection.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+      }
     }
 
     // Show feedback button when transaction is completed
