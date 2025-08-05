@@ -484,7 +484,23 @@
         
         <!-- Current Queue Being Processed -->
         <div class="current-queue-section">
-          <div class="current-queue-label">🔝 Next in Line</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div class="current-queue-label">🔝 Next in Line</div>
+            <button onclick="refreshCurrentQueue()" style="
+              background: rgba(59, 130, 246, 0.2);
+              border: 1px solid rgba(59, 130, 246, 0.4);
+              border-radius: 8px;
+              padding: 6px 12px;
+              font-size: 0.85rem;
+              color: #1d4ed8;
+              cursor: pointer;
+              transition: all 0.2s ease;
+              font-weight: 500;
+            " onmouseover="this.style.background='rgba(59, 130, 246, 0.3)'; this.style.transform='scale(1.05)'" 
+               onmouseout="this.style.background='rgba(59, 130, 246, 0.2)'; this.style.transform='scale(1)'">
+              🔄 Refresh
+            </button>
+          </div>
           <div class="current-queue-number" id="currentQueueNumber">A001</div>
           <div class="current-queue-status" id="currentQueueStatus">Preparing to call...</div>
         </div>
@@ -1374,6 +1390,75 @@
         default:
           adminStatusElement.classList.add('admin-available');
           adminStatusText.textContent = '🟢 Available';
+      }
+    }
+
+    // Refresh current queue display specifically
+    async function refreshCurrentQueue() {
+      const refreshButton = document.querySelector('button[onclick="refreshCurrentQueue()"]');
+      const currentQueueNumber = document.getElementById('currentQueueNumber');
+      const currentQueueStatus = document.getElementById('currentQueueStatus');
+      
+      // Show loading state
+      refreshButton.innerHTML = '⏳ Loading...';
+      refreshButton.disabled = true;
+      currentQueueStatus.textContent = 'Refreshing current queue...';
+      
+      try {
+        if (!queueId) {
+          throw new Error('No queue ID available');
+        }
+        
+        // Fetch fresh data from backend
+        const queueResponse = await fetch(`${API_BASE_URL}/queue/${queueId}`);
+        const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
+        
+        if (queueResponse.ok && statusResponse.ok) {
+          const queueData = await queueResponse.json();
+          const statusData = await statusResponse.json();
+          
+          // Get department from queue data
+          const department = queueData.number.substring(0, 1);
+          
+          // Fetch last completed queue specifically
+          try {
+            const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
+            if (lastCompletedResponse.ok) {
+              const lastCompletedData = await lastCompletedResponse.json();
+              if (lastCompletedData.queue_number) {
+                statusData.last_completed_queue = lastCompletedData.queue_number;
+                console.log(`🔄 Manual refresh: Last completed queue for ${department}: ${lastCompletedData.queue_number}`);
+              }
+            }
+          } catch (error) {
+            console.log('Could not fetch last completed queue in manual refresh:', error);
+          }
+          
+          // Update current queue display with fresh data
+          updateCurrentQueue(statusData);
+          
+          // Success feedback
+          refreshButton.innerHTML = '✅ Updated';
+          setTimeout(() => {
+            refreshButton.innerHTML = '🔄 Refresh';
+            refreshButton.disabled = false;
+          }, 1500);
+          
+        } else {
+          throw new Error('Failed to fetch queue data');
+        }
+        
+      } catch (error) {
+        console.error('Error refreshing current queue:', error);
+        
+        // Error feedback
+        refreshButton.innerHTML = '❌ Error';
+        currentQueueStatus.textContent = 'Failed to refresh - please try again';
+        
+        setTimeout(() => {
+          refreshButton.innerHTML = '🔄 Refresh';
+          refreshButton.disabled = false;
+        }, 2000);
       }
     }
 
