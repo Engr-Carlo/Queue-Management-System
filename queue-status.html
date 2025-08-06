@@ -485,7 +485,7 @@
         <!-- Current Queue Being Processed -->
         <div class="current-queue-section">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <div class="current-queue-label">🔝 Next in Line</div>
+            <div class="current-queue-label">🔄 Current Queue Being Processed</div>
             <button onclick="refreshCurrentQueue()" style="
               background: rgba(59, 130, 246, 0.2);
               border: 1px solid rgba(59, 130, 246, 0.4);
@@ -501,8 +501,8 @@
               🔄 Refresh
             </button>
           </div>
-          <div class="current-queue-number" id="currentQueueNumber">A001</div>
-          <div class="current-queue-status" id="currentQueueStatus">Preparing to call...</div>
+          <div class="current-queue-number" id="currentQueueNumber">---</div>
+          <div class="current-queue-status" id="currentQueueStatus">Loading current queue...</div>
         </div>
         
         <div class="queue-details">
@@ -1181,8 +1181,8 @@
       lastCalledStatus = statusData.is_called;
     }
 
-    // Update current queue being processed display
-    function updateCurrentQueue(statusData) {
+    // Update current queue being processed display - AGGRESSIVE APPROACH
+    async function updateCurrentQueue(statusData) {
       const currentQueueNumber = document.getElementById('currentQueueNumber');
       const currentQueueStatus = document.getElementById('currentQueueStatus');
       
@@ -1191,125 +1191,195 @@
       const userQueueNumber = userQueueElement ? userQueueElement.textContent : null;
       
       if (!userQueueNumber || userQueueNumber === 'A001') {
-        // If we don't have valid user queue data, show loading state
         currentQueueNumber.textContent = '---';
         currentQueueStatus.textContent = 'Loading queue information...';
         return;
       }
       
-      const prefix = userQueueNumber.substring(0, 1); // Get letter prefix (A, B, C, etc.)
-      const userNumber = parseInt(userQueueNumber.substring(1)); // Remove letter prefix and convert to number
+      const prefix = userQueueNumber.substring(0, 1);
+      const userNumber = parseInt(userQueueNumber.substring(1));
+      
+      console.log(`🚀 AGGRESSIVE CURRENT QUEUE UPDATE - User: ${userQueueNumber}, Prefix: ${prefix}`);
       
       let displayNumber = null;
       let displayStatus = '';
+      let dataSource = '';
       
-      console.log(`🔍 Updating current queue - User: ${userQueueNumber}, Position: ${statusData.position}, Last Completed: ${statusData.last_completed_queue}`);
-      console.log('🔍 Full statusData:', JSON.stringify(statusData, null, 2));
-      
-      // Method 1: Check if backend provides last_completed_queue (most accurate)
-      if (statusData.last_completed_queue) {
-        displayNumber = statusData.last_completed_queue;
-        displayStatus = '✅ Last completed queue';
+      try {
+        // METHOD 1: Get currently being processed queue from dedicated endpoint
+        try {
+          console.log(`🎯 Trying dedicated current queue endpoint for department ${prefix}`);
+          const currentQueueResponse = await fetch(`${API_BASE_URL}/queue/current-processing/${prefix}`);
+          if (currentQueueResponse.ok) {
+            const currentData = await currentQueueResponse.json();
+            if (currentData.current_queue) {
+              displayNumber = currentData.current_queue;
+              displayStatus = '🔄 Currently being processed';
+              dataSource = 'Dedicated API';
+              console.log(`✅ METHOD 1 SUCCESS: ${displayNumber} from dedicated endpoint`);
+            }
+          } else {
+            console.log(`❌ METHOD 1 FAILED: Current queue endpoint returned ${currentQueueResponse.status}`);
+          }
+        } catch (error) {
+          console.log(`❌ METHOD 1 ERROR: ${error.message}`);
+        }
         
-        // If user's position is 1, they should be next after the last completed
-        if (statusData.position === 1) {
-          displayStatus = '✅ Last completed - You are NEXT!';
+        // METHOD 2: Get from admin dashboard active queues (if METHOD 1 failed)
+        if (!displayNumber) {
+          try {
+            console.log(`🎯 Trying admin active queues endpoint for department ${prefix}`);
+            const adminQueueResponse = await fetch(`${API_BASE_URL}/admin/queue/${getDepartmentFromPrefix(prefix)}`);
+            if (adminQueueResponse.ok) {
+              const adminQueues = await adminQueueResponse.json();
+              const calledQueue = adminQueues.find(q => q.status === 'called');
+              if (calledQueue) {
+                displayNumber = calledQueue.number;
+                displayStatus = '📢 Currently being called';
+                dataSource = 'Admin API (Called)';
+                console.log(`✅ METHOD 2 SUCCESS: ${displayNumber} from admin API (called queue)`);
+              } else if (adminQueues.length > 0) {
+                // Get the first queue in line
+                displayNumber = adminQueues[0].number;
+                displayStatus = '⏳ Next in processing';
+                dataSource = 'Admin API (First)';
+                console.log(`✅ METHOD 2 SUCCESS: ${displayNumber} from admin API (first queue)`);
+              }
+            } else {
+              console.log(`❌ METHOD 2 FAILED: Admin queue endpoint returned ${adminQueueResponse.status}`);
+            }
+          } catch (error) {
+            console.log(`❌ METHOD 2 ERROR: ${error.message}`);
+          }
         }
-        console.log(`✅ Using last completed queue: ${displayNumber}`);
-      }
-      // Method 2: Check if backend provides current_serving
-      else if (statusData.current_serving) {
-        displayNumber = statusData.current_serving;
-        displayStatus = '🔄 Currently being served';
-        console.log(`🔄 Using current serving: ${displayNumber}`);
-      }
-      // Method 3: If user is being called, show their number as current
-      else if (statusData.is_called) {
-        displayNumber = userQueueNumber;
-        displayStatus = '📢 YOU are being called NOW!';
-        console.log(`📢 User is being called: ${displayNumber}`);
-      }
-      // Method 4: Calculate based on user's position - show what should be currently active
-      else if (statusData.position && statusData.position > 0 && !isNaN(statusData.position)) {
-        if (statusData.position === 1) {
-          // User is next, so show the number just before them
-          const estimatedCurrent = Math.max(1, userNumber - 1);
-          displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-          displayStatus = '🎯 You are NEXT in line!';
-          console.log(`🎯 User is next, estimated current: ${displayNumber}`);
-        } else {
-          // Calculate estimated current queue: user's number minus their position plus 1
-          const estimatedCurrent = Math.max(1, userNumber - statusData.position + 1);
-          displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-          displayStatus = `📊 Estimated current (${statusData.position - 1} ahead of you)`;
-          console.log(`📊 Calculated current based on position: ${displayNumber}`);
+        
+        // METHOD 3: Get last completed + 1 (if METHOD 1 & 2 failed)
+        if (!displayNumber && statusData.last_completed_queue) {
+          try {
+            console.log(`🎯 Using last completed queue: ${statusData.last_completed_queue}`);
+            const lastCompletedNum = parseInt(statusData.last_completed_queue.substring(1));
+            const nextNumber = lastCompletedNum + 1;
+            displayNumber = prefix + String(nextNumber).padStart(3, '0');
+            displayStatus = '📊 Estimated current (last completed + 1)';
+            dataSource = 'Last Completed + 1';
+            console.log(`✅ METHOD 3 SUCCESS: ${displayNumber} from last completed calculation`);
+          } catch (error) {
+            console.log(`❌ METHOD 3 ERROR: ${error.message}`);
+          }
         }
-      }
-      // Method 5: If position is undefined or invalid, use queue number-based estimation
-      else if (!statusData.position || statusData.position === undefined || isNaN(statusData.position)) {
-        // Estimate based on queue number - assume we're somewhere in the middle of processing
-        const estimatedCurrent = Math.max(1, userNumber - Math.floor(userNumber * 0.3));
-        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-        displayStatus = '📊 Estimated current (calculating position...)';
-        console.log(`📊 Position undefined, using number-based estimation: ${displayNumber}`);
-      }
-      // Method 6: Use admin status as fallback
-      else if (statusData.admin_status === 'busy') {
-        // If admin is busy, show a number slightly below user's number
-        const estimatedCurrent = Math.max(1, userNumber - 5);
-        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-        displayStatus = '🔄 Admin is currently processing';
-        console.log(`🔄 Admin busy fallback: ${displayNumber}`);
-      }
-      else if (statusData.admin_status === 'available') {
-        // If admin is available, they might be ready for the user or close to it
-        const estimatedCurrent = Math.max(1, userNumber - 2);
-        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-        displayStatus = '✅ Admin is available - your turn soon!';
-        console.log(`✅ Admin available fallback: ${displayNumber}`);
-      }
-      // Method 6: Simple fallback - show a number below user's number
-      else {
-        const estimatedCurrent = Math.max(1, userNumber - 10);
-        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-        displayStatus = '⏳ Queue is progressing...';
-        console.log(`⏳ Default fallback: ${displayNumber}`);
+        
+        // METHOD 4: Real-time queue statistics endpoint
+        if (!displayNumber) {
+          try {
+            console.log(`🎯 Trying queue statistics endpoint for department ${prefix}`);
+            const statsResponse = await fetch(`${API_BASE_URL}/queue/stats/${prefix}`);
+            if (statsResponse.ok) {
+              const stats = await statsResponse.json();
+              if (stats.current_serving) {
+                displayNumber = stats.current_serving;
+                displayStatus = '🔄 Currently serving';
+                dataSource = 'Statistics API';
+                console.log(`✅ METHOD 4 SUCCESS: ${displayNumber} from statistics API`);
+              }
+            } else {
+              console.log(`❌ METHOD 4 FAILED: Statistics endpoint returned ${statsResponse.status}`);
+            }
+          } catch (error) {
+            console.log(`❌ METHOD 4 ERROR: ${error.message}`);
+          }
+        }
+        
+        // METHOD 5: Get ALL queues for department and find the most recent activity
+        if (!displayNumber) {
+          try {
+            console.log(`🎯 Trying to get all queues for department ${prefix} to find recent activity`);
+            const allQueuesResponse = await fetch(`${API_BASE_URL}/queue/all/${prefix}`);
+            if (allQueuesResponse.ok) {
+              const allQueues = await allQueuesResponse.json();
+              
+              // Sort by timestamp and find the most recently updated queue
+              const sortedQueues = allQueues.sort((a, b) => new Date(b.updated_at || b.timestamp) - new Date(a.updated_at || a.timestamp));
+              const recentQueue = sortedQueues.find(q => q.status === 'called' || q.status === 'processing');
+              
+              if (recentQueue) {
+                displayNumber = recentQueue.number;
+                displayStatus = `🔄 ${recentQueue.status === 'called' ? 'Being called' : 'Being processed'}`;
+                dataSource = 'All Queues (Recent)';
+                console.log(`✅ METHOD 5 SUCCESS: ${displayNumber} from all queues (recent activity)`);
+              }
+            } else {
+              console.log(`❌ METHOD 5 FAILED: All queues endpoint returned ${allQueuesResponse.status}`);
+            }
+          } catch (error) {
+            console.log(`❌ METHOD 5 ERROR: ${error.message}`);
+          }
+        }
+        
+      } catch (error) {
+        console.error('❌ AGGRESSIVE UPDATE ERROR:', error);
       }
       
-      // Update the display with animation if number changed
+      // METHOD 6: Smart estimation based on user position and time
+      if (!displayNumber && statusData.position) {
+        const estimatedCurrent = Math.max(1, userNumber - statusData.position + 1);
+        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+        displayStatus = `📊 Smart estimate (position-based)`;
+        dataSource = 'Smart Estimation';
+        console.log(`✅ METHOD 6 FALLBACK: ${displayNumber} from smart estimation`);
+      }
+      
+      // METHOD 7: Ultimate fallback
+      if (!displayNumber) {
+        const fallbackNumber = Math.max(1, userNumber - 5);
+        displayNumber = prefix + String(fallbackNumber).padStart(3, '0');
+        displayStatus = '⏳ Estimated current';
+        dataSource = 'Ultimate Fallback';
+        console.log(`⚠️ METHOD 7 ULTIMATE FALLBACK: ${displayNumber}`);
+      }
+      
+      // Update display with animation if number changed
       const currentDisplayedNumber = currentQueueNumber.textContent;
       if (currentDisplayedNumber !== displayNumber && displayNumber) {
-        // Add a brief highlight animation when the number changes
         currentQueueNumber.style.animation = 'pulse 0.5s ease-in-out';
         setTimeout(() => {
           currentQueueNumber.style.animation = '';
         }, 500);
-        
-        console.log(`🔄 Current queue updated: ${currentDisplayedNumber} → ${displayNumber}`);
+        console.log(`🔄 CURRENT QUEUE UPDATED: ${currentDisplayedNumber} → ${displayNumber} (${dataSource})`);
       }
       
       currentQueueNumber.textContent = displayNumber || '---';
-      currentQueueStatus.textContent = displayStatus || 'Checking queue status...';
+      currentQueueStatus.textContent = displayStatus + (dataSource ? ` (${dataSource})` : '') || 'Checking queue status...';
       
-      // Add visual feedback based on how close user is and if they're being called
+      // Visual feedback based on proximity and status
       const currentQueueSection = document.querySelector('.current-queue-section');
+      const currentNum = parseInt(displayNumber.substring(1));
+      const difference = userNumber - currentNum;
+      
       if (statusData.is_called) {
-        // User is being called - make it red/urgent
         currentQueueSection.style.background = 'rgba(239, 68, 68, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(239, 68, 68, 0.3)';
-      } else if (statusData.position === 1) {
-        // User is next - make it green
+      } else if (difference <= 1) {
         currentQueueSection.style.background = 'rgba(34, 197, 94, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(34, 197, 94, 0.3)';
-      } else if (statusData.position <= 3) {
-        // User is in top 3 - make it yellow
+      } else if (difference <= 3) {
         currentQueueSection.style.background = 'rgba(245, 158, 11, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(245, 158, 11, 0.3)';
       } else {
-        // Normal waiting - blue
         currentQueueSection.style.background = 'rgba(59, 130, 246, 0.1)';
         currentQueueSection.style.borderColor = 'rgba(59, 130, 246, 0.3)';
       }
+    }
+    
+    // Helper function to convert prefix to department name
+    function getDepartmentFromPrefix(prefix) {
+      const prefixMap = {
+        'A': 'dean',
+        'B': 'ie-chair', 
+        'C': 'cpe-chair',
+        'D': 'ece-chair',
+        'E': 'others'
+      };
+      return prefixMap[prefix] || 'dean';
     }
 
     // Show feedback button when transaction is completed
@@ -1402,9 +1472,9 @@
       }
     }
 
-    // Refresh current queue display specifically
+    // Refresh current queue display specifically - SUPER AGGRESSIVE APPROACH
     async function refreshCurrentQueue() {
-      console.log('🔄 Manual refresh triggered');
+      console.log('🚀 SUPER AGGRESSIVE MANUAL REFRESH TRIGGERED');
       const refreshButton = document.querySelector('button[onclick="refreshCurrentQueue()"]');
       const currentQueueNumber = document.getElementById('currentQueueNumber');
       const currentQueueStatus = document.getElementById('currentQueueStatus');
@@ -1412,78 +1482,136 @@
       // Show loading state
       refreshButton.innerHTML = '⏳ Loading...';
       refreshButton.disabled = true;
-      currentQueueStatus.textContent = 'Refreshing current queue...';
+      currentQueueStatus.textContent = 'Aggressively fetching current queue...';
       
       try {
         if (!queueId) {
           throw new Error('No queue ID available');
         }
         
-        console.log(`🔄 Fetching data for queue ID: ${queueId}`);
-        console.log(`🔄 API Base URL: ${API_BASE_URL}`);
-        
-        // Fetch fresh data from backend
-        const queueResponse = await fetch(`${API_BASE_URL}/queue/${queueId}`);
-        const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
-        
-        console.log(`🔄 Queue response status: ${queueResponse.status}`);
-        console.log(`🔄 Status response status: ${statusResponse.status}`);
-        
-        if (queueResponse.ok && statusResponse.ok) {
-          const queueData = await queueResponse.json();
-          const statusData = await statusResponse.json();
-          
-          console.log('🔄 Queue data:', queueData);
-          console.log('🔄 Status data:', statusData);
-          
-          // Get department from queue data
-          const department = queueData.number.substring(0, 1);
-          console.log(`🔄 Department: ${department}`);
-          
-          // Fetch last completed queue specifically
-          try {
-            const lastCompletedUrl = `${API_BASE_URL}/queue/last-completed/${department}`;
-            console.log(`🔄 Fetching last completed from: ${lastCompletedUrl}`);
-            
-            const lastCompletedResponse = await fetch(lastCompletedUrl);
-            console.log(`🔄 Last completed response status: ${lastCompletedResponse.status}`);
-            
-            if (lastCompletedResponse.ok) {
-              const lastCompletedData = await lastCompletedResponse.json();
-              console.log('🔄 Last completed data:', lastCompletedData);
-              
-              if (lastCompletedData.queue_number) {
-                statusData.last_completed_queue = lastCompletedData.queue_number;
-                console.log(`🔄 Manual refresh: Last completed queue for ${department}: ${lastCompletedData.queue_number}`);
-              }
-            } else {
-              console.log(`🔄 Last completed API returned ${lastCompletedResponse.status} - using fallback estimation`);
-              // Create a fallback last completed queue number
-              const fallbackNumber = Math.max(1, parseInt(queueData.number.substring(1)) - 5);
-              statusData.last_completed_queue = department + String(fallbackNumber).padStart(3, '0');
-              console.log(`🔄 Using fallback last completed: ${statusData.last_completed_queue}`);
-            }
-          } catch (error) {
-            console.log('Could not fetch last completed queue in manual refresh:', error);
-          }
-          
-          // Update current queue display with fresh data
-          console.log('🔄 Updating current queue with fresh data');
-          updateCurrentQueue(statusData);
-          
-          // Success feedback
-          refreshButton.innerHTML = '✅ Updated';
-          setTimeout(() => {
-            refreshButton.innerHTML = '🔄 Refresh';
-            refreshButton.disabled = false;
-          }, 1500);
-          
-        } else {
-          throw new Error(`Failed to fetch queue data - Queue: ${queueResponse.status}, Status: ${statusResponse.status}`);
+        // Get user queue info first
+        const userQueueNumber = document.getElementById('queueNumber').textContent;
+        if (!userQueueNumber || userQueueNumber === 'A001') {
+          throw new Error('Invalid user queue number');
         }
         
+        const prefix = userQueueNumber.substring(0, 1);
+        const department = getDepartmentFromPrefix(prefix);
+        
+        console.log(`🚀 Aggressive refresh for: ${userQueueNumber}, Department: ${department}, Prefix: ${prefix}`);
+        
+        // Create a comprehensive status data object
+        let aggressiveStatusData = {
+          position: null,
+          is_called: false,
+          admin_status: 'available',
+          department_prefix: prefix,
+          last_completed_queue: null,
+          current_serving: null
+        };
+        
+        // PARALLEL AGGRESSIVE FETCHING - Try all endpoints simultaneously
+        const fetchPromises = [
+          // Fetch 1: Original queue status
+          fetch(`${API_BASE_URL}/queue/${queueId}/status`).then(r => r.ok ? r.json() : null).catch(() => null),
+          
+          // Fetch 2: Current processing queue
+          fetch(`${API_BASE_URL}/queue/current-processing/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          
+          // Fetch 3: Admin dashboard queues
+          fetch(`${API_BASE_URL}/admin/queue/${department}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          
+          // Fetch 4: Last completed queue
+          fetch(`${API_BASE_URL}/queue/last-completed/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          
+          // Fetch 5: Queue statistics
+          fetch(`${API_BASE_URL}/queue/stats/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          
+          // Fetch 6: All department queues
+          fetch(`${API_BASE_URL}/queue/all/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          
+          // Fetch 7: Admin status
+          fetch(`${API_BASE_URL}/admin/status/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null)
+        ];
+        
+        console.log('🚀 Launching 7 parallel API calls...');
+        const results = await Promise.allSettled(fetchPromises);
+        
+        // Process results
+        const [statusResult, currentProcResult, adminQueueResult, lastCompResult, statsResult, allQueuesResult, adminStatusResult] = results;
+        
+        // Merge data from all sources
+        if (statusResult.status === 'fulfilled' && statusResult.value) {
+          Object.assign(aggressiveStatusData, statusResult.value);
+          console.log('✅ Got original status data');
+        }
+        
+        if (currentProcResult.status === 'fulfilled' && currentProcResult.value) {
+          if (currentProcResult.value.current_queue) {
+            aggressiveStatusData.current_serving = currentProcResult.value.current_queue;
+            console.log('✅ Got current processing queue:', currentProcResult.value.current_queue);
+          }
+        }
+        
+        if (adminQueueResult.status === 'fulfilled' && adminQueueResult.value) {
+          const adminQueues = adminQueueResult.value;
+          const calledQueue = adminQueues.find(q => q.status === 'called');
+          if (calledQueue) {
+            aggressiveStatusData.current_serving = calledQueue.number;
+            console.log('✅ Got called queue from admin API:', calledQueue.number);
+          } else if (adminQueues.length > 0) {
+            aggressiveStatusData.current_serving = adminQueues[0].number;
+            console.log('✅ Got first queue from admin API:', adminQueues[0].number);
+          }
+        }
+        
+        if (lastCompResult.status === 'fulfilled' && lastCompResult.value) {
+          if (lastCompResult.value.queue_number) {
+            aggressiveStatusData.last_completed_queue = lastCompResult.value.queue_number;
+            console.log('✅ Got last completed queue:', lastCompResult.value.queue_number);
+          }
+        }
+        
+        if (statsResult.status === 'fulfilled' && statsResult.value) {
+          if (statsResult.value.current_serving) {
+            aggressiveStatusData.current_serving = statsResult.value.current_serving;
+            console.log('✅ Got current serving from stats:', statsResult.value.current_serving);
+          }
+        }
+        
+        if (allQueuesResult.status === 'fulfilled' && allQueuesResult.value) {
+          const allQueues = allQueuesResult.value;
+          const recentQueue = allQueues
+            .filter(q => q.status === 'called' || q.status === 'processing')
+            .sort((a, b) => new Date(b.updated_at || b.timestamp) - new Date(a.updated_at || a.timestamp))[0];
+          
+          if (recentQueue) {
+            aggressiveStatusData.current_serving = recentQueue.number;
+            console.log('✅ Got recent active queue from all queues:', recentQueue.number);
+          }
+        }
+        
+        if (adminStatusResult.status === 'fulfilled' && adminStatusResult.value) {
+          aggressiveStatusData.admin_status = adminStatusResult.value.status;
+          console.log('✅ Got admin status:', adminStatusResult.value.status);
+        }
+        
+        console.log('🚀 AGGRESSIVE STATUS DATA COMPILED:', JSON.stringify(aggressiveStatusData, null, 2));
+        
+        // Use the new aggressive updateCurrentQueue function
+        await updateCurrentQueue(aggressiveStatusData);
+        
+        // Success feedback
+        refreshButton.innerHTML = '✅ Updated';
+        setTimeout(() => {
+          refreshButton.innerHTML = '🔄 Refresh';
+          refreshButton.disabled = false;
+        }, 1500);
+        
+        console.log('🚀 AGGRESSIVE REFRESH COMPLETED SUCCESSFULLY');
+        
       } catch (error) {
-        console.error('Error refreshing current queue:', error);
+        console.error('❌ AGGRESSIVE REFRESH ERROR:', error);
         
         // Error feedback
         refreshButton.innerHTML = '❌ Error';
@@ -1530,101 +1658,117 @@
       }, 10000); // Refresh every 10 seconds for real-time updates
     }
 
-    // Silent load that only updates if position changes
+    // Silent load that only updates if position changes - AGGRESSIVE VERSION
     async function loadQueueDataSilent() {
       if (!queueId) return;
       
       try {
-        // First, fetch the queue data to ensure we have the user's queue information
-        const queueResponse = await fetch(`${API_BASE_URL}/queue/${queueId}`);
-        let queueData = null;
+        console.log('🔄 AGGRESSIVE SILENT UPDATE STARTING...');
         
-        if (queueResponse.ok) {
-          queueData = await queueResponse.json();
+        // Get user queue info
+        const userQueueNumber = document.getElementById('queueNumber').textContent;
+        if (!userQueueNumber || userQueueNumber === 'A001') {
+          console.log('⚠️ Invalid user queue number in silent update');
+          return;
         }
         
-        // Get real-time status
-        const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-          
-          // Try to get the last completed queue for real-time updates
-          try {
-            let department = null;
-            
-            // First try to get department from queue data
-            if (queueData && queueData.number) {
-              department = queueData.number.substring(0, 1);
-            } else {
-              // Fallback: get from existing display element
-              const userQueueNumber = document.getElementById('queueNumber').textContent;
-              if (userQueueNumber && userQueueNumber !== 'A001') {
-                department = userQueueNumber.substring(0, 1);
-              }
-            }
-            
-            if (department) {
-              const lastCompletedResponse = await fetch(`${API_BASE_URL}/queue/last-completed/${department}`);
-              if (lastCompletedResponse.ok) {
-                const lastCompletedData = await lastCompletedResponse.json();
-                if (lastCompletedData.queue_number) {
-                  statusData.last_completed_queue = lastCompletedData.queue_number;
-                  console.log(`🔄 Silent update: Last completed queue for ${department}: ${lastCompletedData.queue_number}`);
-                }
-              }
-            }
-          } catch (error) {
-            console.log('Could not fetch last completed queue in silent update:', error);
-          }
-          
-          // Store previous called status to detect changes
-          const wasCalledBefore = lastCalledStatus;
-          const isCalledNow = statusData.is_called;
-          
-          // Check if queue is completed or cleared - show feedback button
-          if (statusData.status.class === 'status-completed' || statusData.is_cleared) {
-            showFeedbackButton();
-            return;
-          }
-          
-          // Only update display elements that don't affect countdown
-          updateAdminStatus(statusData.admin_status, statusData.department_prefix);
-          document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
-          
-          // Update status
-          const statusElement = document.getElementById('queueStatus');
-          statusElement.textContent = statusData.status.text;
-          statusElement.className = `queue-status ${statusData.status.class}`;
-          
-          // IMPORTANT: Update current queue being processed in real-time
-          updateCurrentQueue(statusData);
-          
-          // Handle called status with vibration
-          if (isCalledNow) {
-            statusElement.style.animation = 'pulse 1s infinite';
-            const estimatedTimeSection = document.querySelector('.estimated-time');
-            estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
-            estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
-            estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
-            
-            // Only play sound if status changed from not called to called
-            if (!wasCalledBefore && isCalledNow) {
-              playAlarmSound();
-            }
-          } else {
-            // Reset styling if not called
-            const estimatedTimeSection = document.querySelector('.estimated-time');
-            estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-            estimatedTimeSection.querySelector('h3').textContent = '📢 Queue Information';
-            estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
-            statusElement.style.animation = '';
-          }
-          
-          // Update last called status for next comparison
-          lastCalledStatus = isCalledNow;
+        const prefix = userQueueNumber.substring(0, 1);
+        const department = getDepartmentFromPrefix(prefix);
+        
+        // AGGRESSIVE PARALLEL FETCHING for silent update
+        const silentFetchPromises = [
+          fetch(`${API_BASE_URL}/queue/${queueId}/status`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${API_BASE_URL}/queue/current-processing/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${API_BASE_URL}/admin/queue/${department}`).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(`${API_BASE_URL}/queue/last-completed/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        ];
+        
+        const [statusResult, currentProcResult, adminQueueResult, lastCompResult] = await Promise.allSettled(silentFetchPromises);
+        
+        // Create aggressive status data
+        let statusData = {
+          position: null,
+          is_called: false,
+          admin_status: 'available',
+          department_prefix: prefix,
+          last_completed_queue: null,
+          current_serving: null,
+          status: { text: '🟡 Waiting', class: 'status-waiting' }
+        };
+        
+        // Process all results
+        if (statusResult.status === 'fulfilled' && statusResult.value) {
+          Object.assign(statusData, statusResult.value);
         }
+        
+        if (currentProcResult.status === 'fulfilled' && currentProcResult.value?.current_queue) {
+          statusData.current_serving = currentProcResult.value.current_queue;
+        }
+        
+        if (adminQueueResult.status === 'fulfilled' && adminQueueResult.value) {
+          const adminQueues = adminQueueResult.value;
+          const calledQueue = adminQueues.find(q => q.status === 'called');
+          if (calledQueue) {
+            statusData.current_serving = calledQueue.number;
+          } else if (adminQueues.length > 0) {
+            statusData.current_serving = adminQueues[0].number;
+          }
+        }
+        
+        if (lastCompResult.status === 'fulfilled' && lastCompResult.value?.queue_number) {
+          statusData.last_completed_queue = lastCompResult.value.queue_number;
+        }
+        
+        // Store previous called status to detect changes
+        const wasCalledBefore = lastCalledStatus;
+        const isCalledNow = statusData.is_called;
+        
+        // Check if queue is completed or cleared - show feedback button
+        if (statusData.status.class === 'status-completed' || statusData.is_cleared) {
+          showFeedbackButton();
+          return;
+        }
+        
+        // Update admin status and last updated time
+        updateAdminStatus(statusData.admin_status, statusData.department_prefix);
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        
+        // Update status
+        const statusElement = document.getElementById('queueStatus');
+        statusElement.textContent = statusData.status.text;
+        statusElement.className = `queue-status ${statusData.status.class}`;
+        
+        // AGGRESSIVE UPDATE: Always update current queue display
+        await updateCurrentQueue(statusData);
+        
+        // Handle called status with alarm
+        if (isCalledNow) {
+          statusElement.style.animation = 'pulse 1s infinite';
+          const estimatedTimeSection = document.querySelector('.estimated-time');
+          estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+          estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
+          estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
+          
+          // Only play sound if status changed from not called to called
+          if (!wasCalledBefore && isCalledNow) {
+            playAlarmSound();
+          }
+        } else {
+          // Reset styling if not called
+          const estimatedTimeSection = document.querySelector('.estimated-time');
+          estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+          estimatedTimeSection.querySelector('h3').textContent = '📢 Queue Information';
+          estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
+          statusElement.style.animation = '';
+        }
+        
+        // Update last called status for next comparison
+        lastCalledStatus = isCalledNow;
+        
+        console.log('✅ AGGRESSIVE SILENT UPDATE COMPLETED');
+        
       } catch (error) {
-        console.error('Error in silent refresh:', error);
+        console.error('❌ AGGRESSIVE SILENT UPDATE ERROR:', error);
       }
     }
     
