@@ -1230,7 +1230,7 @@
         console.log(`📢 User is being called: ${displayNumber}`);
       }
       // Method 4: Calculate based on user's position - show what should be currently active
-      else if (statusData.position && statusData.position > 0) {
+      else if (statusData.position && statusData.position > 0 && !isNaN(statusData.position)) {
         if (statusData.position === 1) {
           // User is next, so show the number just before them
           const estimatedCurrent = Math.max(1, userNumber - 1);
@@ -1245,7 +1245,15 @@
           console.log(`📊 Calculated current based on position: ${displayNumber}`);
         }
       }
-      // Method 5: Use admin status as fallback
+      // Method 5: If position is undefined or invalid, use queue number-based estimation
+      else if (!statusData.position || statusData.position === undefined || isNaN(statusData.position)) {
+        // Estimate based on queue number - assume we're somewhere in the middle of processing
+        const estimatedCurrent = Math.max(1, userNumber - Math.floor(userNumber * 0.3));
+        displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
+        displayStatus = '📊 Estimated current (calculating position...)';
+        console.log(`📊 Position undefined, using number-based estimation: ${displayNumber}`);
+      }
+      // Method 6: Use admin status as fallback
       else if (statusData.admin_status === 'busy') {
         // If admin is busy, show a number slightly below user's number
         const estimatedCurrent = Math.max(1, userNumber - 5);
@@ -1449,7 +1457,11 @@
                 console.log(`🔄 Manual refresh: Last completed queue for ${department}: ${lastCompletedData.queue_number}`);
               }
             } else {
-              console.log(`🔄 Last completed API returned ${lastCompletedResponse.status}`);
+              console.log(`🔄 Last completed API returned ${lastCompletedResponse.status} - using fallback estimation`);
+              // Create a fallback last completed queue number
+              const fallbackNumber = Math.max(1, parseInt(queueData.number.substring(1)) - 5);
+              statusData.last_completed_queue = department + String(fallbackNumber).padStart(3, '0');
+              console.log(`🔄 Using fallback last completed: ${statusData.last_completed_queue}`);
             }
           } catch (error) {
             console.log('Could not fetch last completed queue in manual refresh:', error);
