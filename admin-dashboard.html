@@ -175,6 +175,7 @@
       display: flex;
       gap: 10px;
       flex-shrink: 0;
+      flex-wrap: wrap;
     }
 
     .btn-call {
@@ -207,6 +208,22 @@
     .btn-complete:hover {
       transform: translateY(-2px);
       box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-remove {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-remove:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
     }
 
     .status-indicator {
@@ -515,13 +532,19 @@
             </div>
             <div class="queue-actions">
               ${queue.status === 'called' ? 
-                `<button class="btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')">
-                  ✅ Complete Queue
+                `<button class="btn-call" onclick="recallQueue('${queue.id}', '${queue.number}')">
+                  🔄 Recall
+                </button>
+                <button class="btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')">
+                  ✅ Complete
                 </button>` :
                 `<button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
                   📞 Call Queue
                 </button>`
               }
+              <button class="btn-remove" onclick="removeQueue('${queue.id}', '${queue.number}')">
+                ❌ Remove
+              </button>
             </div>
           </div>
         </div>
@@ -558,6 +581,73 @@
       } catch (error) {
         console.error('Error calling queue:', error);
         alert('Error calling queue. Please check your connection.');
+      }
+    }
+
+    // Recall queue function (for already called queues)
+    async function recallQueue(queueId, queueNumber) {
+      if (!confirm(`Recall queue ${queueNumber}? This will notify the user again that they are being called.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/recall-queue/${queueId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recalledBy: adminSession.department,
+            recalledAt: new Date().toISOString()
+          })
+        });
+
+        if (response.ok) {
+          // Show success message
+          alert(`Queue ${queueNumber} has been recalled! The user will see they are being called again.`);
+          
+          // Refresh the dashboard
+          loadDashboard();
+        } else {
+          alert('Failed to recall queue. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error recalling queue:', error);
+        alert('Error recalling queue. Please check your connection.');
+      }
+    }
+
+    // Remove queue function (cancel/delete queue)
+    async function removeQueue(queueId, queueNumber) {
+      if (!confirm(`Remove queue ${queueNumber}? This will permanently cancel and delete this queue from the system.`)) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/remove-queue/${queueId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            removedBy: adminSession.department,
+            removedAt: new Date().toISOString(),
+            reason: 'Cancelled by admin'
+          })
+        });
+
+        if (response.ok) {
+          // Show success message
+          alert(`Queue ${queueNumber} has been removed and cancelled.`);
+          
+          // Refresh the dashboard
+          loadDashboard();
+        } else {
+          alert('Failed to remove queue. Please try again.');
+        }
+      } catch (error) {
+        console.error('Error removing queue:', error);
+        alert('Error removing queue. Please check your connection.');
       }
     }
 
