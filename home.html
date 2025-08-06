@@ -294,6 +294,115 @@
       transform: translateX(-50%) translateY(-10px);
     }
     
+    /* Confirmation Modal Styles */
+    .confirmation-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+    
+    .confirmation-modal.show {
+      display: flex;
+      opacity: 1;
+    }
+    
+    .modal-content {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(20px);
+      border-radius: 25px;
+      padding: 50px 40px;
+      text-align: center;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border: 2px solid rgba(255, 255, 255, 0.8);
+      transform: scale(0.8);
+      transition: all 0.3s ease;
+    }
+    
+    .confirmation-modal.show .modal-content {
+      transform: scale(1);
+    }
+    
+    .modal-title {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #1a1a1a;
+      margin-bottom: 15px;
+      letter-spacing: -0.02em;
+    }
+    
+    .modal-subtitle {
+      font-size: 1.3rem;
+      color: #4b5563;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    .modal-department {
+      font-size: 1.1rem;
+      color: #6b7280;
+      margin-bottom: 35px;
+      font-weight: 500;
+    }
+    
+    .modal-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    
+    .modal-btn {
+      padding: 16px 35px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-radius: 12px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+      border: none;
+      min-width: 140px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .modal-btn-primary {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      color: white;
+    }
+    
+    .modal-btn-primary:hover {
+      background: linear-gradient(135deg, #b91c1c, #991b1b);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(220, 38, 38, 0.3);
+    }
+    
+    .modal-btn-secondary {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+    }
+    
+    .modal-btn-secondary:hover {
+      background: linear-gradient(135deg, #4b5563, #374151);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(75, 85, 99, 0.3);
+    }
+    
     .touch-ripple {
       position: absolute;
       border-radius: 50%;
@@ -372,6 +481,35 @@
         max-width: 300px;
         padding: 16px 35px;
         font-size: 1.2rem;
+      }
+      
+      .modal-content {
+        padding: 40px 30px;
+        width: 95%;
+      }
+      
+      .modal-title {
+        font-size: 1.7rem;
+      }
+      
+      .modal-subtitle {
+        font-size: 1.1rem;
+      }
+      
+      .modal-department {
+        font-size: 1rem;
+      }
+      
+      .modal-buttons {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .modal-btn {
+        width: 100%;
+        max-width: 250px;
+        padding: 14px 30px;
+        font-size: 1.1rem;
       }
     }
     
@@ -455,12 +593,30 @@
         </div>
       </div>
       
-      <div class="action-buttons">
+      <!-- Action buttons - hidden since we're using modal -->
+      <div class="action-buttons" style="display: none;">
         <button id="continueBtn" class="btn-kiosk btn-primary-kiosk" disabled onclick="continueTo()">
           ✅ Continue
         </button>
         <button class="btn-kiosk btn-secondary-kiosk" onclick="goBack()">
           ⬅️ Back
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Confirmation Modal -->
+  <div id="confirmationModal" class="confirmation-modal">
+    <div class="modal-content">
+      <div class="modal-title">✅ Confirm Selection</div>
+      <div class="modal-subtitle" id="modalPersonName">Dean</div>
+      <div class="modal-department" id="modalDepartment">College of Engineering</div>
+      <div class="modal-buttons">
+        <button class="modal-btn modal-btn-primary" onclick="confirmSelection()">
+          ✅ Continue
+        </button>
+        <button class="modal-btn modal-btn-secondary" onclick="cancelSelection()">
+          ❌ Cancel
         </button>
       </div>
     </div>
@@ -508,24 +664,46 @@
       selectedPerson = personType;
       selectedPersonName = personName;
       
-      // Show feedback
-      const feedback = document.getElementById('selectionFeedback');
-      feedback.textContent = `✅ Selected: ${personName}`;
-      feedback.classList.add('show');
+      // Update modal content
+      const parts = personName.split(' - ');
+      document.getElementById('modalPersonName').textContent = parts[0];
+      document.getElementById('modalDepartment').textContent = parts[1] || '';
       
-      // Enable continue button
-      const continueBtn = document.getElementById('continueBtn');
-      continueBtn.disabled = false;
-      
-      // Hide feedback after 3 seconds
-      setTimeout(() => {
-        feedback.classList.remove('show');
-      }, 3000);
+      // Show confirmation modal
+      const modal = document.getElementById('confirmationModal');
+      modal.classList.add('show');
       
       // Add haptic feedback (if supported)
       if ('vibrate' in navigator) {
         navigator.vibrate(50);
       }
+    }
+    
+    function confirmSelection() {
+      if (selectedPerson) {
+        // Store selection in localStorage
+        localStorage.setItem('selectedPerson', selectedPerson);
+        localStorage.setItem('selectedPersonName', selectedPersonName);
+        localStorage.setItem('selectionTime', new Date().toISOString());
+        
+        // Navigate to queue number page
+        window.location.href = 'queue-number.html';
+      }
+    }
+    
+    function cancelSelection() {
+      // Hide modal
+      const modal = document.getElementById('confirmationModal');
+      modal.classList.remove('show');
+      
+      // Remove selection
+      document.querySelectorAll('.person-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      
+      // Reset selection
+      selectedPerson = null;
+      selectedPersonName = null;
     }
     
     function continueTo() {
@@ -557,11 +735,34 @@
     
     // Add keyboard navigation for accessibility
     document.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter' && selectedPerson) {
-        continueTo();
-      } else if (e.key === 'Escape') {
-        goBack();
+      const modal = document.getElementById('confirmationModal');
+      const isModalOpen = modal.classList.contains('show');
+      
+      if (isModalOpen) {
+        if (e.key === 'Enter') {
+          confirmSelection();
+        } else if (e.key === 'Escape') {
+          cancelSelection();
+        }
+      } else {
+        if (e.key === 'Escape') {
+          goBack();
+        }
       }
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('confirmationModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        cancelSelection();
+      }
+    });
+    
+    // Add touch feedback to modal buttons
+    document.querySelectorAll('.modal-btn').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        createRipple(e, this);
+      });
     });
     
     // Fetch queue data from server
