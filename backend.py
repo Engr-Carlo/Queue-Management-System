@@ -377,6 +377,43 @@ def call_queue(queue_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/admin/return-queue/<queue_id>', methods=['POST'])
+def return_queue(queue_id):
+    """Return a called queue back to waiting status"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        data = request.json
+        cur = conn.cursor()
+        
+        # Add missing columns if they don't exist
+        try:
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_by VARCHAR(255) DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_at TIMESTAMP DEFAULT NULL")
+            conn.commit()
+        except Exception:
+            pass
+        
+        # Return queue back to waiting (reset called status)
+        cur.execute("""
+            UPDATE queue 
+            SET called = FALSE, status = 'waiting', returned_by = %s, returned_at = NOW()
+            WHERE id = %s AND called = TRUE AND completed = FALSE
+        """, (data.get('returnedBy'), queue_id))
+        
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found, not called, or already completed"}), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"success": True, "message": "Queue returned to waiting successfully", "status": "waiting"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/admin/complete-queue/<queue_id>', methods=['POST'])
 def complete_queue(queue_id):
     """Complete a queue (mark as completed after being called)"""
