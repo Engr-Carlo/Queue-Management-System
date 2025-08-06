@@ -532,8 +532,8 @@
             </div>
             <div class="queue-actions">
               ${queue.status === 'called' ? 
-                `<button class="btn-call" onclick="recallQueue('${queue.id}', '${queue.number}')">
-                  🔄 Recall
+                `<button class="btn-call" onclick="returnQueue('${queue.id}', '${queue.number}')">
+                  ↩️ Return
                 </button>
                 <button class="btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')">
                   ✅ Complete
@@ -542,9 +542,6 @@
                   📞 Call Queue
                 </button>`
               }
-              <button class="btn-remove" onclick="removeQueue('${queue.id}', '${queue.number}')">
-                ❌ Remove
-              </button>
             </div>
           </div>
         </div>
@@ -584,70 +581,37 @@
       }
     }
 
-    // Recall queue function (for already called queues)
-    async function recallQueue(queueId, queueNumber) {
-      if (!confirm(`Recall queue ${queueNumber}? This will notify the user again that they are being called.`)) {
+    // Return queue function (put called queue back to waiting)
+    async function returnQueue(queueId, queueNumber) {
+      if (!confirm(`Return queue ${queueNumber} back to waiting? The student will need to wait to be called again.`)) {
         return;
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/recall-queue/${queueId}`, {
+        const response = await fetch(`${API_BASE_URL}/admin/return-queue/${queueId}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            recalledBy: adminSession.department,
-            recalledAt: new Date().toISOString()
+            returnedBy: adminSession.department,
+            returnedAt: new Date().toISOString(),
+            called: false // Set called status back to false
           })
         });
 
         if (response.ok) {
           // Show success message
-          alert(`Queue ${queueNumber} has been recalled! The user will see they are being called again.`);
+          alert(`Queue ${queueNumber} has been returned to waiting! The student will need to wait to be called again.`);
           
           // Refresh the dashboard
           loadDashboard();
         } else {
-          alert('Failed to recall queue. Please try again.');
+          alert('Failed to return queue. Please try again.');
         }
       } catch (error) {
-        console.error('Error recalling queue:', error);
-        alert('Error recalling queue. Please check your connection.');
-      }
-    }
-
-    // Remove queue function (cancel/delete queue)
-    async function removeQueue(queueId, queueNumber) {
-      if (!confirm(`Remove queue ${queueNumber}? This will permanently cancel and delete this queue from the system.`)) {
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/remove-queue/${queueId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            removedBy: adminSession.department,
-            removedAt: new Date().toISOString(),
-            reason: 'Cancelled by admin'
-          })
-        });
-
-        if (response.ok) {
-          // Show success message
-          alert(`Queue ${queueNumber} has been removed and cancelled.`);
-          
-          // Refresh the dashboard
-          loadDashboard();
-        } else {
-          alert('Failed to remove queue. Please try again.');
-        }
-      } catch (error) {
-        console.error('Error removing queue:', error);
-        alert('Error removing queue. Please check your connection.');
+        console.error('Error returning queue:', error);
+        alert('Error returning queue. Please check your connection.');
       }
     }
 
