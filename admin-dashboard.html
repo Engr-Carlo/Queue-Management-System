@@ -1134,8 +1134,27 @@
         }
       });
       
-      // Load initial chart data immediately with sample data
-      generateSampleData();
+      // Load initial chart data with real data from backend
+      loadRealChartData();
+    }
+
+    // Load real queue data for chart
+    async function loadRealChartData() {
+      try {
+        // Try to get real analytics data first
+        const response = await fetch(`${API_BASE_URL}/analytics/hourly-queue-data`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          updateChart(data);
+        } else {
+          // Fallback to sample data if endpoint doesn't exist
+          generateSampleData();
+        }
+      } catch (error) {
+        console.log('Analytics endpoint not available, using sample data');
+        generateSampleData();
+      }
     }
 
     // Generate sample data for demonstration
@@ -1154,26 +1173,30 @@
         });
       });
       
-      // Generate time labels and sample data - only for today
-      let dataPoints = 24; // 24 hours for today
+      // Only show hours from 12:00 AM to current time
+      const currentHour = now.getHours();
       
-      for (let i = 23; i >= 0; i--) {
-        let time = new Date(now);
-        time.setHours(time.getHours() - i);
-        labels.push(time.toLocaleTimeString('en-US', { 
+      for (let hour = 0; hour <= currentHour; hour++) {
+        let timeLabel = new Date(now);
+        timeLabel.setHours(hour, 0, 0, 0); // Set to exact hour
+        
+        labels.push(timeLabel.toLocaleTimeString('en-US', { 
           hour: 'numeric', 
           minute: '2-digit',
           hour12: true 
         }));
         
-        // Generate realistic sample data
+        // Generate realistic sample data based on business hours
         datasets.forEach((dataset, index) => {
-          let baseValue = Math.floor(Math.random() * 10) + 1;
+          let baseValue = 0;
           
-          // Add some variation based on time of day
-          const hour = time.getHours();
-          if (hour >= 9 && hour <= 17) { // Business hours
-            baseValue += Math.floor(Math.random() * 15);
+          // Business hours pattern (9 AM to 5 PM)
+          if (hour >= 9 && hour <= 17) {
+            baseValue = Math.floor(Math.random() * 8) + 2; // 2-10 queues
+          } else if (hour >= 7 && hour <= 8) {
+            baseValue = Math.floor(Math.random() * 3) + 1; // 1-4 queues early morning
+          } else {
+            baseValue = Math.floor(Math.random() * 2); // 0-1 queues off hours
           }
           
           dataset.data.push(baseValue);
@@ -1197,7 +1220,7 @@
 
     // Refresh chart data
     function refreshChart() {
-      generateSampleData();
+      loadRealChartData();
     }
 
     // Show/hide chart loading
