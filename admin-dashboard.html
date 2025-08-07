@@ -589,16 +589,7 @@
             <span style="font-size: 0.8rem; font-weight: 400; color: #6b7280; margin-left: 10px;">Real-time Department Comparison</span>
           </h3>
           <div class="chart-controls">
-            <button class="time-filter active" onclick="updateChartTimeframe('today')" data-timeframe="today">
-              Today
-            </button>
-            <button class="time-filter" onclick="updateChartTimeframe('week')" data-timeframe="week">
-              This Week
-            </button>
-            <button class="time-filter" onclick="updateChartTimeframe('month')" data-timeframe="month">
-              This Month
-            </button>
-            <button class="refresh-btn" onclick="refreshChart()" style="margin-left: 10px;">
+            <button class="refresh-btn" onclick="refreshChart()">
               🔄 Refresh
             </button>
           </div>
@@ -704,7 +695,6 @@
     let adminSession = null;
     let refreshInterval = null;
     let queueChart = null;
-    let currentTimeframe = 'today';
 
     // Chart configuration
     const departmentColors = {
@@ -1092,26 +1082,16 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          interaction: {
-            intersect: false,
-            mode: 'index'
-          },
           plugins: {
             legend: {
-              display: false // We have custom legend
+              display: false
             },
             tooltip: {
               backgroundColor: 'rgba(0, 0, 0, 0.8)',
               titleColor: '#ffffff',
               bodyColor: '#ffffff',
-              borderColor: '#667eea',
-              borderWidth: 1,
               cornerRadius: 8,
-              displayColors: true,
               callbacks: {
-                title: function(context) {
-                  return `Time: ${context[0].label}`;
-                },
                 label: function(context) {
                   return `${context.dataset.label}: ${context.parsed.y} queues`;
                 }
@@ -1123,97 +1103,43 @@
               title: {
                 display: true,
                 text: 'Time',
-                color: '#6b7280',
-                font: {
-                  size: 12,
-                  weight: '600'
-                }
+                color: '#6b7280'
               },
               grid: {
-                color: 'rgba(0, 0, 0, 0.05)',
-                drawBorder: false
-              },
-              ticks: {
-                color: '#6b7280',
-                font: {
-                  size: 11
-                }
+                color: 'rgba(0, 0, 0, 0.1)'
               }
             },
             y: {
               title: {
                 display: true,
                 text: 'Number of Queues',
-                color: '#6b7280',
-                font: {
-                  size: 12,
-                  weight: '600'
-                }
+                color: '#6b7280'
               },
               beginAtZero: true,
               grid: {
-                color: 'rgba(0, 0, 0, 0.05)',
-                drawBorder: false
-              },
-              ticks: {
-                color: '#6b7280',
-                font: {
-                  size: 11
-                },
-                stepSize: 1
+                color: 'rgba(0, 0, 0, 0.1)'
               }
             }
           },
           elements: {
             line: {
               tension: 0.4,
-              borderWidth: 3,
-              fill: false
+              borderWidth: 3
             },
             point: {
-              radius: 5,
-              hoverRadius: 8,
-              borderWidth: 2,
-              backgroundColor: '#ffffff'
+              radius: 0,
+              hoverRadius: 6
             }
-          },
-          animation: {
-            duration: 1000,
-            easing: 'easeInOutQuart'
           }
         }
       });
       
-      // Load initial chart data
-      loadChartData(currentTimeframe);
-    }
-
-    // Load chart data based on timeframe
-    async function loadChartData(timeframe) {
-      showChartLoading(true);
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/analytics/queue-volume/${timeframe}`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          updateChart(data);
-          updateChartStats(data);
-        } else {
-          // Generate sample data if endpoint doesn't exist yet
-          generateSampleData(timeframe);
-        }
-      } catch (error) {
-        console.error('Error loading chart data:', error);
-        // Generate sample data as fallback
-        generateSampleData(timeframe);
-      }
-      
-      showChartLoading(false);
+      // Load initial chart data immediately with sample data
+      generateSampleData();
     }
 
     // Generate sample data for demonstration
-    function generateSampleData(timeframe) {
+    function generateSampleData() {
       const now = new Date();
       const labels = [];
       const datasets = [];
@@ -1224,65 +1150,40 @@
           label: departmentNames[dept],
           data: [],
           borderColor: departmentColors[dept],
-          backgroundColor: departmentColors[dept] + '20',
-          pointBackgroundColor: departmentColors[dept],
-          pointBorderColor: '#ffffff',
-          pointHoverBackgroundColor: departmentColors[dept],
-          pointHoverBorderColor: '#ffffff'
+          backgroundColor: departmentColors[dept] + '20'
         });
       });
       
-      // Generate time labels and sample data
-      let dataPoints = timeframe === 'today' ? 24 : timeframe === 'week' ? 7 : 30;
-      let timeUnit = timeframe === 'today' ? 'hour' : 'day';
+      // Generate time labels and sample data - only for today
+      let dataPoints = 24; // 24 hours for today
       
-      for (let i = dataPoints - 1; i >= 0; i--) {
+      for (let i = 23; i >= 0; i--) {
         let time = new Date(now);
-        
-        if (timeUnit === 'hour') {
-          time.setHours(time.getHours() - i);
-          labels.push(time.toLocaleTimeString('en-US', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }));
-        } else {
-          time.setDate(time.getDate() - i);
-          labels.push(time.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric' 
-          }));
-        }
+        time.setHours(time.getHours() - i);
+        labels.push(time.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        }));
         
         // Generate realistic sample data
         datasets.forEach((dataset, index) => {
           let baseValue = Math.floor(Math.random() * 10) + 1;
           
-          // Add some variation based on time of day for 'today' view
-          if (timeframe === 'today') {
-            const hour = time.getHours();
-            if (hour >= 9 && hour <= 17) { // Business hours
-              baseValue += Math.floor(Math.random() * 15);
-            }
+          // Add some variation based on time of day
+          const hour = time.getHours();
+          if (hour >= 9 && hour <= 17) { // Business hours
+            baseValue += Math.floor(Math.random() * 15);
           }
           
           dataset.data.push(baseValue);
         });
       }
       
-      const sampleData = {
+      updateChart({
         labels: labels,
-        datasets: datasets,
-        stats: {
-          totalQueuedToday: Math.floor(Math.random() * 200) + 50,
-          peakHour: timeframe === 'today' ? `${Math.floor(Math.random() * 8) + 9}:00` : '--',
-          avgPerHour: Math.floor(Math.random() * 10) + 5,
-          busiestDept: Object.values(departmentNames)[Math.floor(Math.random() * 5)]
-        }
-      };
-      
-      updateChart(sampleData);
-      updateChartStats(sampleData);
+        datasets: datasets
+      });
     }
 
     // Update chart with new data
@@ -1294,33 +1195,9 @@
       queueChart.update('active');
     }
 
-    // Update chart statistics
-    function updateChartStats(data) {
-      if (data.stats) {
-        document.getElementById('totalQueuedToday').textContent = data.stats.totalQueuedToday || 0;
-        document.getElementById('peakHour').textContent = data.stats.peakHour || '--';
-        document.getElementById('avgPerHour').textContent = data.stats.avgPerHour || 0;
-        document.getElementById('busiestDept').textContent = data.stats.busiestDept || '--';
-      }
-    }
-
-    // Update chart timeframe
-    function updateChartTimeframe(timeframe) {
-      currentTimeframe = timeframe;
-      
-      // Update active button
-      document.querySelectorAll('.time-filter').forEach(btn => {
-        btn.classList.remove('active');
-      });
-      document.querySelector(`[data-timeframe="${timeframe}"]`).classList.add('active');
-      
-      // Load new data
-      loadChartData(timeframe);
-    }
-
     // Refresh chart data
     function refreshChart() {
-      loadChartData(currentTimeframe);
+      generateSampleData();
     }
 
     // Show/hide chart loading
