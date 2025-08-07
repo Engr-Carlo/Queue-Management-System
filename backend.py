@@ -1089,6 +1089,21 @@ def get_hourly_queue_data():
         today = datetime.now().strftime('%Y-%m-%d')
         current_hour = datetime.now().hour
         
+        print(f"DEBUG: Getting data for {today}, current hour: {current_hour}")
+        
+        # First, let's see what data we actually have in the database for today
+        cur.execute("""
+            SELECT person, created_at, EXTRACT(HOUR FROM created_at) as hour_created 
+            FROM queue 
+            WHERE DATE(created_at) = %s 
+            ORDER BY created_at
+        """, (today,))
+        
+        all_today_data = cur.fetchall()
+        print(f"DEBUG: Total queues today: {len(all_today_data)}")
+        for row in all_today_data:
+            print(f"DEBUG: {row[0]} created at {row[1]} (hour: {row[2]})")
+        
         # Initialize data structure
         hourly_data = {}
         departments = {
@@ -1105,16 +1120,21 @@ def get_hourly_queue_data():
             
             # Only get data from 12:00 AM to current hour
             for hour in range(0, current_hour + 1):
-                # Count queues created in this specific hour
+                # Count queues created in this specific hour today
                 cur.execute("""
                     SELECT COUNT(*) FROM queue 
                     WHERE person LIKE %s 
-                    AND DATE(created_at) = %s 
-                    AND EXTRACT(HOUR FROM created_at) = %s
-                """, (person_filter, today, hour))
+                    AND created_at >= %s 
+                    AND created_at < %s
+                """, (
+                    person_filter, 
+                    f"{today} {hour:02d}:00:00",  # Start of hour
+                    f"{today} {hour+1:02d}:00:00" if hour < 23 else f"{datetime.now() + timedelta(days=1):%Y-%m-%d} 00:00:00"  # End of hour
+                ))
                 
                 count = cur.fetchone()[0] or 0
                 hourly_counts.append(count)
+                print(f"DEBUG: {dept_key} at {hour:02d}:00 - {count} queues")  # Debug output
             
             hourly_data[dept_key] = hourly_counts
         
@@ -1122,7 +1142,7 @@ def get_hourly_queue_data():
         labels = []
         for hour in range(0, current_hour + 1):
             time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
-            labels.append(time_obj.strftime('%I:%M %p'))
+            labels.append(time_obj.strftime('%H:%M'))  # 24-hour format
         
         # Format data for Chart.js
         datasets = []
