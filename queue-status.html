@@ -581,11 +581,6 @@
     let autoRefreshInterval = null;
     let lastCalledStatus = false; // Track previous called status
     
-    // Background notification variables (Non-PWA)
-    let backgroundNotificationsEnabled = false;
-    let serviceWorker = null;
-    let isPageVisible = true;
-    
     // DESPERATE AUDIO SOLUTION - MOST AGGRESSIVE APPROACH POSSIBLE
     let audioEnabled = false;
     let userHasInteracted = false;
@@ -594,140 +589,8 @@
     let audioBuffer = null;
     let forceInteractionTimer = null;
 
-    // Initialize background notifications (Non-PWA version)
-    async function initializeBackgroundNotifications() {
-      try {
-        // Register service worker for background functionality
-        if ('serviceWorker' in navigator) {
-          const registration = await navigator.serviceWorker.register('/sw.js');
-          serviceWorker = registration;
-          console.log('✅ Service Worker registered for background notifications');
-          
-          // Wait for service worker to be ready
-          await navigator.serviceWorker.ready;
-          
-          // Start monitoring queue in background
-          if (queueId && navigator.serviceWorker.controller) {
-            const messageChannel = new MessageChannel();
-            
-            messageChannel.port1.onmessage = (event) => {
-              if (event.data.type === 'MONITORING_STARTED') {
-                console.log('🎯 Background queue monitoring started');
-                backgroundNotificationsEnabled = true;
-              }
-            };
-            
-            navigator.serviceWorker.controller.postMessage({
-              type: 'START_MONITORING',
-              queueId: queueId
-            }, [messageChannel.port2]);
-          }
-        }
-        
-        // Request notification permission
-        if ('Notification' in window) {
-          let permission = Notification.permission;
-          
-          if (permission === 'default') {
-            permission = await Notification.requestPermission();
-          }
-          
-          if (permission === 'granted') {
-            console.log('✅ Browser notifications enabled');
-            
-            // Test notification on first permission grant
-            showWelcomeNotification();
-          } else {
-            console.log('⚠️ Notification permission denied');
-          }
-        }
-        
-        // Setup page visibility detection
-        setupPageVisibilityDetection();
-        
-        return true;
-      } catch (error) {
-        console.error('❌ Failed to initialize background notifications:', error);
-        return false;
-      }
-    }
-    
-    // Show welcome notification to confirm setup
-    function showWelcomeNotification() {
-      if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification('🎯 Queue Notifications Active', {
-          body: 'You\'ll receive alerts when your queue number is called, even when this tab is minimized.',
-          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiMzQjgyRjYiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyek0xMSAxN2gtMnYtNmgydjZ6bTAtOGgtMlY3aDJ2MnoiLz4KPC9zdmc+Cjwvc3ZnPgo=',
-          vibrate: [100, 50, 100],
-          silent: false
-        });
-        
-        setTimeout(() => notification.close(), 4000);
-      }
-    }
-    
-    // Setup page visibility detection for background behavior
-    function setupPageVisibilityDetection() {
-      // Page Visibility API
-      document.addEventListener('visibilitychange', () => {
-        isPageVisible = !document.hidden;
-        console.log(`👁️ Page visibility changed: ${isPageVisible ? 'visible' : 'hidden'}`);
-        
-        if (!isPageVisible && backgroundNotificationsEnabled) {
-          console.log('📱 Page is hidden - background monitoring active');
-        }
-      });
-      
-      // Window focus/blur events
-      window.addEventListener('focus', () => {
-        isPageVisible = true;
-        console.log('🎯 Window focused - foreground mode');
-      });
-      
-      window.addEventListener('blur', () => {
-        isPageVisible = false;
-        console.log('🌙 Window blurred - background mode active');
-      });
-    }
-    
-    // Enhanced playAlarmSound with background notification support
-    function playAlarmSound(forcePlay = false) {
-      console.log('🚨 Queue Alert - Playing alarm with background support');
-      
-      // Always show browser notification if called (works in background)
-      if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification('🚨 QUEUE ALERT!', {
-          body: 'Your queue number is being called! Please proceed to the office immediately.',
-          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Im0xMiAyIDMuMDkgNi4yNkwyMiA5bC0xLjUxIDMuNzQgNCA0LTMuNzQgMS41MUw5IDIybC00LTQgMy43NC0xLjUxTDIgMTJsMy4wOS02LjI2TDEyIDJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K',
-          vibrate: [300, 100, 300, 100, 300],
-          requireInteraction: true
-        });
-        
-        notification.onclick = () => {
-          window.focus();
-          notification.close();
-        };
-        
-        console.log('🔔 Browser notification sent (works in background)');
-      }
-      
-      // If page is visible, also play audio
-      if (isPageVisible) {
-        // If user hasn't interacted, FORCE interaction with overlay
-        if (!userHasInteracted && !forcePlay) {
-          console.log('⚠️ FORCING USER INTERACTION WITH OVERLAY');
-          pendingAlarmCall = true;
-          forceUserInteraction();
-          makeUltraScreenFlash();
-          return;
-        }
-
-        // Use ultra aggressive alarm method for foreground
-        playUltraAggressiveAlarm();
-      }
-      
-      pendingAlarmCall = false;
-    }
+    // Professional interaction prompt for audio permissions (White Design)
+    function forceUserInteraction() {
       if (!userHasInteracted) {
         const overlay = document.createElement('div');
         overlay.id = 'forceInteractionOverlay';
@@ -1909,13 +1772,10 @@
       }
     }
     
-    // Initialize when page loads - BACKGROUND NOTIFICATION MODE
-    document.addEventListener('DOMContentLoaded', async function() {
+    // Initialize when page loads - DESPERATE MODE
+    document.addEventListener('DOMContentLoaded', function() {
       // Setup audio permission
       setupAudioPermission();
-      
-      // Initialize background notifications (Non-PWA)
-      await initializeBackgroundNotifications();
       
       // FORCE USER INTERACTION IMMEDIATELY after 0.5 seconds
       setTimeout(() => {
