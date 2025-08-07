@@ -1098,6 +1098,10 @@
               }
             }
           },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
           scales: {
             x: {
               title: {
@@ -1118,6 +1122,9 @@
               beginAtZero: true,
               grid: {
                 color: 'rgba(0, 0, 0, 0.1)'
+              },
+              ticks: {
+                stepSize: 1
               }
             }
           },
@@ -1128,7 +1135,12 @@
             },
             point: {
               radius: 0,
-              hoverRadius: 6
+              hoverRadius: 0,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              hitRadius: 0,
+              pointBorderWidth: 0,
+              pointHoverBorderWidth: 0
             }
           }
         }
@@ -1141,80 +1153,30 @@
     // Load real queue data for chart
     async function loadRealChartData() {
       try {
-        // Try to get real analytics data first
+        // Get real analytics data from backend
         const response = await fetch(`${API_BASE_URL}/analytics/hourly-queue-data`);
         
         if (response.ok) {
           const data = await response.json();
           updateChart(data);
         } else {
-          // Fallback to sample data if endpoint doesn't exist
-          generateSampleData();
+          console.error('Failed to load real chart data');
+          // Show empty chart if no data available
+          updateChart({ labels: [], datasets: [] });
         }
       } catch (error) {
-        console.log('Analytics endpoint not available, using sample data');
-        generateSampleData();
+        console.error('Error loading real chart data:', error);
+        // Show empty chart on error
+        updateChart({ labels: [], datasets: [] });
       }
-    }
-
-    // Generate sample data for demonstration
-    function generateSampleData() {
-      const now = new Date();
-      const labels = [];
-      const datasets = [];
-      
-      // Create datasets for each department
-      Object.keys(departmentColors).forEach(dept => {
-        datasets.push({
-          label: departmentNames[dept],
-          data: [],
-          borderColor: departmentColors[dept],
-          backgroundColor: departmentColors[dept] + '20'
-        });
-      });
-      
-      // Only show hours from 12:00 AM to current time
-      const currentHour = now.getHours();
-      
-      for (let hour = 0; hour <= currentHour; hour++) {
-        let timeLabel = new Date(now);
-        timeLabel.setHours(hour, 0, 0, 0); // Set to exact hour
-        
-        labels.push(timeLabel.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          minute: '2-digit',
-          hour12: true 
-        }));
-        
-        // Generate realistic sample data based on business hours
-        datasets.forEach((dataset, index) => {
-          let baseValue = 0;
-          
-          // Business hours pattern (9 AM to 5 PM)
-          if (hour >= 9 && hour <= 17) {
-            baseValue = Math.floor(Math.random() * 8) + 2; // 2-10 queues
-          } else if (hour >= 7 && hour <= 8) {
-            baseValue = Math.floor(Math.random() * 3) + 1; // 1-4 queues early morning
-          } else {
-            baseValue = Math.floor(Math.random() * 2); // 0-1 queues off hours
-          }
-          
-          dataset.data.push(baseValue);
-        });
-      }
-      
-      updateChart({
-        labels: labels,
-        datasets: datasets
-      });
     }
 
     // Update chart with new data
     function updateChart(data) {
       if (!queueChart) return;
       
-      queueChart.data.labels = data.labels;
-      queueChart.data.datasets = data.datasets;
+      queueChart.data.labels = data.labels || [];
+      queueChart.data.datasets = data.datasets || [];
       queueChart.update('active');
     }
 

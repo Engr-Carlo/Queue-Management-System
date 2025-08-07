@@ -1075,6 +1075,95 @@ def get_hourly_queue_data():
         print(f"Error getting hourly queue data: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/analytics/hourly-queue-data')
+def get_hourly_queue_data():
+    """Get hourly queue data for today's chart"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Get today's date
+        today = datetime.now().strftime('%Y-%m-%d')
+        current_hour = datetime.now().hour
+        
+        # Initialize data structure
+        hourly_data = {}
+        departments = {
+            'dean': 'Dean%',
+            'ie-chair': 'IE%', 
+            'cpe-chair': 'CPE%',
+            'ece-chair': 'ECE%',
+            'others': 'Other%'
+        }
+        
+        # For each department, get hourly queue counts
+        for dept_key, person_filter in departments.items():
+            hourly_counts = []
+            
+            # Only get data from 12:00 AM to current hour
+            for hour in range(0, current_hour + 1):
+                # Count queues created in this specific hour
+                cur.execute("""
+                    SELECT COUNT(*) FROM queue 
+                    WHERE person LIKE %s 
+                    AND DATE(created_at) = %s 
+                    AND EXTRACT(HOUR FROM created_at) = %s
+                """, (person_filter, today, hour))
+                
+                count = cur.fetchone()[0] or 0
+                hourly_counts.append(count)
+            
+            hourly_data[dept_key] = hourly_counts
+        
+        # Generate time labels (12:00 AM to current hour)
+        labels = []
+        for hour in range(0, current_hour + 1):
+            time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
+            labels.append(time_obj.strftime('%I:%M %p'))
+        
+        # Format data for Chart.js
+        datasets = []
+        department_colors = {
+            'dean': '#ef4444',
+            'ie-chair': '#3b82f6', 
+            'cpe-chair': '#10b981',
+            'ece-chair': '#f59e0b',
+            'others': '#8b5cf6'
+        }
+        
+        department_names = {
+            'dean': "Dean's Office",
+            'ie-chair': 'IE Department',
+            'cpe-chair': 'CPE Department', 
+            'ece-chair': 'ECE Department',
+            'others': 'Others'
+        }
+        
+        for dept_key in departments.keys():
+            datasets.append({
+                'label': department_names[dept_key],
+                'data': hourly_data[dept_key],
+                'borderColor': department_colors[dept_key],
+                'backgroundColor': department_colors[dept_key] + '20',
+                'pointRadius': 0,
+                'pointHoverRadius': 0,
+                'pointBorderWidth': 0
+            })
+        
+        conn.close()
+        
+        return jsonify({
+            'labels': labels,
+            'datasets': datasets
+        })
+        
+    except Exception as e:
+        print(f"Error getting hourly queue data: {e}")
+        return jsonify({"error": str(e)}), 500
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Queue Management System API...")
