@@ -141,6 +141,21 @@
       box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
     }
 
+    .queue-item[data-present="true"] {
+      background: rgba(34, 197, 94, 0.05);
+      border: 2px solid rgba(34, 197, 94, 0.3);
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.1);
+    }
+
+    .queue-item[data-present="true"]:hover {
+      border-color: #16a34a;
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.2);
+    }
+
+    .queue-item[data-present="true"] .queue-number {
+      color: #16a34a;
+    }
+
     .queue-number {
       font-size: 1.8rem;
       font-weight: 900;
@@ -818,13 +833,22 @@
       }
 
       queueList.innerHTML = queues.map(queue => `
-        <div class="queue-item" data-id="${queue.id}">
+        <div class="queue-item" data-id="${queue.id}" data-present="${queue.is_present || false}">
           <div class="queue-number">${queue.number}</div>
           <div class="queue-details">
             <div class="queue-info">
               <div class="queue-person">${queue.person}</div>
               <div class="queue-meta">📅 ${queue.date} • ⏰ ${queue.time}</div>
               <div class="queue-meta">Status: ${queue.status}</div>
+              ${queue.is_present ? 
+                `<div class="queue-meta" style="color: #16a34a; font-weight: 600; margin-top: 5px;">
+                  ✋ Student is here and ready!
+                  ${queue.present_at ? `<span style="font-size: 0.8rem; color: #6b7280;">(${new Date(queue.present_at).toLocaleTimeString()})</span>` : ''}
+                </div>` : 
+                `<div class="queue-meta" style="color: #6b7280; font-style: italic; margin-top: 5px;">
+                  📍 Student status unknown
+                </div>`
+              }
             </div>
             <div class="queue-actions">
               ${queue.status === 'called' ? 

@@ -125,7 +125,9 @@ def create_queue():
                 created_at TIMESTAMP DEFAULT NOW(),
                 called BOOLEAN DEFAULT FALSE,
                 called_at TIMESTAMP DEFAULT NULL,
-                called_by VARCHAR(255) DEFAULT NULL
+                called_by VARCHAR(255) DEFAULT NULL,
+                is_present BOOLEAN DEFAULT FALSE,
+                present_at TIMESTAMP DEFAULT NULL
             )
         """)
         
@@ -154,6 +156,8 @@ def get_queue(queue_id):
         try:
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS accessed BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS accessed_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
             conn.commit()
         except Exception as alter_error:
             # Columns might already exist, continue
@@ -240,6 +244,8 @@ def get_admin_queue(department):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_by VARCHAR(255) DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
             conn.commit()
         except Exception:
             pass
@@ -257,7 +263,7 @@ def get_admin_queue(department):
         
         # Get current queue (not completed) for this department, ordered by creation time
         cur.execute("""
-            SELECT id, number, person, date, time, status, created_at 
+            SELECT id, number, person, date, time, status, created_at, is_present, present_at 
             FROM queue 
             WHERE person LIKE %s AND (completed IS NULL OR completed = FALSE)
             ORDER BY created_at ASC
@@ -275,7 +281,9 @@ def get_admin_queue(department):
                 "date": row[3],
                 "time": row[4],
                 "status": row[5],
-                "created_at": row[6].isoformat() if row[6] else None
+                "created_at": row[6].isoformat() if row[6] else None,
+                "is_present": row[7] if len(row) > 7 else False,
+                "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None
             })
         
         return jsonify(queues)
@@ -498,7 +506,7 @@ def get_queue_status(queue_id):
         cur = conn.cursor()
         
         # Get the current queue details
-        cur.execute("SELECT number, person, created_at, called FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
+        cur.execute("SELECT number, person, created_at, called, is_present FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
         current_queue = cur.fetchone()
         
         if not current_queue:
@@ -508,6 +516,7 @@ def get_queue_status(queue_id):
         person = current_queue[1]
         created_at = current_queue[2]
         is_called = current_queue[3] if len(current_queue) > 3 else False
+        is_present = current_queue[4] if len(current_queue) > 4 else False
         
         # If created_at is None, use current time as fallback
         if not created_at:
@@ -561,9 +570,147 @@ def get_queue_status(queue_id):
             "department_prefix": department_prefix,
             "admin_status": admin_status,
             "is_called": is_called,
+            "is_present": is_present,
             "queue_number": queue_number
         })
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/queue/im-here/<queue_id>', methods=['POST'])
+def queue_im_here(queue_id):
+    """Mark queue as 'I'm here' - user is present and ready"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Add missing columns if they don't exist
+        try:
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
+            conn.commit()
+        except Exception:
+            pass  # Columns might already exist
+        
+        # Check if queue exists and is not completed
+        cur.execute("SELECT number, person FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
+        queue_data = cur.fetchone()
+        
+        if not queue_data:
+            return jsonify({"success": False, "error": "Queue not found or already completed"}), 404
+        
+        # Mark as present
+        cur.execute("""
+            UPDATE queue 
+            SET is_present = TRUE, present_at = NOW() 
+            WHERE id = %s
+        """, (queue_id,))
+        
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "error": "Failed to update queue"}), 400
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True, 
+            "message": "Successfully marked as present",
+            "queue_number": queue_data[0]
+        })
+        
+    except Exception as e:
+        print(f"Error in im-here endpoint: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/queue/cancel-im-here/<queue_id>', methods=['POST'])
+def cancel_queue_im_here(queue_id):
+    """Cancel 'I'm here' status"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Check if queue exists and is not completed
+        cur.execute("SELECT number FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
+        queue_data = cur.fetchone()
+        
+        if not queue_data:
+            return jsonify({"success": False, "error": "Queue not found or already completed"}), 404
+        
+        # Remove present status
+        cur.execute("""
+            UPDATE queue 
+            SET is_present = FALSE, present_at = NULL 
+            WHERE id = %s
+        """, (queue_id,))
+        
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "error": "Failed to update queue"}), 400
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True, 
+            "message": "Successfully cancelled present status",
+            "queue_number": queue_data[0]
+        })
+        
+    except Exception as e:
+        print(f"Error in cancel-im-here endpoint: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/queue/<queue_id>/is-previous-day')
+def check_if_previous_day_queue(queue_id):
+    """Check if a queue is from a previous day"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Get queue creation date
+        cur.execute("SELECT created_at, date FROM queue WHERE id = %s", (queue_id,))
+        queue_data = cur.fetchone()
+        conn.close()
+        
+        if not queue_data:
+            return jsonify({"error": "Queue not found"}), 404
+        
+        created_at = queue_data[0]
+        queue_date_str = queue_data[1]
+        
+        # Get today's date
+        today = datetime.now().date()
+        
+        # Check if created_at is from a previous day
+        if created_at:
+            queue_date = created_at.date()
+            is_previous_day = queue_date < today
+        else:
+            # Fallback to parsing the date string
+            try:
+                # Parse various date formats
+                from dateutil import parser
+                parsed_date = parser.parse(queue_date_str).date()
+                is_previous_day = parsed_date < today
+            except:
+                # If parsing fails, assume it's not from previous day
+                is_previous_day = False
+        
+        return jsonify({
+            "is_previous_day": is_previous_day,
+            "queue_date": queue_date.isoformat() if 'queue_date' in locals() else queue_date_str,
+            "today": today.isoformat()
+        })
+        
+    except Exception as e:
+        print(f"Error checking previous day queue: {e}")
         return jsonify({"error": str(e)}), 500
 
 # Admin status management
