@@ -242,6 +242,30 @@
       box-shadow: 0 8px 25px rgba(239, 68, 68, 0.3);
     }
 
+    .btn-mute {
+      background: linear-gradient(135deg, #6b7280, #4b5563);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .btn-mute:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);
+    }
+
+    .btn-mute.muted {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+
+    .btn-mute.muted:hover {
+      box-shadow: 0 8px 25px rgba(245, 158, 11, 0.3);
+    }
+
     .status-indicator {
       display: inline-block;
       padding: 4px 12px;
@@ -544,20 +568,7 @@
         </div>
       </div>
 
-      <!-- Audio Control -->
-      <div class="department-status" style="border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.05);">
-        <h5 class="mb-3" style="color: #3b82f6;">🔊 Audio Control</h5>
-        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 15px;">
-          Control whether users receive audio alerts when their queue is called
-        </p>
-        <div class="status-toggle">
-          <button id="audioUnmutedBtn" class="status-btn active" onclick="setAudioSetting('unmuted')">🔊 Audio ON</button>
-          <button id="audioMutedBtn" class="status-btn" onclick="setAudioSetting('muted')">🔇 Audio OFF</button>
-        </div>
-        <div style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
-          <span id="audioStatusText">Users will hear audio alerts when called</span>
-        </div>
-      </div>
+
 
       <!-- Dean-only Delete All Queues Section -->
       <div id="deanControls" class="department-status" style="display: none; border: 2px solid #dc2626; background: rgba(239, 68, 68, 0.05);">
@@ -802,6 +813,14 @@
     function displayQueue(queues) {
       const queueList = document.getElementById('queueList');
       
+      // Update mutedQueues set based on server data
+      mutedQueues.clear();
+      queues.forEach(queue => {
+        if (queue.is_muted) {
+          mutedQueues.add(queue.id);
+        }
+      });
+      
       if (queues.length === 0) {
         queueList.innerHTML = `
           <div class="no-queues">
@@ -813,7 +832,9 @@
         return;
       }
 
-      queueList.innerHTML = queues.map(queue => `
+      queueList.innerHTML = queues.map(queue => {
+        const isMuted = mutedQueues.has(queue.id);
+        return `
         <div class="queue-item" data-id="${queue.id}" data-present="${queue.is_present || false}">
           <div class="queue-number">${queue.number}</div>
           <div class="queue-details">
@@ -830,6 +851,11 @@
                   📍 Student status unknown
                 </div>`
               }
+              ${isMuted ? 
+                `<div class="queue-meta" style="color: #f59e0b; font-weight: 600; margin-top: 5px;">
+                  🔇 Audio alerts muted for this queue
+                </div>` : ''
+              }
             </div>
             <div class="queue-actions">
               ${queue.status === 'called' ? 
@@ -838,6 +864,9 @@
                 </button>
                 <button class="btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')">
                   ✅ Complete
+                </button>
+                <button class="btn-mute ${isMuted ? 'muted' : ''}" onclick="toggleQueueMute('${queue.id}', '${queue.number}')" id="muteBtn-${queue.id}">
+                  ${isMuted ? '🔊 Unmute' : '🔇 Mute'}
                 </button>` :
                 `<button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
                   📞 Call Queue
@@ -846,7 +875,7 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
     }
 
     // Call queue function
@@ -947,6 +976,67 @@
         console.error('Error completing queue:', error);
         alert('Error completing queue. Please check your connection.');
       }
+    }
+
+    // Queue-specific mute functionality
+    let mutedQueues = new Set(); // Store muted queue IDs
+
+    // Toggle mute for a specific queue
+    async function toggleQueueMute(queueId, queueNumber) {
+      const muteBtn = document.getElementById(`muteBtn-${queueId}`);
+      
+      if (mutedQueues.has(queueId)) {
+        // Unmute the queue
+        mutedQueues.delete(queueId);
+        muteBtn.textContent = '🔇 Mute';
+        muteBtn.classList.remove('muted');
+        
+        // Optional: Call backend to update mute status
+        try {
+          await fetch(`${API_BASE_URL}/admin/unmute-queue/${queueId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              unmutedBy: adminSession.department,
+              unmutedAt: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.log('Warning: Could not update unmute status on server');
+        }
+        
+        alert(`Queue ${queueNumber} audio alerts have been UNMUTED. Users will hear sounds when called.`);
+      } else {
+        // Mute the queue
+        mutedQueues.add(queueId);
+        muteBtn.textContent = '🔊 Unmute';
+        muteBtn.classList.add('muted');
+        
+        // Optional: Call backend to update mute status
+        try {
+          await fetch(`${API_BASE_URL}/admin/mute-queue/${queueId}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              mutedBy: adminSession.department,
+              mutedAt: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.log('Warning: Could not update mute status on server');
+        }
+        
+        alert(`Queue ${queueNumber} audio alerts have been MUTED. Users will NOT hear sounds when called.`);
+      }
+    }
+
+    // Check if a queue is muted
+    function isQueueMuted(queueId) {
+      return mutedQueues.has(queueId);
     }
 
     // Load recent activity

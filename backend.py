@@ -263,7 +263,7 @@ def get_admin_queue(department):
         
         # Get current queue (not completed) for this department, ordered by creation time
         cur.execute("""
-            SELECT id, number, person, date, time, status, created_at, is_present, present_at 
+            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
             FROM queue 
             WHERE person LIKE %s AND (completed IS NULL OR completed = FALSE)
             ORDER BY created_at ASC
@@ -283,7 +283,8 @@ def get_admin_queue(department):
                 "status": row[5],
                 "created_at": row[6].isoformat() if row[6] else None,
                 "is_present": row[7] if len(row) > 7 else False,
-                "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None
+                "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None,
+                "is_muted": row[9] if len(row) > 9 else False
             })
         
         return jsonify(queues)
@@ -663,6 +664,129 @@ def cancel_queue_im_here(queue_id):
     except Exception as e:
         print(f"Error in cancel-im-here endpoint: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/mute-queue/<queue_id>', methods=['POST'])
+def mute_queue(queue_id):
+    """Mute audio alerts for a specific queue"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Add missing columns if they don't exist
+        try:
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_by VARCHAR(255) DEFAULT NULL")
+            conn.commit()
+        except Exception:
+            pass  # Columns might already exist
+        
+        # Check if queue exists and is called
+        cur.execute("SELECT number FROM queue WHERE id = %s AND called = TRUE AND completed = FALSE", (queue_id,))
+        queue_data = cur.fetchone()
+        
+        if not queue_data:
+            return jsonify({"success": False, "error": "Queue not found, not called, or already completed"}), 404
+        
+        # Mark as muted
+        data = request.json
+        cur.execute("""
+            UPDATE queue 
+            SET is_muted = TRUE, muted_at = NOW(), muted_by = %s 
+            WHERE id = %s
+        """, (data.get('mutedBy'), queue_id))
+        
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "error": "Failed to mute queue"}), 400
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True, 
+            "message": "Queue audio alerts muted",
+            "queue_number": queue_data[0]
+        })
+        
+    except Exception as e:
+        print(f"Error in mute-queue endpoint: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/admin/unmute-queue/<queue_id>', methods=['POST'])
+def unmute_queue(queue_id):
+    """Unmute audio alerts for a specific queue"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Check if queue exists and is called
+        cur.execute("SELECT number FROM queue WHERE id = %s AND called = TRUE AND completed = FALSE", (queue_id,))
+        queue_data = cur.fetchone()
+        
+        if not queue_data:
+            return jsonify({"success": False, "error": "Queue not found, not called, or already completed"}), 404
+        
+        # Remove muted status
+        data = request.json
+        cur.execute("""
+            UPDATE queue 
+            SET is_muted = FALSE, muted_at = NULL, muted_by = NULL 
+            WHERE id = %s
+        """, (queue_id,))
+        
+        if cur.rowcount == 0:
+            return jsonify({"success": False, "error": "Failed to unmute queue"}), 400
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            "success": True, 
+            "message": "Queue audio alerts unmuted",
+            "queue_number": queue_data[0]
+        })
+        
+    except Exception as e:
+        print(f"Error in unmute-queue endpoint: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/queue/<queue_id>/mute-status')
+def get_queue_mute_status(queue_id):
+    """Check if a specific queue is muted"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Get mute status for this queue
+        cur.execute("SELECT is_muted_by_admin, muted_at, muted_by FROM queue WHERE id = %s", (queue_id,))
+        mute_data = cur.fetchone()
+        conn.close()
+        
+        if not mute_data:
+            return jsonify({"error": "Queue not found"}), 404
+        
+        is_muted = mute_data[0] if mute_data[0] is not None else False
+        muted_at = mute_data[1]
+        muted_by = mute_data[2]
+        
+        return jsonify({
+            "is_muted": is_muted,
+            "muted_at": muted_at.isoformat() if muted_at else None,
+            "muted_by": muted_by
+        })
+        
+    except Exception as e:
+        print(f"Error checking queue mute status: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/queue/<queue_id>/is-previous-day')
 def check_if_previous_day_queue(queue_id):
