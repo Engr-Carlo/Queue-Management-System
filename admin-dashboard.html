@@ -351,6 +351,21 @@
         </div>
       </div>
 
+      <!-- Audio Control -->
+      <div class="department-status" style="border: 2px solid #3b82f6; background: rgba(59, 130, 246, 0.05);">
+        <h5 class="mb-3" style="color: #3b82f6;">🔊 Audio Control</h5>
+        <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 15px;">
+          Control whether users receive audio alerts when their queue is called
+        </p>
+        <div class="status-toggle">
+          <button id="audioUnmutedBtn" class="status-btn active" onclick="setAudioSetting('unmuted')">🔊 Audio ON</button>
+          <button id="audioMutedBtn" class="status-btn" onclick="setAudioSetting('muted')">🔇 Audio OFF</button>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.85rem; color: #6b7280;">
+          <span id="audioStatusText">Users will hear audio alerts when called</span>
+        </div>
+      </div>
+
       <!-- Dean-only Delete All Queues Section -->
       <div id="deanControls" class="department-status" style="display: none; border: 2px solid #dc2626; background: rgba(239, 68, 68, 0.05);">
         <h5 class="mb-3" style="color: #dc2626;">⚠️ Dean Administrative Controls</h5>
@@ -457,6 +472,9 @@
       
       // Load current admin status
       loadAdminStatus();
+      
+      // Load current audio setting
+      loadAudioSetting();
       
       // Load dashboard data
       loadDashboard();
@@ -897,6 +915,85 @@
         const deleteBtn = document.getElementById('confirmDeleteBtn');
         deleteBtn.innerHTML = '🗑️ DELETE ALL QUEUES';
         deleteBtn.disabled = false;
+      }
+    }
+
+    // Load current audio setting
+    async function loadAudioSetting() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/audio-setting/${adminSession.department}`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          updateAudioUI(result.muted || false);
+        } else {
+          // Default to unmuted if no setting found
+          updateAudioUI(false);
+        }
+      } catch (error) {
+        console.error('Error loading audio setting:', error);
+        // Default to unmuted on error
+        updateAudioUI(false);
+      }
+    }
+
+    // Set audio setting (muted/unmuted)
+    async function setAudioSetting(setting) {
+      const isMuted = setting === 'muted';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/audio-setting`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            department: adminSession.department,
+            muted: isMuted
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Audio setting updated successfully:', result);
+          
+          // Update UI
+          updateAudioUI(isMuted);
+          
+          // Show success feedback
+          const message = isMuted ? 
+            'Audio alerts DISABLED - Users will not hear sounds when called' : 
+            'Audio alerts ENABLED - Users will hear sounds when called';
+          showStatusFeedback(message, 'success');
+        } else {
+          throw new Error('Failed to update audio setting');
+        }
+      } catch (error) {
+        console.error('Error updating audio setting:', error);
+        showStatusFeedback('Failed to update audio setting', 'error');
+      }
+    }
+
+    // Update audio UI based on current setting
+    function updateAudioUI(isMuted) {
+      const unmuteBtn = document.getElementById('audioUnmutedBtn');
+      const muteBtn = document.getElementById('audioMutedBtn');
+      const statusText = document.getElementById('audioStatusText');
+      
+      // Remove active class from both buttons
+      unmuteBtn.classList.remove('active');
+      muteBtn.classList.remove('active');
+      
+      if (isMuted) {
+        muteBtn.classList.add('active');
+        statusText.textContent = 'Users will NOT hear audio alerts when called (MUTED)';
+        statusText.style.color = '#dc2626';
+        statusText.style.fontWeight = '600';
+      } else {
+        unmuteBtn.classList.add('active');
+        statusText.textContent = 'Users will hear audio alerts when called';
+        statusText.style.color = '#6b7280';
+        statusText.style.fontWeight = 'normal';
       }
     }
 
