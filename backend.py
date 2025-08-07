@@ -246,6 +246,9 @@ def get_admin_queue(department):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_by VARCHAR(255) DEFAULT NULL")
             conn.commit()
         except Exception:
             pass
@@ -767,7 +770,7 @@ def get_queue_mute_status(queue_id):
         cur = conn.cursor()
         
         # Get mute status for this queue
-        cur.execute("SELECT is_muted_by_admin, muted_at, muted_by FROM queue WHERE id = %s", (queue_id,))
+        cur.execute("SELECT is_muted, muted_at, muted_by FROM queue WHERE id = %s", (queue_id,))
         mute_data = cur.fetchone()
         conn.close()
         
