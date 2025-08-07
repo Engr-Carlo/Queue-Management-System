@@ -570,46 +570,6 @@
         </button>
       </div>
 
-      <!-- Statistics Row -->
-      <div class="row">
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
-              📊
-            </div>
-            <div class="stats-number text-success" id="totalToday">0</div>
-            <div class="stats-label">Total Today</div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-              ⏳
-            </div>
-            <div class="stats-number text-primary" id="currentQueue">0</div>
-            <div class="stats-label">Current Queue</div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-              ✅
-            </div>
-            <div class="stats-number text-warning" id="completedToday">0</div>
-            <div class="stats-label">Completed Today</div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
-              ⏱️
-            </div>
-            <div class="stats-number text-purple" id="avgWaitTime">0m</div>
-            <div class="stats-label">Avg Wait Time</div>
-          </div>
-        </div>
-      </div>
-
       <!-- Data Visualization Section -->
       <div class="chart-container">
         <div class="chart-header">
@@ -664,23 +624,44 @@
         <div id="chartCanvasContainer">
           <canvas id="queueChart"></canvas>
         </div>
+      </div>
 
-        <div class="chart-stats">
-          <div class="chart-stat">
-            <div class="chart-stat-value" style="color: #ef4444;" id="totalQueuedToday">0</div>
-            <div class="chart-stat-label">Total Queued Today</div>
+      <!-- Statistics Row -->
+      <div class="row">
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
+              📊
+            </div>
+            <div class="stats-number text-success" id="totalToday">0</div>
+            <div class="stats-label">Total Today</div>
           </div>
-          <div class="chart-stat">
-            <div class="chart-stat-value" style="color: #10b981;" id="peakHour">--</div>
-            <div class="chart-stat-label">Peak Hour</div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+              ⏳
+            </div>
+            <div class="stats-number text-primary" id="currentQueue">0</div>
+            <div class="stats-label">Current Queue</div>
           </div>
-          <div class="chart-stat">
-            <div class="chart-stat-value" style="color: #3b82f6;" id="avgPerHour">0</div>
-            <div class="chart-stat-label">Avg Per Hour</div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+              ✅
+            </div>
+            <div class="stats-number text-warning" id="completedToday">0</div>
+            <div class="stats-label">Completed Today</div>
           </div>
-          <div class="chart-stat">
-            <div class="chart-stat-value" style="color: #f59e0b;" id="busiestDept">--</div>
-            <div class="chart-stat-label">Busiest Dept</div>
+        </div>
+        <div class="col-md-3">
+          <div class="stats-card">
+            <div class="stats-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+              ⏱️
+            </div>
+            <div class="stats-number text-purple" id="avgWaitTime">0m</div>
+            <div class="stats-label">Avg Wait Time</div>
           </div>
         </div>
       </div>
