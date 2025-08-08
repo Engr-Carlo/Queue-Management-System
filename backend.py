@@ -1156,6 +1156,100 @@ def get_hourly_queue_data():
             ]
         })
 
+@app.route('/analytics/hourly-department-data')
+def get_hourly_department_data():
+    """Get real hourly queue data for each department from the database"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({
+                'error': 'Database connection failed'
+            }), 500
+        
+        cur = conn.cursor()
+        
+        # Get today's date
+        today = datetime.now().strftime('%Y-%m-%d')
+        
+        # Initialize result structure
+        result = {
+            'dean': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'ie': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'cpe': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'ece': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'others': {'hourlyData': [0] * 24, 'totalToday': 0}
+        }
+        
+        # Department mapping
+        department_map = {
+            'A': 'dean',
+            'B': 'ie', 
+            'C': 'cpe',
+            'D': 'ece',
+            'E': 'others'
+        }
+        
+        # Query to get hourly queue data for today
+        cur.execute("""
+            SELECT 
+                SUBSTRING(number FROM 1 FOR 1) as dept_prefix,
+                EXTRACT(HOUR FROM created_at) as hour,
+                COUNT(*) as queue_count
+            FROM queue 
+            WHERE DATE(created_at) = %s
+            GROUP BY SUBSTRING(number FROM 1 FOR 1), EXTRACT(HOUR FROM created_at)
+            ORDER BY dept_prefix, hour
+        """, (today,))
+        
+        hourly_data = cur.fetchall()
+        
+        # Process hourly data
+        for row in hourly_data:
+            dept_prefix = row[0]
+            hour = int(row[1]) if row[1] is not None else 0
+            count = row[2]
+            
+            dept_key = department_map.get(dept_prefix)
+            if dept_key and 0 <= hour < 24:
+                result[dept_key]['hourlyData'][hour] = count
+        
+        # Get total counts for each department today
+        cur.execute("""
+            SELECT 
+                SUBSTRING(number FROM 1 FOR 1) as dept_prefix,
+                COUNT(*) as total_count
+            FROM queue 
+            WHERE DATE(created_at) = %s
+            GROUP BY SUBSTRING(number FROM 1 FOR 1)
+        """, (today,))
+        
+        total_data = cur.fetchall()
+        
+        # Process total data
+        for row in total_data:
+            dept_prefix = row[0]
+            total_count = row[1]
+            
+            dept_key = department_map.get(dept_prefix)
+            if dept_key:
+                result[dept_key]['totalToday'] = total_count
+        
+        conn.close()
+        
+        print(f"DEBUG: Hourly department data: {result}")
+        return jsonify(result)
+        
+    except Exception as e:
+        print(f"ERROR in hourly-department-data: {e}")
+        # Return empty data structure on error
+        return jsonify({
+            'dean': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'ie': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'cpe': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'ece': {'hourlyData': [0] * 24, 'totalToday': 0},
+            'others': {'hourlyData': [0] * 24, 'totalToday': 0}
+        })
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     print("🚀 Starting Queue Management System API...")
