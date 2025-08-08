@@ -713,38 +713,50 @@
       'others': 'Others'
     };
 
-    // Check authentication - TEMPORARY BYPASS FOR TESTING
+    // Check authentication
     document.addEventListener('DOMContentLoaded', function() {
-      console.log('DOM loaded, BYPASSING authentication for chart testing...');
+      const storedSession = localStorage.getItem('adminSession');
       
-      // Create a fake admin session for testing
-      adminSession = {
-        department: 'dean',
-        name: 'Test Admin',
-        loginTime: new Date().toISOString()
-      };
+      if (!storedSession) {
+        alert('Please log in to access the admin dashboard.');
+        window.location.href = 'admin-login.html';
+        return;
+      }
       
-      // Update admin info
-      document.getElementById('adminInfo').textContent = `Welcome, ${adminSession.name} (TEST MODE)`;
-      
-      // Check if user is dean and show dean controls
-      checkDeanAccess();
-      
-      console.log('Skipping other loads, going straight to chart...');
-      
-      console.log('About to initialize chart...');
-      // Initialize chart
-      initializeChart();
-      
-      console.log('Chart initialization called, waiting 2 seconds...');
-      
-      // Try multiple times to ensure chart loads
-      setTimeout(() => {
-        console.log('Trying chart initialization again...');
-        if (!queueChart) {
-          initializeChart();
+      try {
+        adminSession = JSON.parse(storedSession);
+        
+        // Validate session
+        if (!adminSession.department || !adminSession.name) {
+          throw new Error('Invalid session data');
         }
-      }, 2000);
+        
+        // Update admin info
+        document.getElementById('adminInfo').textContent = `Welcome, ${adminSession.name}`;
+        
+        // Check if user is dean and show dean controls
+        checkDeanAccess();
+        
+        // Load dashboard data
+        loadDashboard();
+        loadAdminStatus();
+        loadAudioSetting();
+        
+        // Initialize chart
+        initializeChart();
+        
+        // Set up auto-refresh
+        refreshInterval = setInterval(() => {
+          loadDashboard();
+          refreshChart();
+        }, 30000);
+        
+      } catch (error) {
+        console.error('Error parsing admin session:', error);
+        alert('Invalid session. Please log in again.');
+        localStorage.removeItem('adminSession');
+        window.location.href = 'admin-login.html';
+      }
     });
 
     // Load dashboard data
@@ -1103,7 +1115,7 @@
               display: false
             }
           },
-          scales: {
+          scales: { 
             x: {
               title: {
                 display: true,
