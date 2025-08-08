@@ -1032,11 +1032,14 @@ def get_hourly_queue_data():
             'others': '#8b5cf6'
         }
         
-        # Create time labels from 12:00 AM to current hour
+        # Create time labels from 12:00 AM to current hour (or at least 8 hours)
+        end_hour = max(current_hour, 7)  # Show at least 8 hours
         labels = []
-        for hour in range(0, current_hour + 1):
+        for hour in range(0, end_hour + 1):
             time_label = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
-            labels.append(time_label.strftime('%I:%M %p'))
+            labels.append(time_label.strftime('%H:%M'))  # 24-hour format
+        
+        print(f"DEBUG: Generated {len(labels)} time labels: {labels}")
         
         # Create datasets for each department
         datasets = []
@@ -1046,11 +1049,13 @@ def get_hourly_queue_data():
                 'label': department_names[dept_key],
                 'data': [],
                 'borderColor': department_colors[dept_key],
-                'backgroundColor': department_colors[dept_key] + '20'
+                'backgroundColor': department_colors[dept_key] + '20',
+                'fill': False,
+                'tension': 0.4
             }
             
             # Get data for each hour
-            for hour in range(0, current_hour + 1):
+            for hour in range(0, end_hour + 1):
                 # Count queues created in this hour
                 cur.execute("""
                     SELECT COUNT(*) FROM queue 
@@ -1061,8 +1066,10 @@ def get_hourly_queue_data():
                 
                 count = cur.fetchone()[0] or 0
                 dataset['data'].append(count)
+                print(f"DEBUG: {dept_key} at {hour:02d}:00 - {count} queues")
             
             datasets.append(dataset)
+            print(f"DEBUG: Dataset for {dept_key}: {dataset['data']}")
         
         conn.close()
         

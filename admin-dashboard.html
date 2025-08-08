@@ -1186,85 +1186,14 @@
       console.log('Number of labels:', data.labels?.length);
       console.log('Number of datasets:', data.datasets?.length);
       
-      // Destroy existing chart
-      queueChart.destroy();
+      // Update the chart data directly instead of destroying it
+      queueChart.data.labels = data.labels || [];
+      queueChart.data.datasets = data.datasets || [];
       
-      // Recreate chart with new data
-      const ctx = document.getElementById('queueChart').getContext('2d');
-      queueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: data.labels || [],
-          datasets: data.datasets || []
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              display: false
-            },
-            tooltip: {
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              titleColor: '#ffffff',
-              bodyColor: '#ffffff',
-              cornerRadius: 8,
-              callbacks: {
-                label: function(context) {
-                  return `${context.dataset.label}: ${context.parsed.y} queues`;
-                }
-              }
-            }
-          },
-          interaction: {
-            intersect: false,
-            mode: 'index'
-          },
-          scales: {
-            x: {
-              title: {
-                display: true,
-                text: 'Time',
-                color: '#6b7280'
-              },
-              grid: {
-                color: 'rgba(0, 0, 0, 0.1)'
-              }
-            },
-            y: {
-              title: {
-                display: true,
-                text: 'Number of Queues',
-                color: '#6b7280'
-              },
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0, 0, 0, 0.1)'
-              },
-              ticks: {
-                stepSize: 1
-              }
-            }
-          },
-          elements: {
-            line: {
-              tension: 0.4,
-              borderWidth: 3
-            },
-            point: {
-              radius: 0,
-              hoverRadius: 0,
-              pointRadius: 0,
-              pointHoverRadius: 0,
-              hitRadius: 0,
-              pointBorderWidth: 0,
-              pointHoverBorderWidth: 0
-            }
-          }
-        }
-      });
+      // Force chart update
+      queueChart.update('active');
       
-      console.log('Chart recreated successfully');
+      console.log('Chart updated successfully');
     }
 
     // Refresh chart data
