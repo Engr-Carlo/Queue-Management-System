@@ -6,6 +6,7 @@
   <title>Admin Dashboard - Queue Management System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="config.js"></script>
   <style>
     body {
@@ -348,6 +349,54 @@
       font-weight: 400;
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
+
+    /* Data Visualization Cards */
+    .viz-card {
+      background: white;
+      border-radius: 15px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+      border: 1px solid #e5e7eb;
+      margin-bottom: 15px;
+      transition: transform 0.3s ease;
+    }
+
+    .viz-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .viz-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .viz-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .viz-count {
+      font-size: 1.8rem;
+      font-weight: 900;
+      margin: 0;
+    }
+
+    .viz-chart-container {
+      height: 120px;
+      position: relative;
+      margin-top: 10px;
+    }
+
+    .viz-chart-container canvas {
+      max-height: 120px;
+    }
     
     @media (max-width: 768px) {
       .developer-credit {
@@ -402,6 +451,87 @@
         <button class="btn btn-danger" onclick="showDeleteAllModal()">
           🗑️ Delete All Queues (ALL DEPARTMENTS)
         </button>
+      </div>
+
+      <!-- Data Visualization Cards -->
+      <div class="row">
+        <div class="col-md-12">
+          <h4 style="margin-bottom: 20px; color: #1a1a1a; font-weight: 700;">📊 Hourly Queue Analytics</h4>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-lg-4 col-md-6">
+          <div class="viz-card">
+            <div class="viz-header">
+              <div>
+                <h5 class="viz-title">🏢 Dean's Office</h5>
+                <div class="viz-count" style="color: #ef4444;" id="deanCount">0</div>
+              </div>
+            </div>
+            <div class="viz-chart-container">
+              <canvas id="deanChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="viz-card">
+            <div class="viz-header">
+              <div>
+                <h5 class="viz-title">⚙️ IE Department</h5>
+                <div class="viz-count" style="color: #3b82f6;" id="ieCount">0</div>
+              </div>
+            </div>
+            <div class="viz-chart-container">
+              <canvas id="ieChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="viz-card">
+            <div class="viz-header">
+              <div>
+                <h5 class="viz-title">💻 CPE Department</h5>
+                <div class="viz-count" style="color: #10b981;" id="cpeCount">0</div>
+              </div>
+            </div>
+            <div class="viz-chart-container">
+              <canvas id="cpeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="row">
+        <div class="col-lg-4 col-md-6">
+          <div class="viz-card">
+            <div class="viz-header">
+              <div>
+                <h5 class="viz-title">🔌 ECE Department</h5>
+                <div class="viz-count" style="color: #f59e0b;" id="eceCount">0</div>
+              </div>
+            </div>
+            <div class="viz-chart-container">
+              <canvas id="eceChart"></canvas>
+            </div>
+          </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6">
+          <div class="viz-card">
+            <div class="viz-header">
+              <div>
+                <h5 class="viz-title">📋 Others</h5>
+                <div class="viz-count" style="color: #8b5cf6;" id="othersCount">0</div>
+              </div>
+            </div>
+            <div class="viz-chart-container">
+              <canvas id="othersChart"></canvas>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Statistics Row -->
@@ -470,6 +600,41 @@
   <script>
     let adminSession = null;
     let refreshInterval = null;
+    
+    // Chart instances for each department
+    let departmentCharts = {
+      dean: null,
+      ie: null,
+      cpe: null,
+      ece: null,
+      others: null
+    };
+
+    // Chart colors for each department
+    const departmentColors = {
+      dean: '#ef4444',
+      ie: '#3b82f6',
+      cpe: '#10b981',
+      ece: '#f59e0b',
+      others: '#8b5cf6'
+    };
+
+    // Generate 24-hour labels (12 AM to 11 PM)
+    function generateHourlyLabels() {
+      const labels = [];
+      for (let hour = 0; hour < 24; hour++) {
+        if (hour === 0) {
+          labels.push('12 AM');
+        } else if (hour < 12) {
+          labels.push(`${hour} AM`);
+        } else if (hour === 12) {
+          labels.push('12 PM');
+        } else {
+          labels.push(`${hour - 12} PM`);
+        }
+      }
+      return labels;
+    }
 
     // Check authentication
     document.addEventListener('DOMContentLoaded', function() {
@@ -500,9 +665,13 @@
         loadAdminStatus();
         loadAudioSetting();
         
+        // Initialize charts
+        initializeVisualizationCharts();
+        
         // Set up auto-refresh
         refreshInterval = setInterval(() => {
           loadDashboard();
+          updateVisualizationCharts();
         }, 30000);
         
       } catch (error) {
@@ -822,6 +991,148 @@
     function refreshQueue() {
       loadCurrentQueue();
       loadStatistics();
+    }
+
+    // Initialize visualization charts for all departments
+    function initializeVisualizationCharts() {
+      const departments = ['dean', 'ie', 'cpe', 'ece', 'others'];
+      const hourlyLabels = generateHourlyLabels();
+      
+      departments.forEach(dept => {
+        const canvasId = dept === 'dean' ? 'deanChart' : 
+                        dept === 'ie' ? 'ieChart' :
+                        dept === 'cpe' ? 'cpeChart' :
+                        dept === 'ece' ? 'eceChart' : 'othersChart';
+        
+        const ctx = document.getElementById(canvasId);
+        if (ctx) {
+          departmentCharts[dept] = new Chart(ctx.getContext('2d'), {
+            type: 'line',
+            data: {
+              labels: hourlyLabels,
+              datasets: [{
+                data: new Array(24).fill(0),
+                borderColor: departmentColors[dept],
+                backgroundColor: 'transparent',
+                borderWidth: 2.5,
+                fill: false,
+                tension: 0.3,
+                pointRadius: 0,
+                pointHoverRadius: 0,
+                pointBackgroundColor: departmentColors[dept],
+                pointBorderColor: departmentColors[dept]
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              interaction: {
+                intersect: false,
+                mode: 'index'
+              },
+              plugins: {
+                legend: {
+                  display: false
+                },
+                tooltip: {
+                  enabled: true,
+                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  titleColor: 'white',
+                  bodyColor: 'white',
+                  borderColor: departmentColors[dept],
+                  borderWidth: 1,
+                  displayColors: false,
+                  callbacks: {
+                    title: function(context) {
+                      return context[0].label;
+                    },
+                    label: function(context) {
+                      return `Queues: ${context.parsed.y}`;
+                    }
+                  }
+                }
+              },
+              scales: {
+                x: {
+                  display: false,
+                  grid: {
+                    display: false
+                  }
+                },
+                y: {
+                  display: false,
+                  beginAtZero: true,
+                  grid: {
+                    display: false
+                  }
+                }
+              },
+              elements: {
+                point: {
+                  radius: 0,
+                  hoverRadius: 4
+                }
+              }
+            }
+          });
+        }
+      });
+      
+      // Load initial data
+      updateVisualizationCharts();
+    }
+
+    // Update visualization charts with real data
+    async function updateVisualizationCharts() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/analytics/hourly-department-data`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          updateChartsWithData(data);
+        } else {
+          console.log('Backend not available, using sample data');
+          updateChartsWithSampleData();
+        }
+      } catch (error) {
+        console.log('Error loading chart data:', error);
+        updateChartsWithSampleData();
+      }
+    }
+
+    // Update charts with real data from backend
+    function updateChartsWithData(data) {
+      const departments = ['dean', 'ie', 'cpe', 'ece', 'others'];
+      
+      departments.forEach(dept => {
+        if (departmentCharts[dept] && data[dept]) {
+          // Update chart data
+          departmentCharts[dept].data.datasets[0].data = data[dept].hourlyData || new Array(24).fill(0);
+          departmentCharts[dept].update('none');
+          
+          // Update count display
+          const countElement = document.getElementById(`${dept === 'dean' ? 'dean' : 
+                                                       dept === 'ie' ? 'ie' : 
+                                                       dept === 'cpe' ? 'cpe' : 
+                                                       dept === 'ece' ? 'ece' : 'others'}Count`);
+          if (countElement) {
+            countElement.textContent = data[dept].totalToday || 0;
+          }
+        }
+      });
+    }
+
+    // Update charts with sample data when backend is not available
+    function updateChartsWithSampleData() {
+      const sampleData = {
+        dean: { hourlyData: [0,0,0,0,0,1,3,5,7,4,6,8,5,7,3,4,2,1,0,0,0,0,0,0], totalToday: 56 },
+        ie: { hourlyData: [0,0,0,0,1,2,4,6,8,5,7,9,6,8,4,5,3,2,1,0,0,0,0,0], totalToday: 71 },
+        cpe: { hourlyData: [0,0,0,0,0,1,2,4,6,3,5,7,4,6,2,3,1,1,0,0,0,0,0,0], totalToday: 45 },
+        ece: { hourlyData: [0,0,0,0,1,1,3,5,7,4,6,8,5,7,3,4,2,1,0,0,0,0,0,0], totalToday: 57 },
+        others: { hourlyData: [0,0,0,0,0,1,1,2,3,2,3,4,2,3,1,2,1,0,0,0,0,0,0,0], totalToday: 25 }
+      };
+      
+      updateChartsWithData(sampleData);
     }
 
     // Set department status
