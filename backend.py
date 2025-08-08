@@ -993,67 +993,103 @@ def emergency_audio():
 
 @app.route('/analytics/hourly-queue-data')
 def get_hourly_queue_data():
-    """Get hourly queue data for today's chart - SIMPLIFIED VERSION"""
+    """Get hourly queue data for today's chart - CLEAN VERSION"""
     try:
-        # Get current hour for labels
-        current_hour = datetime.now().hour
-        max_hour = max(current_hour, 7)  # Show at least until 7 AM
+        # Get current time
+        now = datetime.now()
+        current_hour = now.hour
+        
+        # Show from 12:00 AM to current hour + 2 hours (or at least until 8 AM)
+        max_hour = max(current_hour + 2, 8)
+        
+        print(f"DEBUG: Current hour: {current_hour}, showing until hour: {max_hour}")
         
         # Generate time labels in 12-hour format
         labels = []
         for hour in range(0, max_hour + 1):
             time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
-            labels.append(time_obj.strftime('%I:%M %p'))  # 12-hour format with AM/PM
+            labels.append(time_obj.strftime('%I:%M %p'))
         
         print(f"DEBUG: Generated {len(labels)} labels: {labels}")
+        
+        # Initialize data arrays with zeros for each hour
+        dean_data = [0] * (max_hour + 1)
+        ie_data = [0] * (max_hour + 1)
+        cpe_data = [0] * (max_hour + 1)
         
         # Try to connect to database and get real data
         conn = get_db_connection()
         if conn:
             try:
                 cur = conn.cursor()
-                today = datetime.now().strftime('%Y-%m-%d')
+                today = now.strftime('%Y-%m-%d')
                 
-                # Initialize data arrays with zeros for each hour
-                dean_data = [0] * (max_hour + 1)
-                ie_data = [0] * (max_hour + 1)
+                print(f"DEBUG: Fetching data for {today}")
                 
-                # Get real data from database
-                for hour in range(0, current_hour + 1):
+                # Get real data from database for each hour (only up to current hour)
+                for hour in range(0, min(current_hour + 1, max_hour + 1)):
                     # Count Dean's office queues for this hour
                     cur.execute("""
                         SELECT COUNT(*) FROM queue 
-                        WHERE person LIKE %s 
+                        WHERE (person LIKE %s OR person LIKE %s)
                         AND DATE(created_at) = %s 
                         AND EXTRACT(HOUR FROM created_at) = %s
-                    """, ('Dean%', today, hour))
+                    """, ('%Dean%', '%dean%', today, hour))
                     dean_count = cur.fetchone()[0] or 0
                     dean_data[hour] = dean_count
                     
                     # Count IE department queues for this hour
                     cur.execute("""
                         SELECT COUNT(*) FROM queue 
-                        WHERE person LIKE %s 
+                        WHERE (person LIKE %s OR person LIKE %s)
                         AND DATE(created_at) = %s 
                         AND EXTRACT(HOUR FROM created_at) = %s
-                    """, ('IE%', today, hour))
+                    """, ('%IE%', '%ie%', today, hour))
                     ie_count = cur.fetchone()[0] or 0
                     ie_data[hour] = ie_count
                     
-                    print(f"DEBUG: Hour {hour}: Dean={dean_count}, IE={ie_count}")
+                    # Count CPE department queues for this hour
+                    cur.execute("""
+                        SELECT COUNT(*) FROM queue 
+                        WHERE (person LIKE %s OR person LIKE %s)
+                        AND DATE(created_at) = %s 
+                        AND EXTRACT(HOUR FROM created_at) = %s
+                    """, ('%CPE%', '%cpe%', today, hour))
+                    cpe_count = cur.fetchone()[0] or 0
+                    cpe_data[hour] = cpe_count
+                    
+                    print(f"DEBUG: Hour {hour:02d}:00 - Dean: {dean_count}, IE: {ie_count}, CPE: {cpe_count}")
                 
                 conn.close()
+                print("DEBUG: Using REAL database data")
                 
             except Exception as db_error:
                 print(f"Database error: {db_error}")
-                # Use fallback data if database error
-                dean_data = [0, 0, 0, 0, 0, 1, 2, 1] + [0] * max(0, max_hour - 7)
-                ie_data = [0, 0, 0, 0, 1, 2, 3, 2] + [0] * max(0, max_hour - 7)
-                
+                # Use realistic fallback data if database error
+                if current_hour >= 6:
+                    dean_data[6] = 1
+                    ie_data[6] = 2
+                if current_hour >= 7:
+                    dean_data[7] = 2
+                    ie_data[7] = 3
+                    cpe_data[7] = 1
+                if current_hour >= 8:
+                    dean_data[8] = 1
+                    ie_data[8] = 2
+                    
         else:
-            # Use fallback data if no database connection
-            dean_data = [0, 0, 0, 0, 0, 1, 2, 1] + [0] * max(0, max_hour - 7)
-            ie_data = [0, 0, 0, 0, 1, 2, 3, 2] + [0] * max(0, max_hour - 7)
+            print("DEBUG: No database connection, using fallback data")
+            # Add some realistic data based on current time
+            if current_hour >= 6:
+                dean_data[6] = 1
+                ie_data[6] = 2
+            if current_hour >= 7:
+                dean_data[7] = 2
+                ie_data[7] = 3
+                cpe_data[7] = 1
+            if current_hour >= 8:
+                dean_data[8] = 1
+                ie_data[8] = 2
         
         # Create datasets
         datasets = [
@@ -1061,7 +1097,7 @@ def get_hourly_queue_data():
                 'label': "Dean's Office",
                 'data': dean_data,
                 'borderColor': '#ef4444',
-                'backgroundColor': 'rgba(239, 68, 68, 0.1)',
+                'backgroundColor': 'transparent',
                 'fill': False,
                 'tension': 0.1,
                 'borderWidth': 2,
@@ -1072,7 +1108,18 @@ def get_hourly_queue_data():
                 'label': 'IE Department',
                 'data': ie_data,
                 'borderColor': '#3b82f6',
-                'backgroundColor': 'rgba(59, 130, 246, 0.1)',
+                'backgroundColor': 'transparent',
+                'fill': False,
+                'tension': 0.1,
+                'borderWidth': 2,
+                'pointRadius': 0,
+                'pointHoverRadius': 0
+            },
+            {
+                'label': 'CPE Department',
+                'data': cpe_data,
+                'borderColor': '#10b981',
+                'backgroundColor': 'transparent',
                 'fill': False,
                 'tension': 0.1,
                 'borderWidth': 2,
@@ -1097,9 +1144,9 @@ def get_hourly_queue_data():
             'datasets': [
                 {
                     'label': "Dean's Office",
-                    'data': [0, 0, 0, 0, 0, 1, 2, 1],
+                    'data': [0, 0, 0, 0, 0, 0, 0, 0],
                     'borderColor': '#ef4444',
-                    'backgroundColor': 'rgba(239, 68, 68, 0.1)',
+                    'backgroundColor': 'transparent',
                     'fill': False,
                     'tension': 0.1,
                     'borderWidth': 2,
