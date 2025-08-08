@@ -1160,7 +1160,7 @@ def get_hourly_queue_data():
         labels = []
         for hour in range(0, max_hour + 1):
             time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
-            labels.append(time_obj.strftime('%H:%M'))  # 24-hour format
+            labels.append(time_obj.strftime('%I:%M %p'))  # 12-hour format with AM/PM
             
         print(f"DEBUG: Generated {len(labels)} labels: {labels}")
         
