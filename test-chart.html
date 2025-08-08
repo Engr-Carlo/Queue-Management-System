@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 40px;
+            font-family: Arial, sans-serif;
+        }
+        .chart-container {
+            width: 800px;
+            height: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        #testChart {
+            max-height: 350px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Queue Management Chart Test</h1>
+    <p>This is a standalone test to verify the chart works properly.</p>
+    
+    <div class="chart-container">
+        <canvas id="testChart"></canvas>
+    </div>
+    
+    <button onclick="updateWithNewData()">Update with New Data</button>
+    <button onclick="addMoreData()">Add More Data</button>
+    
+    <script>
+        let testChart = null;
+        
+        // Initialize the chart
+        function initChart() {
+            const ctx = document.getElementById('testChart').getContext('2d');
+            
+            testChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM', '6:00 AM', '7:00 AM'],
+                    datasets: [
+                        {
+                            label: "Dean's Office",
+                            data: [0, 0, 0, 0, 0, 2, 5, 3],
+                            borderColor: '#ef4444',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            tension: 0,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'IE Department',
+                            data: [0, 0, 0, 0, 1, 3, 7, 4],
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            pointRadius: 0,
+                            pointHoverRadius: 0,
+                            tension: 0,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Number of Queues'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    elements: {
+                        point: {
+                            radius: 0,
+                            hoverRadius: 0
+                        }
+                    }
+                }
+            });
+            
+            console.log('Test chart initialized successfully');
+        }
+        
+        // Update chart with new data
+        function updateWithNewData() {
+            if (!testChart) {
+                console.error('Chart not initialized');
+                return;
+            }
+            
+            const newData = {
+                labels: ['12:00 AM', '1:00 AM', '2:00 AM', '3:00 AM', '4:00 AM', '5:00 AM', '6:00 AM', '7:00 AM', '8:00 AM'],
+                datasets: [
+                    {
+                        label: "Dean's Office",
+                        data: [0, 1, 0, 2, 1, 3, 6, 4, 2],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        tension: 0,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'IE Department',
+                        data: [1, 0, 1, 1, 2, 4, 8, 5, 3],
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        tension: 0,
+                        borderWidth: 2
+                    },
+                    {
+                        label: 'CPE Department',
+                        data: [0, 0, 0, 1, 1, 2, 4, 3, 1],
+                        borderColor: '#10b981',
+                        backgroundColor: 'transparent',
+                        fill: false,
+                        pointRadius: 0,
+                        pointHoverRadius: 0,
+                        tension: 0,
+                        borderWidth: 2
+                    }
+                ]
+            };
+            
+            testChart.data.labels = newData.labels;
+            testChart.data.datasets = newData.datasets;
+            testChart.update();
+            
+            console.log('Chart updated with new data');
+        }
+        
+        // Add more data points
+        function addMoreData() {
+            if (!testChart) {
+                console.error('Chart not initialized');
+                return;
+            }
+            
+            testChart.data.labels.push('9:00 AM');
+            testChart.data.datasets[0].data.push(1);
+            testChart.data.datasets[1].data.push(2);
+            if (testChart.data.datasets[2]) {
+                testChart.data.datasets[2].data.push(1);
+            }
+            
+            testChart.update();
+            console.log('Added more data points');
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initChart();
+        });
+    </script>
+</body>
+</html>

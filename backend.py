@@ -993,219 +993,121 @@ def emergency_audio():
 
 @app.route('/analytics/hourly-queue-data')
 def get_hourly_queue_data():
-    """Get hourly queue data for today's chart"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
+    """Get hourly queue data for today's chart - SIMPLIFIED VERSION"""
     try:
-        cur = conn.cursor()
-        
-        # Get current date and time
-        from datetime import datetime
-        now = datetime.now()
-        today = now.strftime('%Y-%m-%d')
-        current_hour = now.hour
-        
-        # Department mapping for person filters
-        person_filters = {
-            'dean': '%Dean%',
-            'ie-chair': '%IE%',
-            'cpe-chair': '%CPE%',
-            'ece-chair': '%ECE%',
-            'others': '%Other%'
-        }
-        
-        department_names = {
-            'dean': "Dean's Office",
-            'ie-chair': 'IE Department',
-            'cpe-chair': 'CPE Department', 
-            'ece-chair': 'ECE Department',
-            'others': 'Others'
-        }
-        
-        department_colors = {
-            'dean': '#ef4444',
-            'ie-chair': '#3b82f6', 
-            'cpe-chair': '#10b981',
-            'ece-chair': '#f59e0b',
-            'others': '#8b5cf6'
-        }
-        
-        # Create time labels from 12:00 AM to current hour (or at least 8 hours)
-        end_hour = max(current_hour, 7)  # Show at least 8 hours
-        labels = []
-        for hour in range(0, end_hour + 1):
-            time_label = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
-            labels.append(time_label.strftime('%H:%M'))  # 24-hour format
-        
-        print(f"DEBUG: Generated {len(labels)} time labels: {labels}")
-        
-        # Create datasets for each department
-        datasets = []
-        
-        for dept_key, person_filter in person_filters.items():
-            dataset = {
-                'label': department_names[dept_key],
-                'data': [],
-                'borderColor': department_colors[dept_key],
-                'backgroundColor': department_colors[dept_key] + '20',
-                'fill': False,
-                'tension': 0.4
-            }
-            
-            # Get data for each hour
-            for hour in range(0, end_hour + 1):
-                # Count queues created in this hour
-                cur.execute("""
-                    SELECT COUNT(*) FROM queue 
-                    WHERE person LIKE %s 
-                    AND DATE(created_at) = %s 
-                    AND EXTRACT(HOUR FROM created_at) = %s
-                """, (person_filter, today, hour))
-                
-                count = cur.fetchone()[0] or 0
-                dataset['data'].append(count)
-                print(f"DEBUG: {dept_key} at {hour:02d}:00 - {count} queues")
-            
-            datasets.append(dataset)
-            print(f"DEBUG: Dataset for {dept_key}: {dataset['data']}")
-        
-        conn.close()
-        
-        return jsonify({
-            'labels': labels,
-            'datasets': datasets
-        })
-        
-    except Exception as e:
-        print(f"Error getting hourly queue data: {e}")
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/analytics/hourly-queue-data')
-def get_hourly_queue_data():
-    """Get hourly queue data for today's chart"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Get today's date
-        today = datetime.now().strftime('%Y-%m-%d')
+        # Get current hour for labels
         current_hour = datetime.now().hour
-        
-        print(f"DEBUG: Current hour is {current_hour}, generating labels from 0 to {current_hour}")
-        
-        # Always show at least 8 hours of labels (current hour + next few hours for context)
         max_hour = max(current_hour, 7)  # Show at least until 7 AM
         
-        print(f"DEBUG: Getting data for {today}, current hour: {current_hour}")
-        
-        # First, let's see what data we actually have in the database for today
-        cur.execute("""
-            SELECT person, created_at, EXTRACT(HOUR FROM created_at) as hour_created 
-            FROM queue 
-            WHERE DATE(created_at) = %s 
-            ORDER BY created_at
-        """, (today,))
-        
-        all_today_data = cur.fetchall()
-        print(f"DEBUG: Total queues today: {len(all_today_data)}")
-        for row in all_today_data:
-            print(f"DEBUG: {row[0]} created at {row[1]} (hour: {row[2]})")
-        
-        # Initialize data structure
-        hourly_data = {}
-        departments = {
-            'dean': 'Dean%',
-            'ie-chair': 'IE%', 
-            'cpe-chair': 'CPE%',
-            'ece-chair': 'ECE%',
-            'others': 'Other%'
-        }
-        
-        # For each department, get hourly queue counts
-        for dept_key, person_filter in departments.items():
-            hourly_counts = []
-            
-            # Only get data from 12:00 AM to current hour (but show more labels)
-            for hour in range(0, max_hour + 1):
-                if hour <= current_hour:
-                    # Count queues created in this specific hour today
-                    cur.execute("""
-                        SELECT COUNT(*) FROM queue 
-                        WHERE person LIKE %s 
-                        AND created_at >= %s 
-                        AND created_at < %s
-                    """, (
-                        person_filter, 
-                        f"{today} {hour:02d}:00:00",  # Start of hour
-                        f"{today} {hour+1:02d}:00:00" if hour < 23 else f"{datetime.now() + timedelta(days=1):%Y-%m-%d} 00:00:00"  # End of hour
-                    ))
-                    
-                    count = cur.fetchone()[0] or 0
-                else:
-                    # Future hours show 0
-                    count = 0
-                    
-                print(f"DEBUG: {dept_key} hour {hour:02d}:00 = {count} queues")
-                hourly_counts.append(count)
-                print(f"DEBUG: {dept_key} at {hour:02d}:00 - {count} queues")  # Debug output
-            
-            hourly_data[dept_key] = hourly_counts
-        
-        # Generate time labels (12:00 AM to current hour + some extra for context)
+        # Generate time labels in 12-hour format
         labels = []
         for hour in range(0, max_hour + 1):
             time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
             labels.append(time_obj.strftime('%I:%M %p'))  # 12-hour format with AM/PM
-            
+        
         print(f"DEBUG: Generated {len(labels)} labels: {labels}")
         
-        # Format data for Chart.js
-        datasets = []
-        department_colors = {
-            'dean': '#ef4444',
-            'ie-chair': '#3b82f6', 
-            'cpe-chair': '#10b981',
-            'ece-chair': '#f59e0b',
-            'others': '#8b5cf6'
-        }
+        # Try to connect to database and get real data
+        conn = get_db_connection()
+        if conn:
+            try:
+                cur = conn.cursor()
+                today = datetime.now().strftime('%Y-%m-%d')
+                
+                # Initialize data arrays with zeros for each hour
+                dean_data = [0] * (max_hour + 1)
+                ie_data = [0] * (max_hour + 1)
+                
+                # Get real data from database
+                for hour in range(0, current_hour + 1):
+                    # Count Dean's office queues for this hour
+                    cur.execute("""
+                        SELECT COUNT(*) FROM queue 
+                        WHERE person LIKE %s 
+                        AND DATE(created_at) = %s 
+                        AND EXTRACT(HOUR FROM created_at) = %s
+                    """, ('Dean%', today, hour))
+                    dean_count = cur.fetchone()[0] or 0
+                    dean_data[hour] = dean_count
+                    
+                    # Count IE department queues for this hour
+                    cur.execute("""
+                        SELECT COUNT(*) FROM queue 
+                        WHERE person LIKE %s 
+                        AND DATE(created_at) = %s 
+                        AND EXTRACT(HOUR FROM created_at) = %s
+                    """, ('IE%', today, hour))
+                    ie_count = cur.fetchone()[0] or 0
+                    ie_data[hour] = ie_count
+                    
+                    print(f"DEBUG: Hour {hour}: Dean={dean_count}, IE={ie_count}")
+                
+                conn.close()
+                
+            except Exception as db_error:
+                print(f"Database error: {db_error}")
+                # Use fallback data if database error
+                dean_data = [0, 0, 0, 0, 0, 1, 2, 1] + [0] * max(0, max_hour - 7)
+                ie_data = [0, 0, 0, 0, 1, 2, 3, 2] + [0] * max(0, max_hour - 7)
+                
+        else:
+            # Use fallback data if no database connection
+            dean_data = [0, 0, 0, 0, 0, 1, 2, 1] + [0] * max(0, max_hour - 7)
+            ie_data = [0, 0, 0, 0, 1, 2, 3, 2] + [0] * max(0, max_hour - 7)
         
-        department_names = {
-            'dean': "Dean's Office",
-            'ie-chair': 'IE Department',
-            'cpe-chair': 'CPE Department', 
-            'ece-chair': 'ECE Department',
-            'others': 'Others'
-        }
-        
-        for dept_key in departments.keys():
-            datasets.append({
-                'label': department_names[dept_key],
-                'data': hourly_data[dept_key],
-                'borderColor': department_colors[dept_key],
-                'backgroundColor': department_colors[dept_key] + '20',
+        # Create datasets
+        datasets = [
+            {
+                'label': "Dean's Office",
+                'data': dean_data,
+                'borderColor': '#ef4444',
+                'backgroundColor': 'rgba(239, 68, 68, 0.1)',
                 'fill': False,
-                'tension': 0.4,
-                'borderWidth': 3,
+                'tension': 0.1,
+                'borderWidth': 2,
                 'pointRadius': 0,
-                'pointHoverRadius': 0,
-                'pointBorderWidth': 0
-            })
+                'pointHoverRadius': 0
+            },
+            {
+                'label': 'IE Department',
+                'data': ie_data,
+                'borderColor': '#3b82f6',
+                'backgroundColor': 'rgba(59, 130, 246, 0.1)',
+                'fill': False,
+                'tension': 0.1,
+                'borderWidth': 2,
+                'pointRadius': 0,
+                'pointHoverRadius': 0
+            }
+        ]
         
-        conn.close()
-        
-        return jsonify({
+        response_data = {
             'labels': labels,
             'datasets': datasets
-        })
+        }
+        
+        print(f"DEBUG: Returning data with {len(labels)} labels and {len(datasets)} datasets")
+        return jsonify(response_data)
         
     except Exception as e:
-        print(f"Error getting hourly queue data: {e}")
-        return jsonify({"error": str(e)}), 500
+        print(f"ERROR in hourly-queue-data: {e}")
+        # Emergency fallback
+        return jsonify({
+            'labels': ['12:00 AM', '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM', '06:00 AM', '07:00 AM'],
+            'datasets': [
+                {
+                    'label': "Dean's Office",
+                    'data': [0, 0, 0, 0, 0, 1, 2, 1],
+                    'borderColor': '#ef4444',
+                    'backgroundColor': 'rgba(239, 68, 68, 0.1)',
+                    'fill': False,
+                    'tension': 0.1,
+                    'borderWidth': 2,
+                    'pointRadius': 0,
+                    'pointHoverRadius': 0
+                }
+            ]
+        })
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

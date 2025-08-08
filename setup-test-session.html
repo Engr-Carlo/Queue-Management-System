@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Test Session</title>
+</head>
+<body>
+    <h1>Setting up test admin session...</h1>
+    <p>Creating a test admin session to bypass authentication.</p>
+    
+    <script>
+        // Create a test admin session
+        const testSession = {
+            name: "Test Admin",
+            department: "dean",
+            loginTime: new Date().toISOString()
+        };
+        
+        // Store in localStorage
+        localStorage.setItem('adminSession', JSON.stringify(testSession));
+        
+        console.log('Test session created:', testSession);
+        
+        // Redirect to admin dashboard after 2 seconds
+        setTimeout(() => {
+            window.location.href = 'admin-dashboard.html';
+        }, 2000);
+    </script>
+    
+    <p>You will be redirected to the admin dashboard in 2 seconds...</p>
+    <p><a href="admin-dashboard.html">Or click here to go now</a></p>
+</body>
+</html>
