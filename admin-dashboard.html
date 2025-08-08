@@ -1153,31 +1153,118 @@
     // Load real queue data for chart
     async function loadRealChartData() {
       try {
+        console.log('Loading real chart data...');
         // Get real analytics data from backend
         const response = await fetch(`${API_BASE_URL}/analytics/hourly-queue-data`);
         
         if (response.ok) {
           const data = await response.json();
+          console.log('Chart data received:', data);
+          console.log('Labels:', data.labels);
+          console.log('Datasets:', data.datasets);
           updateChart(data);
         } else {
-          console.error('Failed to load real chart data');
+          console.error('Failed to load real chart data, status:', response.status);
           // Show empty chart if no data available
-          updateChart({ labels: [], datasets: [] });
+          updateChart({ labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00'], datasets: [] });
         }
       } catch (error) {
         console.error('Error loading real chart data:', error);
-        // Show empty chart on error
-        updateChart({ labels: [], datasets: [] });
+        // Show empty chart on error with at least some time labels
+        updateChart({ labels: ['00:00', '01:00', '02:00', '03:00', '04:00', '05:00', '06:00', '07:00'], datasets: [] });
       }
     }
 
     // Update chart with new data
     function updateChart(data) {
-      if (!queueChart) return;
+      if (!queueChart) {
+        console.error('Chart not initialized');
+        return;
+      }
       
-      queueChart.data.labels = data.labels || [];
-      queueChart.data.datasets = data.datasets || [];
-      queueChart.update('active');
+      console.log('Updating chart with data:', data);
+      console.log('Number of labels:', data.labels?.length);
+      console.log('Number of datasets:', data.datasets?.length);
+      
+      // Destroy existing chart
+      queueChart.destroy();
+      
+      // Recreate chart with new data
+      const ctx = document.getElementById('queueChart').getContext('2d');
+      queueChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.labels || [],
+          datasets: data.datasets || []
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleColor: '#ffffff',
+              bodyColor: '#ffffff',
+              cornerRadius: 8,
+              callbacks: {
+                label: function(context) {
+                  return `${context.dataset.label}: ${context.parsed.y} queues`;
+                }
+              }
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: 'Time',
+                color: '#6b7280'
+              },
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              }
+            },
+            y: {
+              title: {
+                display: true,
+                text: 'Number of Queues',
+                color: '#6b7280'
+              },
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              },
+              ticks: {
+                stepSize: 1
+              }
+            }
+          },
+          elements: {
+            line: {
+              tension: 0.4,
+              borderWidth: 3
+            },
+            point: {
+              radius: 0,
+              hoverRadius: 0,
+              pointRadius: 0,
+              pointHoverRadius: 0,
+              hitRadius: 0,
+              pointBorderWidth: 0,
+              pointHoverBorderWidth: 0
+            }
+          }
+        }
+      });
+      
+      console.log('Chart recreated successfully');
     }
 
     // Refresh chart data

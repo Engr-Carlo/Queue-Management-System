@@ -1089,6 +1089,11 @@ def get_hourly_queue_data():
         today = datetime.now().strftime('%Y-%m-%d')
         current_hour = datetime.now().hour
         
+        print(f"DEBUG: Current hour is {current_hour}, generating labels from 0 to {current_hour}")
+        
+        # Always show at least 8 hours of labels (current hour + next few hours for context)
+        max_hour = max(current_hour, 7)  # Show at least until 7 AM
+        
         print(f"DEBUG: Getting data for {today}, current hour: {current_hour}")
         
         # First, let's see what data we actually have in the database for today
@@ -1118,31 +1123,39 @@ def get_hourly_queue_data():
         for dept_key, person_filter in departments.items():
             hourly_counts = []
             
-            # Only get data from 12:00 AM to current hour
-            for hour in range(0, current_hour + 1):
-                # Count queues created in this specific hour today
-                cur.execute("""
-                    SELECT COUNT(*) FROM queue 
-                    WHERE person LIKE %s 
-                    AND created_at >= %s 
-                    AND created_at < %s
-                """, (
-                    person_filter, 
-                    f"{today} {hour:02d}:00:00",  # Start of hour
-                    f"{today} {hour+1:02d}:00:00" if hour < 23 else f"{datetime.now() + timedelta(days=1):%Y-%m-%d} 00:00:00"  # End of hour
-                ))
-                
-                count = cur.fetchone()[0] or 0
+            # Only get data from 12:00 AM to current hour (but show more labels)
+            for hour in range(0, max_hour + 1):
+                if hour <= current_hour:
+                    # Count queues created in this specific hour today
+                    cur.execute("""
+                        SELECT COUNT(*) FROM queue 
+                        WHERE person LIKE %s 
+                        AND created_at >= %s 
+                        AND created_at < %s
+                    """, (
+                        person_filter, 
+                        f"{today} {hour:02d}:00:00",  # Start of hour
+                        f"{today} {hour+1:02d}:00:00" if hour < 23 else f"{datetime.now() + timedelta(days=1):%Y-%m-%d} 00:00:00"  # End of hour
+                    ))
+                    
+                    count = cur.fetchone()[0] or 0
+                else:
+                    # Future hours show 0
+                    count = 0
+                    
+                print(f"DEBUG: {dept_key} hour {hour:02d}:00 = {count} queues")
                 hourly_counts.append(count)
                 print(f"DEBUG: {dept_key} at {hour:02d}:00 - {count} queues")  # Debug output
             
             hourly_data[dept_key] = hourly_counts
         
-        # Generate time labels (12:00 AM to current hour)
+        # Generate time labels (12:00 AM to current hour + some extra for context)
         labels = []
-        for hour in range(0, current_hour + 1):
+        for hour in range(0, max_hour + 1):
             time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
             labels.append(time_obj.strftime('%H:%M'))  # 24-hour format
+            
+        print(f"DEBUG: Generated {len(labels)} labels: {labels}")
         
         # Format data for Chart.js
         datasets = []
@@ -1168,6 +1181,9 @@ def get_hourly_queue_data():
                 'data': hourly_data[dept_key],
                 'borderColor': department_colors[dept_key],
                 'backgroundColor': department_colors[dept_key] + '20',
+                'fill': False,
+                'tension': 0.4,
+                'borderWidth': 3,
                 'pointRadius': 0,
                 'pointHoverRadius': 0,
                 'pointBorderWidth': 0
