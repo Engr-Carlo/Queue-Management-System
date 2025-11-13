@@ -3,6 +3,7 @@ from flask_cors import CORS
 import psycopg2
 import os
 from datetime import datetime, timedelta
+from dateutil import parser
 
 app = Flask(__name__)
 CORS(app)
@@ -832,7 +833,6 @@ def check_if_previous_day_queue(queue_id):
             # Fallback to parsing the date string
             try:
                 # Parse various date formats
-                from dateutil import parser
                 parsed_date = parser.parse(queue_date_str).date()
                 is_previous_day = parsed_date < today
             except:
