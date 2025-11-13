@@ -1298,8 +1298,12 @@ def get_hourly_department_data():
             'others': {'hourlyData': [0] * 24, 'totalToday': 0}
         })
 
-if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    print("🚀 Starting Queue Management System API...")
-    print(f"📡 Server running on port: {port}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+# For Vercel Serverless deployment - export the Flask app
+# The app variable is automatically used by Vercel's Python runtime
+
+# Uncomment below for local development only:
+# if __name__ == '__main__':
+#     port = int(os.environ.get('PORT', 5000))
+#     print("🚀 Starting Queue Management System API...")
+#     print(f"📡 Server running on port: {port}")
+#     app.run(host='0.0.0.0', port=port, debug=False)
