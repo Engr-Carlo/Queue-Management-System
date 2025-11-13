@@ -4,6 +4,46 @@ import psycopg2
 import os
 from datetime import datetime, timedelta
 
+def parse_date(date_str):
+    """Parse a date string into a datetime.date without external dependencies."""
+    if not date_str:
+        return None
+
+    # Try ISO format first (handles 'YYYY-MM-DD' and 'YYYY-MM-DDTHH:MM:SS' variants)
+    try:
+        # datetime.fromisoformat accepts 'YYYY-MM-DD' and 'YYYY-MM-DDTHH:MM:SS'
+        return datetime.fromisoformat(date_str).date()
+    except Exception:
+        pass
+
+    # Common date formats to try
+    formats = [
+        '%Y-%m-%d',
+        '%Y-%m-%d %H:%M:%S',
+        '%Y/%m/%d',
+        '%m/%d/%Y',
+        '%d/%m/%Y',
+        '%b %d, %Y',
+        '%d %b %Y'
+    ]
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except Exception:
+            continue
+
+    # Try to extract YYYY-MM-DD from more complex strings
+    try:
+        import re
+        m = re.search(r'(\d{4}-\d{2}-\d{2})', date_str)
+        if m:
+            return datetime.strptime(m.group(1), '%Y-%m-%d').date()
+    except Exception:
+        pass
+
+    # Could not parse
+    return None
+
 app = Flask(__name__)
 CORS(app)
 
@@ -820,13 +860,12 @@ def check_if_previous_day_queue(queue_id):
             queue_date = created_at.date()
             is_previous_day = queue_date < today
         else:
-            # Fallback to parsing the date string
-            try:
-                # Parse various date formats
-                from dateutil import parser
-                parsed_date = parser.parse(queue_date_str).date()
+            # Fallback to parsing the date string using the local parse_date helper
+            parsed_date = parse_date(queue_date_str)
+            if parsed_date:
+                queue_date = parsed_date
                 is_previous_day = parsed_date < today
-            except:
+            else:
                 # If parsing fails, assume it's not from previous day
                 is_previous_day = False
         
