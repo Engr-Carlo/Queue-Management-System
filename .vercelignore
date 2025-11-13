@@ -1,0 +1,10 @@
+backend.py
+emergency_audio.py
+emergency_audio.bat
+fix_firewall.bat
+audio-test.html
+test_connection.html
+data/
+__pycache__/
+*.pyc
+.git/

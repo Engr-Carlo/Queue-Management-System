@@ -1,3 +1,0 @@
-{
-  "web": "py backend.py"
-}
