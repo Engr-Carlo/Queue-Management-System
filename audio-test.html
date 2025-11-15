@@ -51,15 +51,15 @@
     </button>
     
     <button class="test-button" onclick="testExternalPlayer()">
-        🎵 Test External Audio Player Window
+        <i class="fas fa-music"></i> Test External Audio Player Window
     </button>
     
     <button class="test-button" onclick="testEmergencyAudio()">
-        🚨 Test Emergency Audio (Python Script)
+        <i class="fas fa-triangle-exclamation"></i> Test Emergency Audio (Python Script)
     </button>
     
     <button class="test-button" onclick="testAllMethods()">
-        ⚡ Test ALL Methods (Nuclear Option)
+        <i class="fas fa-flask"></i> Test ALL Methods (Nuclear Option)
     </button>
     
     <button class="test-button" onclick="enableAudioFirst()">
@@ -160,7 +160,7 @@
         }
         
         function testAllMethods() {
-            logResult('⚡ NUCLEAR OPTION: Testing ALL methods...');
+            logResult('[TEST] NUCLEAR OPTION: Testing ALL methods...');
             
             // Test 1: Basic audio
             setTimeout(() => testBasicAudio(), 500);
@@ -173,7 +173,7 @@
             
             // Test 4: Web Audio API beep
             setTimeout(() => {
-                logResult('🎵 Testing Web Audio API beep...');
+                logResult('[TEST] Testing Web Audio API beep...');
                 try {
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const oscillator = audioContext.createOscillator();

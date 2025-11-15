@@ -623,13 +623,13 @@ def get_queue_status(queue_id):
             }
         elif is_called:
             status = {
-                "text": "🔴 You are now being called!",
+                "text": "You are now being called!",
                 "class": "status-called",
                 "priority": "high"
             }
         else:
             status = {
-                "text": "🟡 Waiting",
+                "text": "Waiting",
                 "class": "status-waiting",
                 "priority": "low"
             }
@@ -1019,7 +1019,7 @@ def emergency_audio():
         data = request.json
         queue_number = data.get('queue_number', 'Unknown')
         
-        print(f"🚨 EMERGENCY AUDIO TRIGGERED FOR QUEUE {queue_number}! 🚨")
+        print(f"[ALERT] EMERGENCY AUDIO TRIGGERED FOR QUEUE {queue_number}!")
         
         # Try to run the Python emergency audio script
         try:
@@ -1030,28 +1030,28 @@ def emergency_audio():
                 str(queue_number)
             ], cwd=os.path.dirname(os.path.abspath(__file__)))
             
-            print(f"✅ Emergency audio script launched for queue {queue_number}")
+            print(f"[OK] Emergency audio script launched for queue {queue_number}")
             return jsonify({
                 "success": True,
                 "message": f"Emergency audio triggered for queue {queue_number}"
             })
             
         except FileNotFoundError:
-            print("❌ emergency_audio.py not found")
+            print("[ERROR] emergency_audio.py not found")
             return jsonify({
                 "success": False,
                 "error": "Emergency audio script not found"
             }), 404
             
         except Exception as script_error:
-            print(f"❌ Emergency audio script error: {script_error}")
+            print(f"[ERROR] Emergency audio script error: {script_error}")
             return jsonify({
                 "success": False,
                 "error": f"Script execution error: {str(script_error)}"
             }), 500
             
     except Exception as e:
-        print(f"❌ Emergency audio endpoint error: {e}")
+        print(f"[ERROR] Emergency audio endpoint error: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -1309,8 +1309,8 @@ def get_hourly_department_data():
 # Uncomment below for local development only:
 # if __name__ == '__main__':
 #     port = int(os.environ.get('PORT', 5000))
-#     print("🚀 Starting Queue Management System API...")
-#     print(f"📡 Server running on port: {port}")
+#     print("[START] Starting Queue Management System API...")
+#     print(f"[INFO] Server running on port: {port}")
 #     app.run(host='0.0.0.0', port=port, debug=False)
 
 @app.route('/home')

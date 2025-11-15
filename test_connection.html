@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Backend Connection Test</title>
+        <link rel="icon" type="image/svg+xml" href="favicon.svg">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
     <h1>Backend Connection Test</h1>
@@ -19,14 +21,14 @@
                 const data = await response.json();
                 
                 resultDiv.innerHTML = `
-                    <h3>✅ Connection Successful!</h3>
+                    <h3><i class="fas fa-check-circle"></i> Connection Successful!</h3>
                     <p>Status: ${response.status}</p>
                     <p>Database Connected: ${data.db_connected}</p>
                     <p>Result: ${JSON.stringify(data)}</p>
                 `;
             } catch (error) {
                 resultDiv.innerHTML = `
-                    <h3>❌ Connection Failed!</h3>
+                    <h3><i class="fas fa-circle-xmark"></i> Connection Failed!</h3>
                     <p>Error: ${error.message}</p>
                     <p>This means the backend server is not accessible from your current location.</p>
                 `;

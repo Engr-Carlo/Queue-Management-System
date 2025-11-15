@@ -107,7 +107,7 @@ def show_alert_window(queue_number):
         
         # Show alert
         messagebox.showwarning(
-            "🚨 QUEUE ALERT! 🚨",
+            "QUEUE ALERT!",
             f"Queue Number {queue_number} is being called!\n\nPlease proceed to the office immediately!"
         )
         
@@ -122,7 +122,7 @@ def show_alert_window(queue_number):
 def main():
     queue_number = sys.argv[1] if len(sys.argv) > 1 else "Unknown"
     
-    print(f"🚨 EMERGENCY AUDIO ALERT FOR QUEUE {queue_number}! 🚨")
+    print(f"[ALERT] EMERGENCY AUDIO ALERT FOR QUEUE {queue_number}!")
     
     # Find sound file
     sound_paths = [
@@ -139,7 +139,7 @@ def main():
             break
     
     if not sound_path:
-        print("⚠️ No sound file found! Looking for:")
+        print("[WARN] No sound file found! Looking for:")
         for path in sound_paths:
             print(f"  - {path}")
         
@@ -147,7 +147,7 @@ def main():
         show_alert_window(queue_number)
         return
     
-    print(f"📢 Playing sound: {sound_path}")
+    print(f"[AUDIO] Playing sound: {sound_path}")
     
     # Try different audio methods
     methods = [
@@ -162,20 +162,20 @@ def main():
     
     success = False
     for method_name, method in methods:
-        print(f"🔊 Trying {method_name}...")
+        print(f"[AUDIO] Trying {method_name}...")
         if method():
-            print(f"✅ {method_name} succeeded!")
+            print(f"[OK] {method_name} succeeded!")
             success = True
             break
         else:
-            print(f"❌ {method_name} failed.")
+            print(f"[ERROR] {method_name} failed.")
     
     if not success:
-        print("❌ All audio methods failed!")
+        print("[ERROR] All audio methods failed!")
         # Keep alert window visible
         show_alert_window(queue_number)
     else:
-        print("✅ Audio alert completed!")
+        print("[OK] Audio alert completed!")
 
 if __name__ == "__main__":
     main()

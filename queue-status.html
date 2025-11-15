@@ -654,7 +654,7 @@
         if ('serviceWorker' in navigator) {
           const registration = await navigator.serviceWorker.register('/sw.js');
           serviceWorker = registration;
-          console.log('✅ Service Worker registered for background notifications');
+          console.log('[SW] Service Worker registered for background notifications');
           
           // Wait for service worker to be ready
           await navigator.serviceWorker.ready;
@@ -686,12 +686,12 @@
           }
           
           if (permission === 'granted') {
-            console.log('✅ Browser notifications enabled');
+            console.log('[NOTIFY] Browser notifications enabled');
             
             // Test notification on first permission grant
             showWelcomeNotification();
           } else {
-            console.log('⚠️ Notification permission denied');
+            console.log('[NOTIFY] Notification permission denied');
           }
         }
         
@@ -700,7 +700,7 @@
         
         return true;
       } catch (error) {
-        console.error('❌ Failed to initialize background notifications:', error);
+        console.error('[ERROR] Failed to initialize background notifications:', error);
         return false;
       }
     }
@@ -745,7 +745,7 @@
     
     // Enhanced playAlarmSound with background notification support
     async function playAlarmSound(forcePlay = false) {
-      console.log('🚨 Queue Alert - Checking audio settings and playing alarm');
+      console.log('[ALERT] Queue Alert - Checking audio settings and playing alarm');
       
       // Check if this specific queue is muted by admin
       try {
@@ -760,10 +760,10 @@
             const muteStatus = await queueMuteResponse.json();
             console.log('[DATA] Mute status data:', muteStatus);
             if (muteStatus.is_muted) {
-              console.log('🔇 This specific queue is muted by admin - skipping sound');
+              console.log('[AUDIO] This specific queue is muted by admin - skipping sound');
               // Still show visual alerts and browser notifications, but no sound
               if ('Notification' in window && Notification.permission === 'granted') {
-                const notification = new Notification('🚨 QUEUE ALERT! (Muted)', {
+                const notification = new Notification('Queue Alert (Muted)', {
                   body: 'Your queue number is being called! Please proceed to the office. (Audio alerts are muted for this queue)',
                   icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Im0xMiAyIDMuMDkgNi4yNkwyMiA5bC0xLjUxIDMuNzQgNCA0LTMuNzQgMS41MUw5IDIybC00LTQgMy43NC0xLjUxTDIgMTJsMy4wOS02LjI2TDEyIDJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K',
                   vibrate: [300, 100, 300, 100, 300],
@@ -781,14 +781,14 @@
               makeUltraScreenFlash();
               return;
             } else {
-              console.log('✅ Queue is NOT muted, proceeding with alarm sound');
+              console.log('[AUDIO] Queue is NOT muted, proceeding with alarm sound');
             }
           } else {
-            console.warn('⚠️ Failed to fetch mute status, status code:', queueMuteResponse.status);
+            console.warn('[WARN] Failed to fetch mute status, status code:', queueMuteResponse.status);
           }
         }
       } catch (error) {
-        console.log('❌ Could not check queue mute status, proceeding with sound:', error);
+        console.log('[WARN] Could not check queue mute status, proceeding with sound:', error);
       }
       
       // Check if audio is muted by admin before playing any sounds
@@ -801,10 +801,10 @@
         if (audioSettingResponse.ok) {
           const audioSetting = await audioSettingResponse.json();
           if (audioSetting.muted) {
-            console.log('🔇 Audio alerts are muted by admin - skipping sound');
+            console.log('[AUDIO] Audio alerts are muted by admin - skipping sound');
             // Still show visual alerts and browser notifications, but no sound
             if ('Notification' in window && Notification.permission === 'granted') {
-              const notification = new Notification('🚨 QUEUE ALERT! (Audio Muted)', {
+              const notification = new Notification('Queue Alert (Audio Muted)', {
                 body: 'Your queue number is being called! Please proceed to the office. (Audio alerts are currently disabled)',
                 icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Im0xMiAyIDMuMDkgNi4yNkwyMiA5bC0xLjUxIDMuNzQgNCA0LTMuNzQgMS41MUw5IDIybC00LTQgMy43NC0xLjUxTDIgMTJsMy4wOS02LjI2TDEyIDJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K',
                 vibrate: [300, 100, 300, 100, 300],
@@ -828,11 +828,11 @@
       }
       
       // Audio is not muted, proceed with normal audio alerts
-      console.log('🔊 Audio alerts enabled - playing sound');
+      console.log('[AUDIO] Audio alerts enabled - playing sound');
       
       // Always show browser notification if called (works in background)
       if ('Notification' in window && Notification.permission === 'granted') {
-        const notification = new Notification('🚨 QUEUE ALERT!', {
+        const notification = new Notification('Queue Alert', {
           body: 'Your queue number is being called! Please proceed to the office immediately.',
           icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Im0xMiAyIDMuMDkgNi4yNkwyMiA5bC0xLjUxIDMuNzQgNCA0LTMuNzQgMS41MUw5IDIybC00LTQgMy43NC0xLjUxTDIgMTJsMy4wOS02LjI2TDEyIDJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K',
           vibrate: [300, 100, 300, 100, 300],
@@ -851,7 +851,7 @@
       if (isPageVisible) {
         // If user hasn't interacted, FORCE interaction with overlay
         if (!userHasInteracted && !forcePlay) {
-          console.log('⚠️ FORCING USER INTERACTION WITH OVERLAY');
+          console.log('[UX] FORCING USER INTERACTION WITH OVERLAY');
           pendingAlarmCall = true;
           forceUserInteraction();
           makeUltraScreenFlash();
@@ -933,7 +933,7 @@
       if (!userHasInteracted) {
         audioEnabled = true;
         userHasInteracted = true;
-        console.log('✅ Audio enabled after user interaction');
+        console.log('[AUDIO] Audio enabled after user interaction');
         
         // Remove force interaction overlay if present
         const overlay = document.getElementById('forceInteractionOverlay');
@@ -984,14 +984,14 @@
     function initWebAudio() {
       try {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        console.log('🎵 Web Audio API initialized');
+        console.log('[AUDIO] Web Audio API initialized');
         
         // Resume context if suspended
         if (audioContext.state === 'suspended') {
           audioContext.resume();
         }
       } catch (error) {
-        console.log('⚠️ Web Audio API not available:', error);
+        console.log('[AUDIO] Web Audio API not available:', error);
       }
     }
 
@@ -1020,17 +1020,17 @@
           oscillator.stop(audioContext.currentTime + 2);
         }
         
-        console.log('🔊 Ultra loud beep generated');
+        console.log('[AUDIO] Ultra loud beep generated');
         return true;
       } catch (error) {
-        console.error('❌ Ultra beep failed:', error);
+        console.error('[ERROR] Ultra beep failed:', error);
         return false;
       }
     }
 
     // PLAY ALL SOUND METHODS WITHOUT VOICE
     function playUltraAggressiveAlarm() {
-      console.log('🚨 PLAYING ALARM WITH ALL METHODS!');
+      console.log('[ALERT] PLAYING ALARM WITH ALL METHODS!');
       
       let soundPlayed = false;
       
@@ -1043,7 +1043,7 @@
           const playPromise = audio.play();
           if (playPromise) {
             playPromise.then(() => {
-              console.log(`🔊 HTML5 audio ${i} playing`);
+              console.log(`[AUDIO] HTML5 audio ${i} playing`);
               soundPlayed = true;
             }).catch(err => console.log(`Audio ${i} failed:`, err));
           }
@@ -1057,9 +1057,9 @@
       
       // METHOD 3: Try browser notification sound
       if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification('🚨 QUEUE ALERT!', {
+        new Notification('Queue Alert', {
           body: 'Your queue number is being called!',
-          icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHRleHQgeD0iMTYiIHk9IjIwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSJ3aGl0ZSIgZm9udC1zaXplPSIxNiI+🚨PC90ZXh0Pgo8L3N2Zz4K',
+          icon: '/favicon.svg',
           requireInteraction: true
         });
       }
@@ -1103,7 +1103,7 @@
 
     // Test all sound methods to verify they work
     function testAllSoundMethods() {
-      console.log('🧪 Testing all sound methods...');
+      console.log('[TEST] Testing all sound methods...');
       
       // Quick test with all methods
       setTimeout(() => playUltraAggressiveAlarm(), 100);
@@ -1142,11 +1142,11 @@
         oscillator.start(audioContext.currentTime);
         oscillator.stop(audioContext.currentTime + 1);
         
-        console.log('🔊 Generated beep sound played');
+        console.log('[AUDIO] Generated beep sound played');
         
         return true;
       } catch (error) {
-        console.error('❌ Generated sound failed:', error);
+        console.error('[ERROR] Generated sound failed:', error);
         return false;
       }
     }
@@ -1157,7 +1157,7 @@
       
       // If user hasn't interacted, FORCE interaction with overlay
       if (!userHasInteracted && !forcePlay) {
-        console.log('⚠️ FORCING USER INTERACTION WITH OVERLAY');
+        console.log('[UX] FORCING USER INTERACTION WITH OVERLAY');
         pendingAlarmCall = true;
         forceUserInteraction();
         makeUltraScreenFlash();
@@ -1180,17 +1180,17 @@
           
           if (playPromise !== undefined) {
             playPromise.then(() => {
-              console.log('🔊 HTML5 audio playing successfully');
+              console.log('[AUDIO] HTML5 audio playing successfully');
               resolve(true);
             }).catch((error) => {
-              console.error('❌ HTML5 audio playback failed:', error);
+              console.error('[ERROR] HTML5 audio playback failed:', error);
               resolve(false);
             });
           } else {
             resolve(false);
           }
         } catch (error) {
-          console.error('❌ HTML5 audio error:', error);
+          console.error('[ERROR] HTML5 audio error:', error);
           resolve(false);
         }
       });
@@ -1269,7 +1269,7 @@
             audio.currentTime = 0;
             audio.muted = false;
           }).catch(() => {
-            console.log('🔇 Silent audio unlock failed (expected on most browsers)');
+            console.log('[AUDIO] Silent audio unlock failed (expected on most browsers)');
             audio.muted = false;
           });
         }
@@ -1284,12 +1284,12 @@
     
     // Load queue data
     async function loadQueueData() {
-      console.log('📊 loadQueueData() called');
+      console.log('[DATA] loadQueueData() called');
       queueId = getQueueId();
       console.log('[ID] Queue ID:', queueId);
       
       if (!queueId) {
-        console.log('❌ No queue ID found in URL');
+        console.log('[ERROR] No queue ID found in URL');
         showError();
         return;
       }
@@ -1325,7 +1325,7 @@
         
         if (!response.ok) {
           if (response.status === 404) {
-            console.log('❌ Queue not found (404)');
+            console.log('[ERROR] Queue not found (404)');
             showError();
             return;
           }
@@ -1333,23 +1333,23 @@
         }
         
         const queueData = await response.json();
-        console.log('✅ Queue data received:', queueData);
+        console.log('[DATA] Queue data received:', queueData);
         
         // Get real-time status and position
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         let statusData = {
           position: 1,
           estimated_minutes: 5,
-          status: { text: '🟡 Waiting', class: 'status-waiting' },
+          status: { text: 'Waiting', class: 'status-waiting' },
           admin_status: 'available',
           department_prefix: 'A'
         };
         
         if (statusResponse.ok) {
           statusData = await statusResponse.json();
-          console.log('✅ Status data received:', statusData);
+          console.log('[DATA] Status data received:', statusData);
         } else {
-          console.warn('⚠️ Could not fetch status, using defaults');
+          console.warn('[WARN] Could not fetch status, using defaults');
         }
         
         // Try to get the last completed queue for the same department
@@ -1369,14 +1369,14 @@
         // Update display with real data
         console.log('🎨 Updating display with queue data...');
         updateDisplay(queueData, statusData);
-        console.log('✅ Display updated, showing content...');
+        console.log('[UI] Display updated, showing content...');
         showContent();
         
       } catch (error) {
         if (error.name === 'AbortError') {
-          console.error('❌ Request timeout - API took too long to respond');
+          console.error('[ERROR] Request timeout - API took too long to respond');
         } else {
-          console.error('❌ Error fetching queue data:', error);
+          console.error('[ERROR] Error fetching queue data:', error);
         }
         showError();
       }
@@ -1428,7 +1428,7 @@
             // Try to focus the window and make it visible
             if (audioPlayerWindow) {
               audioPlayerWindow.focus();
-              console.log('🚨 EXTERNAL AUDIO PLAYER OPENED! 🚨');
+              console.log('[ALERT] EXTERNAL AUDIO PLAYER OPENED!');
               // Try to bring window to front multiple times
               setTimeout(() => audioPlayerWindow.focus(), 500);
               setTimeout(() => audioPlayerWindow.focus(), 1000);
@@ -1440,7 +1440,7 @@
           // Also show alert dialog as backup
           setTimeout(() => {
             try {
-              alert('🚨 QUEUE ALERT! 🚨\n\nYour queue number is being called!\n\nPlease proceed to the office immediately!');
+              alert('QUEUE ALERT!\n\nYour queue number is being called!\n\nPlease proceed to the office immediately!');
             } catch (e) {
               console.log('Alert dialog failed:', e);
             }
@@ -1465,13 +1465,13 @@
         // Change estimated time section for called status
         const estimatedTimeSection = document.querySelector('.estimated-time');
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
-        estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
+        estimatedTimeSection.querySelector('h3').textContent = 'You are being called!';
         estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
       } else {
         // Reset styling if not called
         const estimatedTimeSection = document.querySelector('.estimated-time');
         estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-        estimatedTimeSection.querySelector('h3').textContent = '📢 Queue Information';
+        estimatedTimeSection.querySelector('h3').textContent = 'Queue Information';
         estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
         statusElement.style.animation = '';
       }
@@ -1542,7 +1542,7 @@
       
       try {
         // Show loading state
-        imHereBtn.innerHTML = '⏳ Notifying...';
+        imHereBtn.innerHTML = '<i class="fas fa-hourglass-half"></i> Notifying...';
         imHereBtn.disabled = true;
         
         const response = await fetch(`${API_BASE_URL}/queue/im-here/${queueId}`, {
@@ -1561,7 +1561,7 @@
           document.getElementById('alreadyNotifiedSection').style.display = 'block';
           
           // Show success toast
-          showSuccessToast('✅ Admin notified! You\'re marked as present.');
+          showSuccessToast('Admin notified! You\'re marked as present.');
           
           // Refresh queue data to get updated status
           setTimeout(() => loadQueueDataSilent(), 1000);
@@ -1687,7 +1687,7 @@
       const prefix = userQueueNumber.substring(0, 1);
       const userNumber = parseInt(userQueueNumber.substring(1));
       
-      console.log(`🚀 AGGRESSIVE CURRENT QUEUE UPDATE - User: ${userQueueNumber}, Prefix: ${prefix}`);
+      console.log(`[UPDATE] AGGRESSIVE CURRENT QUEUE UPDATE - User: ${userQueueNumber}, Prefix: ${prefix}`);
       
       let displayNumber = null;
       let displayStatus = '';
@@ -1702,15 +1702,15 @@
             const currentData = await currentQueueResponse.json();
             if (currentData.current_queue) {
               displayNumber = currentData.current_queue;
-              displayStatus = '🔄 Currently being processed';
+              displayStatus = 'Currently being processed';
               dataSource = 'Dedicated API';
-              console.log(`✅ METHOD 1 SUCCESS: ${displayNumber} from dedicated endpoint`);
+              console.log(`[OK] METHOD 1 SUCCESS: ${displayNumber} from dedicated endpoint`);
             }
           } else {
-            console.log(`❌ METHOD 1 FAILED: Current queue endpoint returned ${currentQueueResponse.status}`);
+            console.log(`[ERROR] METHOD 1 FAILED: Current queue endpoint returned ${currentQueueResponse.status}`);
           }
         } catch (error) {
-          console.log(`❌ METHOD 1 ERROR: ${error.message}`);
+          console.log(`[ERROR] METHOD 1 ERROR: ${error.message}`);
         }
         
         // METHOD 2: Get from admin dashboard active queues (if METHOD 1 failed)
@@ -1723,21 +1723,21 @@
               const calledQueue = adminQueues.find(q => q.status === 'called');
               if (calledQueue) {
                 displayNumber = calledQueue.number;
-                displayStatus = '📢 Currently being called';
+                displayStatus = 'Currently being called';
                 dataSource = 'Admin API (Called)';
-                console.log(`✅ METHOD 2 SUCCESS: ${displayNumber} from admin API (called queue)`);
+                console.log(`[OK] METHOD 2 SUCCESS: ${displayNumber} from admin API (called queue)`);
               } else if (adminQueues.length > 0) {
                 // Get the first queue in line
                 displayNumber = adminQueues[0].number;
                 displayStatus = '⏳ Next in processing';
                 dataSource = 'Admin API (First)';
-                console.log(`✅ METHOD 2 SUCCESS: ${displayNumber} from admin API (first queue)`);
+                console.log(`[OK] METHOD 2 SUCCESS: ${displayNumber} from admin API (first queue)`);
               }
             } else {
-              console.log(`❌ METHOD 2 FAILED: Admin queue endpoint returned ${adminQueueResponse.status}`);
+              console.log(`[ERROR] METHOD 2 FAILED: Admin queue endpoint returned ${adminQueueResponse.status}`);
             }
           } catch (error) {
-            console.log(`❌ METHOD 2 ERROR: ${error.message}`);
+            console.log(`[ERROR] METHOD 2 ERROR: ${error.message}`);
           }
         }
         
@@ -1748,39 +1748,39 @@
             const lastCompletedNum = parseInt(statusData.last_completed_queue.substring(1));
             const nextNumber = lastCompletedNum + 1;
             displayNumber = prefix + String(nextNumber).padStart(3, '0');
-            displayStatus = '📊 Estimated current (last completed + 1)';
+            displayStatus = 'Estimated current (last completed + 1)';
             dataSource = 'Last Completed + 1';
-            console.log(`✅ METHOD 3 SUCCESS: ${displayNumber} from last completed calculation`);
+            console.log(`[OK] METHOD 3 SUCCESS: ${displayNumber} from last completed calculation`);
           } catch (error) {
-            console.log(`❌ METHOD 3 ERROR: ${error.message}`);
+            console.log(`[ERROR] METHOD 3 ERROR: ${error.message}`);
           }
         }
         
         // METHOD 4: Real-time queue statistics endpoint
         if (!displayNumber) {
           try {
-            console.log(`🎯 Trying queue statistics endpoint for department ${prefix}`);
+            console.log(`[ENDPOINT] Trying queue statistics endpoint for department ${prefix}`);
             const statsResponse = await fetch(`${API_BASE_URL}/queue/stats/${prefix}`);
             if (statsResponse.ok) {
               const stats = await statsResponse.json();
               if (stats.current_serving) {
                 displayNumber = stats.current_serving;
-                displayStatus = '🔄 Currently serving';
+                displayStatus = 'Currently serving';
                 dataSource = 'Statistics API';
-                console.log(`✅ METHOD 4 SUCCESS: ${displayNumber} from statistics API`);
+                console.log(`[OK] METHOD 4 SUCCESS: ${displayNumber} from statistics API`);
               }
             } else {
-              console.log(`❌ METHOD 4 FAILED: Statistics endpoint returned ${statsResponse.status}`);
+              console.log(`[ERROR] METHOD 4 FAILED: Statistics endpoint returned ${statsResponse.status}`);
             }
           } catch (error) {
-            console.log(`❌ METHOD 4 ERROR: ${error.message}`);
+            console.log(`[ERROR] METHOD 4 ERROR: ${error.message}`);
           }
         }
         
         // METHOD 5: Get ALL queues for department and find the most recent activity
         if (!displayNumber) {
           try {
-            console.log(`🎯 Trying to get all queues for department ${prefix} to find recent activity`);
+            console.log(`[ENDPOINT] Trying to get all queues for department ${prefix} to find recent activity`);
             const allQueuesResponse = await fetch(`${API_BASE_URL}/queue/all/${prefix}`);
             if (allQueuesResponse.ok) {
               const allQueues = await allQueuesResponse.json();
@@ -1791,29 +1791,29 @@
               
               if (recentQueue) {
                 displayNumber = recentQueue.number;
-                displayStatus = `🔄 ${recentQueue.status === 'called' ? 'Being called' : 'Being processed'}`;
+                displayStatus = `${recentQueue.status === 'called' ? 'Being called' : 'Being processed'}`;
                 dataSource = 'All Queues (Recent)';
-                console.log(`✅ METHOD 5 SUCCESS: ${displayNumber} from all queues (recent activity)`);
+                console.log(`[OK] METHOD 5 SUCCESS: ${displayNumber} from all queues (recent activity)`);
               }
             } else {
-              console.log(`❌ METHOD 5 FAILED: All queues endpoint returned ${allQueuesResponse.status}`);
+              console.log(`[ERROR] METHOD 5 FAILED: All queues endpoint returned ${allQueuesResponse.status}`);
             }
           } catch (error) {
-            console.log(`❌ METHOD 5 ERROR: ${error.message}`);
+            console.log(`[ERROR] METHOD 5 ERROR: ${error.message}`);
           }
         }
         
       } catch (error) {
-        console.error('❌ AGGRESSIVE UPDATE ERROR:', error);
+        console.error('[ERROR] AGGRESSIVE UPDATE ERROR:', error);
       }
       
       // METHOD 6: Smart estimation based on user position and time
       if (!displayNumber && statusData.position) {
         const estimatedCurrent = Math.max(1, userNumber - statusData.position + 1);
         displayNumber = prefix + String(estimatedCurrent).padStart(3, '0');
-        displayStatus = `📊 Smart estimate (position-based)`;
+        displayStatus = `Smart estimate (position-based)`;
         dataSource = 'Smart Estimation';
-        console.log(`✅ METHOD 6 FALLBACK: ${displayNumber} from smart estimation`);
+        console.log(`[OK] METHOD 6 FALLBACK: ${displayNumber} from smart estimation`);
       }
       
       // METHOD 7: Ultimate fallback
@@ -1822,7 +1822,7 @@
         displayNumber = prefix + String(fallbackNumber).padStart(3, '0');
         displayStatus = '⏳ Estimated current';
         dataSource = 'Ultimate Fallback';
-        console.log(`⚠️ METHOD 7 ULTIMATE FALLBACK: ${displayNumber}`);
+        console.log(`[FALLBACK] METHOD 7 ULTIMATE FALLBACK: ${displayNumber}`);
       }
       
       // Update display with animation if number changed
@@ -1880,13 +1880,13 @@
       
       // Update status to show completion
       const statusElement = document.getElementById('queueStatus');
-      statusElement.textContent = '✅ Completed';
+      statusElement.textContent = 'Completed';
       statusElement.className = 'queue-status status-completed';
       
       // Update estimated time section to show completion message
       const estimatedTimeSection = document.querySelector('.estimated-time');
       estimatedTimeSection.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-      estimatedTimeSection.querySelector('h3').textContent = '🎉 Transaction Complete!';
+      estimatedTimeSection.querySelector('h3').textContent = 'Transaction Complete';
       estimatedTimeSection.querySelector('.time').textContent = 'Your transaction has been processed successfully';
       
       // Add feedback button to the page
@@ -1920,7 +1920,7 @@
           box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
         " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 8px 25px rgba(16, 185, 129, 0.4)'" 
            onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(16, 185, 129, 0.3)'">
-          📝 Go to Feedback
+          <i class="fas fa-pen-to-square"></i> Go to Feedback
         </button>
       `;
       
@@ -1944,31 +1944,31 @@
       switch(status) {
         case 'available':
           adminStatusElement.classList.add('admin-available');
-          adminStatusText.textContent = '🟢 Available';
+          adminStatusText.textContent = 'Available';
           break;
         case 'busy':
           adminStatusElement.classList.add('admin-busy');
-          adminStatusText.textContent = '🟡 Busy';
+          adminStatusText.textContent = 'Busy';
           break;
         case 'away':
           adminStatusElement.classList.add('admin-away');
-          adminStatusText.textContent = '🔴 Away';
+          adminStatusText.textContent = 'Away';
           break;
         default:
           adminStatusElement.classList.add('admin-available');
-          adminStatusText.textContent = '🟢 Available';
+          adminStatusText.textContent = 'Available';
       }
     }
 
     // Refresh current queue display specifically - SUPER AGGRESSIVE APPROACH
     async function refreshCurrentQueue() {
-      console.log('🚀 SUPER AGGRESSIVE MANUAL REFRESH TRIGGERED');
+      console.log('[UPDATE] SUPER AGGRESSIVE MANUAL REFRESH TRIGGERED');
       const refreshButton = document.querySelector('button[onclick="refreshCurrentQueue()"]');
       const currentQueueNumber = document.getElementById('currentQueueNumber');
       const currentQueueStatus = document.getElementById('currentQueueStatus');
       
       // Show loading state
-      refreshButton.innerHTML = '⏳ Loading...';
+      refreshButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
       refreshButton.disabled = true;
       currentQueueStatus.textContent = 'Aggressively fetching current queue...';
       
@@ -1986,7 +1986,7 @@
         const prefix = userQueueNumber.substring(0, 1);
         const department = getDepartmentFromPrefix(prefix);
         
-        console.log(`🚀 Aggressive refresh for: ${userQueueNumber}, Department: ${department}, Prefix: ${prefix}`);
+        console.log(`[UPDATE] Aggressive refresh for: ${userQueueNumber}, Department: ${department}, Prefix: ${prefix}`);
         
         // Create a comprehensive status data object
         let aggressiveStatusData = {
@@ -2022,7 +2022,7 @@
           fetch(`${API_BASE_URL}/admin/status/${prefix}`).then(r => r.ok ? r.json() : null).catch(() => null)
         ];
         
-        console.log('🚀 Launching 7 parallel API calls...');
+        console.log('[UPDATE] Launching 7 parallel API calls...');
         const results = await Promise.allSettled(fetchPromises);
         
         // Process results
@@ -2031,13 +2031,13 @@
         // Merge data from all sources
         if (statusResult.status === 'fulfilled' && statusResult.value) {
           Object.assign(aggressiveStatusData, statusResult.value);
-          console.log('✅ Got original status data');
+          console.log('[DATA] Got original status data');
         }
         
         if (currentProcResult.status === 'fulfilled' && currentProcResult.value) {
           if (currentProcResult.value.current_queue) {
             aggressiveStatusData.current_serving = currentProcResult.value.current_queue;
-            console.log('✅ Got current processing queue:', currentProcResult.value.current_queue);
+            console.log('[DATA] Got current processing queue:', currentProcResult.value.current_queue);
           }
         }
         
@@ -2046,24 +2046,24 @@
           const calledQueue = adminQueues.find(q => q.status === 'called');
           if (calledQueue) {
             aggressiveStatusData.current_serving = calledQueue.number;
-            console.log('✅ Got called queue from admin API:', calledQueue.number);
+            console.log('[DATA] Got called queue from admin API:', calledQueue.number);
           } else if (adminQueues.length > 0) {
             aggressiveStatusData.current_serving = adminQueues[0].number;
-            console.log('✅ Got first queue from admin API:', adminQueues[0].number);
+            console.log('[DATA] Got first queue from admin API:', adminQueues[0].number);
           }
         }
         
         if (lastCompResult.status === 'fulfilled' && lastCompResult.value) {
           if (lastCompResult.value.queue_number) {
             aggressiveStatusData.last_completed_queue = lastCompResult.value.queue_number;
-            console.log('✅ Got last completed queue:', lastCompResult.value.queue_number);
+            console.log('[DATA] Got last completed queue:', lastCompResult.value.queue_number);
           }
         }
         
         if (statsResult.status === 'fulfilled' && statsResult.value) {
           if (statsResult.value.current_serving) {
             aggressiveStatusData.current_serving = statsResult.value.current_serving;
-            console.log('✅ Got current serving from stats:', statsResult.value.current_serving);
+            console.log('[DATA] Got current serving from stats:', statsResult.value.current_serving);
           }
         }
         
@@ -2075,38 +2075,38 @@
           
           if (recentQueue) {
             aggressiveStatusData.current_serving = recentQueue.number;
-            console.log('✅ Got recent active queue from all queues:', recentQueue.number);
+            console.log('[DATA] Got recent active queue from all queues:', recentQueue.number);
           }
         }
         
         if (adminStatusResult.status === 'fulfilled' && adminStatusResult.value) {
           aggressiveStatusData.admin_status = adminStatusResult.value.status;
-          console.log('✅ Got admin status:', adminStatusResult.value.status);
+          console.log('[DATA] Got admin status:', adminStatusResult.value.status);
         }
         
-        console.log('🚀 AGGRESSIVE STATUS DATA COMPILED:', JSON.stringify(aggressiveStatusData, null, 2));
+        console.log('[DATA] AGGRESSIVE STATUS DATA COMPILED:', JSON.stringify(aggressiveStatusData, null, 2));
         
         // Use the new aggressive updateCurrentQueue function
         await updateCurrentQueue(aggressiveStatusData);
         
         // Success feedback
-        refreshButton.innerHTML = '✅ Updated';
+        refreshButton.innerHTML = 'Updated';
         setTimeout(() => {
-          refreshButton.innerHTML = '🔄 Refresh';
+          refreshButton.innerHTML = 'Refresh';
           refreshButton.disabled = false;
         }, 1500);
         
-        console.log('🚀 AGGRESSIVE REFRESH COMPLETED SUCCESSFULLY');
+        console.log('[UPDATE] AGGRESSIVE REFRESH COMPLETED SUCCESSFULLY');
         
       } catch (error) {
-        console.error('❌ AGGRESSIVE REFRESH ERROR:', error);
+        console.error('[ERROR] AGGRESSIVE REFRESH ERROR:', error);
         
         // Error feedback
-        refreshButton.innerHTML = '❌ Error';
+        refreshButton.innerHTML = 'Error';
         currentQueueStatus.textContent = `Failed to refresh: ${error.message}`;
         
         setTimeout(() => {
-          refreshButton.innerHTML = '🔄 Refresh';
+          refreshButton.innerHTML = 'Refresh';
           refreshButton.disabled = false;
         }, 2000);
       }
@@ -2156,7 +2156,7 @@
         // Get user queue info
         const userQueueNumber = document.getElementById('queueNumber').textContent;
         if (!userQueueNumber || userQueueNumber === 'A001') {
-          console.log('⚠️ Invalid user queue number in silent update');
+          console.log('[WARN] Invalid user queue number in silent update');
           return;
         }
         
@@ -2181,7 +2181,7 @@
           department_prefix: prefix,
           last_completed_queue: null,
           current_serving: null,
-          status: { text: '🟡 Waiting', class: 'status-waiting' }
+          status: { text: 'Waiting', class: 'status-waiting' }
         };
         
         // Process all results
@@ -2231,25 +2231,25 @@
         
         // Handle called status with alarm
         if (isCalledNow) {
-          console.log('🔴 QUEUE IS CALLED! wasCalledBefore:', wasCalledBefore, 'isCalledNow:', isCalledNow);
+          console.log('[STATUS] QUEUE IS CALLED! wasCalledBefore:', wasCalledBefore, 'isCalledNow:', isCalledNow);
           statusElement.style.animation = 'pulse 1s infinite';
           const estimatedTimeSection = document.querySelector('.estimated-time');
           estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
-          estimatedTimeSection.querySelector('h3').textContent = '🔴 YOU ARE BEING CALLED!';
+          estimatedTimeSection.querySelector('h3').textContent = 'You are being called!';
           estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
           
           // Only play sound if status changed from not called to called
           if (!wasCalledBefore && isCalledNow) {
-            console.log('🔊 TRIGGERING ALARM SOUND - Status changed from uncalled to called!');
+            console.log('[AUDIO] TRIGGERING ALARM SOUND - Status changed from uncalled to called!');
             playAlarmSound();
           } else {
-            console.log('⚠️ Already called before, not playing alarm again');
+            console.log('[AUDIO] Already called before, not playing alarm again');
           }
         } else {
           // Reset styling if not called
           const estimatedTimeSection = document.querySelector('.estimated-time');
           estimatedTimeSection.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-          estimatedTimeSection.querySelector('h3').textContent = '📢 Queue Information';
+          estimatedTimeSection.querySelector('h3').textContent = 'Queue Information';
           estimatedTimeSection.querySelector('.time').textContent = 'Please wait for your queue number to be called';
           statusElement.style.animation = '';
         }
@@ -2257,16 +2257,16 @@
         // Update last called status for next comparison
         lastCalledStatus = isCalledNow;
         
-        console.log('✅ AGGRESSIVE SILENT UPDATE COMPLETED');
+        console.log('[UPDATE] AGGRESSIVE SILENT UPDATE COMPLETED');
         
       } catch (error) {
-        console.error('❌ AGGRESSIVE SILENT UPDATE ERROR:', error);
+        console.error('[ERROR] AGGRESSIVE SILENT UPDATE ERROR:', error);
       }
     }
     
     // Initialize when page loads - BACKGROUND NOTIFICATION MODE
     document.addEventListener('DOMContentLoaded', async function() {
-      console.log('🚀 DOM LOADED - Starting initialization...');
+      console.log('[INIT] DOM LOADED - Starting initialization...');
       
       // Setup audio permission
       setupAudioPermission();
@@ -2283,15 +2283,15 @@
       }, 500);
       
       // Show portal loading screen first
-      console.log('🌀 Showing portal loading...');
+      console.log('[LOADING] Showing portal loading...');
       showPortalLoading();
       
       // After 3 seconds, hide portal loading and start normal loading
       setTimeout(() => {
-        console.log('🌀 Hiding portal loading and starting queue data load...');
+        console.log('[LOADING] Hiding portal loading and starting queue data load...');
         hidePortalLoading();
         setTimeout(() => {
-          console.log('📊 Loading queue data...');
+          console.log('[DATA] Loading queue data...');
           loadQueueData();
           console.log('🔄 Starting auto refresh...');
           startAutoRefresh();

@@ -6,13 +6,13 @@ const API_BASE_URL = 'https://qms-coe-backend.onrender.com'; // Replace with you
 
 // Install service worker
 self.addEventListener('install', (event) => {
-  console.log('🛠️ Service Worker installing for background notifications');
+  console.log('[SW] Service Worker installing for background notifications');
   self.skipWaiting();
 });
 
 // Activate service worker
 self.addEventListener('activate', (event) => {
-  console.log('✅ Service Worker activated for background monitoring');
+  console.log('[SW] Service Worker activated for background monitoring');
   event.waitUntil(clients.claim());
 });
 
@@ -40,7 +40,7 @@ async function checkQueueStatusInBackground(queueId) {
 async function sendNotificationToUser(statusData) {
   try {
     // Show browser notification
-    const notification = new Notification('🚨 Queue Alert!', {
+    const notification = new Notification('Queue Alert!', {
       body: `Your queue number is being called! Please proceed to the office.`,
       icon: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiByeD0iMTYiIGZpbGw9IiNEQzI2MjYiLz4KPHN2ZyB4PSIxNiIgeT0iMTYiIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Im0xMiAyIDMuMDkgNi4yNkwyMiA5bC0xLjUxIDMuNzQgNCA0LTMuNzQgMS41MUw5IDIybC00LTQgMy43NC0xLjUxTDIgMTJsMy4wOS02LjI2TDEyIDJ6Ii8+Cjwvc3ZnPgo8L3N2Zz4K',
       badge: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0iI0RDMjYyNiIvPgo8dGV4dCB4PSIxNiIgeT0iMjAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjE0Ij7wn5qoPC90ZXh0Pgo8L3N2Zz4K',
@@ -72,7 +72,7 @@ self.addEventListener('message', async (event) => {
   const { type, queueId } = event.data;
   
   if (type === 'START_MONITORING' && queueId) {
-    console.log(`🎯 Starting background monitoring for queue: ${queueId}`);
+    console.log(`[SW] Starting background monitoring for queue: ${queueId}`);
     
     // Start periodic background checking
     setInterval(async () => {
@@ -90,7 +90,7 @@ self.addEventListener('message', async (event) => {
 // Background sync for offline support
 self.addEventListener('sync', (event) => {
   if (event.tag === 'queue-check') {
-    console.log('🔄 Background sync: Checking queue status');
+    console.log('[SW] Background sync: Checking queue status');
     // Implement queue checking logic here
   }
 });
