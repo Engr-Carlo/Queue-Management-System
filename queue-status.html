@@ -2111,14 +2111,14 @@
       }, 1000);
     }
     
-    // Auto refresh every 10 seconds (but smarter to not interrupt countdown)
+    // Auto refresh every 3 seconds for instant notifications
     function startAutoRefresh() {
       autoRefreshInterval = setInterval(() => {
         if (document.getElementById('contentArea').style.display !== 'none') {
           // Load data but don't reset countdown if position hasn't changed
           loadQueueDataSilent();
         }
-      }, 10000); // Refresh every 10 seconds for real-time updates
+      }, 3000); // Refresh every 3 seconds for real-time instant updates
     }
 
     // Silent load that only updates if position changes - AGGRESSIVE VERSION
@@ -2206,6 +2206,7 @@
         
         // Handle called status with alarm
         if (isCalledNow) {
+          console.log('🔴 QUEUE IS CALLED! wasCalledBefore:', wasCalledBefore, 'isCalledNow:', isCalledNow);
           statusElement.style.animation = 'pulse 1s infinite';
           const estimatedTimeSection = document.querySelector('.estimated-time');
           estimatedTimeSection.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
@@ -2214,7 +2215,10 @@
           
           // Only play sound if status changed from not called to called
           if (!wasCalledBefore && isCalledNow) {
+            console.log('🔊 TRIGGERING ALARM SOUND - Status changed from uncalled to called!');
             playAlarmSound();
+          } else {
+            console.log('⚠️ Already called before, not playing alarm again');
           }
         } else {
           // Reset styling if not called
