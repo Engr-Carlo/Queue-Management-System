@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Database Insert Test</title>
+  <script src="config.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    button {
+      background: #dc2626;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #b91c1c;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f3f4f6;
+      border-radius: 5px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    .success { background: #d1fae5; color: #065f46; }
+    .error { background: #fee2e2; color: #991b1b; }
+  </style>
+</head>
+<body>
+  <h1>Database Connection & Insert Test</h1>
+  
+  <div class="test-section">
+    <h2>1. Test Database Connection</h2>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="connectionResult" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. Test Queue Creation (POST /api/queue)</h2>
+    <button onclick="testInsert()">Create Test Queue Entry</button>
+    <div id="insertResult" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. Test Fetch Queue (GET /api/queue/:id)</h2>
+    <input type="text" id="queueId" placeholder="Enter Queue ID" style="padding: 8px; width: 300px;">
+    <button onclick="testFetch()">Fetch Queue</button>
+    <div id="fetchResult" class="result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. Check All Queues for Department</h2>
+    <select id="department" style="padding: 8px;">
+      <option value="D">Dean (D)</option>
+      <option value="I">IE (I)</option>
+      <option value="C">CPE (C)</option>
+      <option value="E">ECE (E)</option>
+      <option value="O">Others (O)</option>
+    </select>
+    <button onclick="testGetAll()">Get All Queues</button>
+    <div id="allResult" class="result"></div>
+  </div>
+
+  <script>
+    async function testConnection() {
+      const result = document.getElementById('connectionResult');
+      result.textContent = 'Testing...';
+      result.className = 'result';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/test-db`);
+        const data = await response.json();
+        
+        result.textContent = JSON.stringify(data, null, 2);
+        result.className = data.db_connected ? 'result success' : 'result error';
+      } catch (error) {
+        result.textContent = 'Error: ' + error.message;
+        result.className = 'result error';
+      }
+    }
+
+    async function testInsert() {
+      const result = document.getElementById('insertResult');
+      result.textContent = 'Creating test queue entry...';
+      result.className = 'result';
+      
+      const testData = {
+        id: 'test-' + Date.now(),
+        number: 'D001',
+        person: 'Test Person',
+        date: new Date().toLocaleDateString(),
+        time: new Date().toLocaleTimeString(),
+        status: 'waiting'
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/queue`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(testData)
+        });
+        
+        const data = await response.json();
+        
+        result.textContent = 'Request Data:\n' + JSON.stringify(testData, null, 2) + 
+                           '\n\nResponse:\n' + JSON.stringify(data, null, 2);
+        result.className = data.success ? 'result success' : 'result error';
+        
+        if (data.success) {
+          document.getElementById('queueId').value = testData.id;
+        }
+      } catch (error) {
+        result.textContent = 'Error: ' + error.message;
+        result.className = 'result error';
+      }
+    }
+
+    async function testFetch() {
+      const result = document.getElementById('fetchResult');
+      const queueId = document.getElementById('queueId').value;
+      
+      if (!queueId) {
+        result.textContent = 'Please enter a Queue ID';
+        result.className = 'result error';
+        return;
+      }
+      
+      result.textContent = 'Fetching...';
+      result.className = 'result';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/queue/${queueId}`);
+        const data = await response.json();
+        
+        result.textContent = JSON.stringify(data, null, 2);
+        result.className = data.error ? 'result error' : 'result success';
+      } catch (error) {
+        result.textContent = 'Error: ' + error.message;
+        result.className = 'result error';
+      }
+    }
+
+    async function testGetAll() {
+      const result = document.getElementById('allResult');
+      const dept = document.getElementById('department').value;
+      
+      result.textContent = 'Fetching all queues...';
+      result.className = 'result';
+      
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/admin/queue/${dept}`);
+        const data = await response.json();
+        
+        result.textContent = JSON.stringify(data, null, 2);
+        result.className = 'result success';
+      } catch (error) {
+        result.textContent = 'Error: ' + error.message;
+        result.className = 'result error';
+      }
+    }
+  </script>
+</body>
+</html>
