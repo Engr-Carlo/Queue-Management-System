@@ -3,6 +3,8 @@
 <head>
     <title>Queue Audio Test</title>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,11 +43,11 @@
     </style>
 </head>
 <body>
-    <h1>🚨 Queue Audio Test Center 🚨</h1>
+    <h1><i class="fas fa-bell"></i> Queue Audio Test Center <i class="fas fa-bell"></i></h1>
     <p>Use these buttons to test different audio notification methods:</p>
     
     <button class="test-button" onclick="testBasicAudio()">
-        🔊 Test Basic Audio (alarm.wav)
+        <i class="fas fa-volume-high"></i> Test Basic Audio (alarm.wav)
     </button>
     
     <button class="test-button" onclick="testExternalPlayer()">
@@ -86,35 +88,35 @@
             audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+H2u2oiByOLzPTOeTUFLYHC6tOGOAcCY7Xq4ptMEw1Qu+X4wHEeACCMzvXQeDkGH3rC6tOGOggAZ7Tr5Z5NEAxPqeP4wXIjBR6HzfTNeTQFLYHC6tOGNwcCY7Xq4ppMEgxPqeH2wmseASKLyfXOezQGK3/B6tOHOQcCYrXq4ppMEwxPqeL1wW0fASCEzfTNeSMFLYDC6tOGOQgAZrPr5JxNEwxPqeP4wW8dASWPzvfPhzUGK3vG5tOIOQgAZrPq5JxNEwxQqOH2wm0eBSCEzfXOejMGLH/A6tOGOQcBYrXq4ppNEw1Qu+P1wWwfASKKzfPOejEGLYDB6tOGOAcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQcBYrXq4ppMEwxPqeL3wm0dASGEzfTOeCEGLYDA6tOGOQgAZrTq5JxNEwxPqeH3wm0eBSCEzfTOcyEGLYDB6tOGOQc=';
             audio.volume = 0.01;
             audio.play().then(() => {
-                logResult('✅ Audio permissions enabled successfully!');
+                logResult('✓ Audio permissions enabled successfully!');
                 userInteracted = true;
             }).catch(e => {
-                logResult(`❌ Failed to enable audio: ${e.message}`);
+                logResult(`✗ Failed to enable audio: ${e.message}`);
             });
         }
         
         function testBasicAudio() {
-            logResult('🔊 Testing basic audio...');
+            logResult('[TESTING] Testing basic audio...');
             
             const audio = new Audio('Sounds/alarm.wav');
             audio.volume = 1.0;
             audio.play().then(() => {
-                logResult('✅ Basic audio played successfully!');
+                logResult('✓ Basic audio played successfully!');
             }).catch(e => {
-                logResult(`❌ Basic audio failed: ${e.message}`);
+                logResult(`✗ Basic audio failed: ${e.message}`);
                 // Try MP3 fallback
                 const audioMp3 = new Audio('Sounds/alarm.mp3');
                 audioMp3.volume = 1.0;
                 audioMp3.play().then(() => {
-                    logResult('✅ MP3 fallback played successfully!');
+                    logResult('✓ MP3 fallback played successfully!');
                 }).catch(e2 => {
-                    logResult(`❌ MP3 fallback also failed: ${e2.message}`);
+                    logResult(`✗ MP3 fallback also failed: ${e2.message}`);
                 });
             });
         }
         
         function testExternalPlayer() {
-            logResult('🎵 Opening external audio player window...');
+            logResult('[TESTING] Opening external audio player window...');
             
             try {
                 const audioWindow = window.open(
@@ -125,17 +127,17 @@
                 
                 if (audioWindow) {
                     audioWindow.focus();
-                    logResult('✅ External audio player opened successfully!');
+                    logResult('✓ External audio player opened successfully!');
                 } else {
-                    logResult('❌ Failed to open external audio player (popup blocked?)');
+                    logResult('✗ Failed to open external audio player (popup blocked?)');
                 }
             } catch (e) {
-                logResult(`❌ External player error: ${e.message}`);
+                logResult(`✗ External player error: ${e.message}`);
             }
         }
         
         function testEmergencyAudio() {
-            logResult('🚨 Triggering emergency audio (Python script)...');
+            logResult('[EMERGENCY] Triggering emergency audio (Python script)...');
             
             fetch('/emergency-audio', {
                 method: 'POST',
@@ -148,12 +150,12 @@
             }).then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    logResult('✅ Emergency audio triggered successfully!');
+                    logResult('✓ Emergency audio triggered successfully!');
                 } else {
-                    logResult(`❌ Emergency audio failed: ${result.error}`);
+                    logResult(`✗ Emergency audio failed: ${result.error}`);
                 }
             }).catch(e => {
-                logResult(`❌ Emergency audio request failed: ${e.message}`);
+                logResult(`✗ Emergency audio request failed: ${e.message}`);
             });
         }
         
@@ -189,17 +191,17 @@
                     oscillator.start(audioContext.currentTime);
                     oscillator.stop(audioContext.currentTime + 2);
                     
-                    logResult('✅ Web Audio API beep triggered!');
+                    logResult('✓ Web Audio API beep triggered!');
                 } catch (e) {
-                    logResult(`❌ Web Audio API beep failed: ${e.message}`);
+                    logResult(`✗ Web Audio API beep failed: ${e.message}`);
                 }
             }, 3500);
             
             // Test 5: Alert dialog
             setTimeout(() => {
-                logResult('📢 Showing alert dialog...');
-                alert('🚨 TEST ALERT! 🚨\n\nThis is a test of the emergency alert system!');
-                logResult('✅ Alert dialog shown!');
+                logResult('[ALERT] Showing alert dialog...');
+                alert('[TEST] TEST ALERT!\n\nThis is a test of the emergency alert system!');
+                logResult('✓ Alert dialog shown!');
             }, 4500);
         }
         

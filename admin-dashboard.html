@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Queue Management System</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="config.js"></script>
@@ -415,7 +417,7 @@
     <div class="container">
       <div class="d-flex justify-content-between align-items-center w-100">
         <div>
-          <span class="navbar-brand">🏢 Admin Dashboard</span>
+          <span class="navbar-brand"><i class="fas fa-building"></i> Admin Dashboard</span>
           <span id="adminInfo" class="admin-info"></span>
         </div>
         <a href="#" class="btn-logout" onclick="logout()">Logout</a>
@@ -430,13 +432,13 @@
         <h5 class="mb-3">Department Status</h5>
         <div class="status-toggle">
           <button class="status-btn active" onclick="setStatus('available')">
-            🟢 Available
+            <i class="fas fa-circle text-success"></i> Available
           </button>
           <button class="status-btn" onclick="setStatus('busy')">
-            🔴 Busy
+            <i class="fas fa-circle text-danger"></i> Busy
           </button>
           <button class="status-btn" onclick="setStatus('away')">
-            🟡 Away
+            <i class="fas fa-circle text-warning"></i> Away
           </button>
         </div>
       </div>
@@ -445,7 +447,7 @@
 
       <!-- Dean-only Delete All Queues Section -->
       <div id="deanControls" class="department-status" style="display: none; border: 2px solid #dc2626; background: rgba(239, 68, 68, 0.05);">
-        <h5 class="mb-3" style="color: #dc2626;">⚠️ Dean Administrative Controls</h5>
+        <h5 class="mb-3" style="color: #dc2626;"><i class="fas fa-triangle-exclamation"></i> Dean Administrative Controls</h5>
         <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 15px;">
           <strong>Warning:</strong> This action will permanently delete ALL queues from the entire system across all departments.
         </p>
@@ -457,7 +459,7 @@
       <!-- Data Visualization Cards -->
       <div class="row">
         <div class="col-md-12">
-          <h4 style="margin-bottom: 20px; color: #1a1a1a; font-weight: 700;">📊 Hourly Queue Analytics</h4>
+          <h4 style="margin-bottom: 20px; color: #1a1a1a; font-weight: 700;"><i class="fas fa-chart-bar"></i> Hourly Queue Analytics</h4>
         </div>
       </div>
       
@@ -466,7 +468,7 @@
           <div class="viz-card">
             <div class="viz-header">
               <div>
-                <h5 class="viz-title">🏢 Dean's Office</h5>
+                <h5 class="viz-title"><i class="fas fa-building"></i> Dean's Office</h5>
                 <div class="viz-count" style="color: #ef4444;" id="deanCount">0</div>
               </div>
             </div>
@@ -524,7 +526,7 @@
         <div class="col-md-3">
           <div class="stats-card">
             <div class="stats-icon" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
-              📊
+              <i class="fas fa-chart-line"></i>
             </div>
             <div class="stats-number text-success" id="totalToday">0</div>
             <div class="stats-label">Total Today</div>
@@ -542,7 +544,7 @@
         <div class="col-md-3">
           <div class="stats-card">
             <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-              ✅
+              <i class="fas fa-check-circle"></i>
             </div>
             <div class="stats-number text-warning" id="completedToday">0</div>
             <div class="stats-label">Completed Today</div>
@@ -551,7 +553,7 @@
         <div class="col-md-3">
           <div class="stats-card">
             <div class="stats-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
-              ⏱️
+              <i class="fas fa-clock"></i>
             </div>
             <div class="stats-number text-purple" id="avgWaitTime">0m</div>
             <div class="stats-label">Avg Wait Time</div>
@@ -564,7 +566,7 @@
         <div class="queue-header">
           <h3 class="queue-title">Current Queue</h3>
           <button class="refresh-btn" onclick="refreshQueue()">
-            🔄 Refresh
+            <i class="fas fa-rotate"></i> Refresh
           </button>
         </div>
         <div id="queueList">
@@ -750,7 +752,7 @@
               }
               ${isMuted ? 
                 `<div class="queue-meta" style="color: #f59e0b; font-weight: 600; margin-top: 5px;">
-                  🔇 Audio alerts muted for this queue
+                  <i class="fas fa-volume-xmark"></i> Audio alerts muted for this queue
                 </div>` : ''
               }
             </div>
@@ -760,13 +762,13 @@
                   ↩️ Return
                 </button>
                 <button class="btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')">
-                  ✅ Complete
+                  <i class="fas fa-check"></i> Complete
                 </button>
                 <button class="btn-mute ${isMuted ? 'muted' : ''}" onclick="toggleQueueMute('${queue.id}', '${queue.number}')" id="muteBtn-${queue.id}">
-                  ${isMuted ? '🔊 Unmute' : '🔇 Mute'}
+                  ${isMuted ? '<i class="fas fa-volume-high"></i> Unmute' : '<i class="fas fa-volume-xmark"></i> Mute'}
                 </button>` :
                 `<button class="btn-call" onclick="callQueue('${queue.id}', '${queue.number}')">
-                  📞 Call Queue
+                  <i class="fas fa-phone"></i> Call Queue
                 </button>`
               }
             </div>
@@ -885,7 +887,7 @@
       if (mutedQueues.has(queueId)) {
         // Unmute the queue
         mutedQueues.delete(queueId);
-        muteBtn.textContent = '🔇 Mute';
+        muteBtn.innerHTML = '<i class="fas fa-volume-xmark"></i> Mute';
         muteBtn.classList.remove('muted');
         
         // Optional: Call backend to update mute status
@@ -908,7 +910,7 @@
       } else {
         // Mute the queue
         mutedQueues.add(queueId);
-        muteBtn.textContent = '🔊 Unmute';
+        muteBtn.innerHTML = '<i class="fas fa-volume-high"></i> Unmute';
         muteBtn.classList.add('muted');
         
         // Optional: Call backend to update mute status
@@ -1198,14 +1200,14 @@
           document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('active'));
           
           const statusMap = {
-            'available': '🟢 Available',
-            'busy': '🔴 Busy',
-            'away': '🟡 Away'
+            'available': '<i class="fas fa-circle text-success"></i> Available',
+            'busy': '<i class="fas fa-circle text-danger"></i> Busy',
+            'away': '<i class="fas fa-circle text-warning"></i> Away'
           };
           
-          const targetText = statusMap[result.status] || '🟢 Available';
+          const targetText = statusMap[result.status] || '<i class="fas fa-circle text-success"></i> Available';
           const targetBtn = Array.from(document.querySelectorAll('.status-btn')).find(btn => 
-            btn.textContent.trim() === targetText
+            btn.innerHTML.trim().includes(result.status === 'available' ? 'Available' : result.status === 'busy' ? 'Busy' : 'Away')
           );
           
           if (targetBtn) {
@@ -1339,7 +1341,7 @@
         // Show loading state
         const deleteBtn = document.getElementById('confirmDeleteBtn');
         const originalText = deleteBtn.innerHTML;
-        deleteBtn.innerHTML = '🔄 Deleting...';
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
         deleteBtn.disabled = true;
         
         const response = await fetch(`${API_BASE_URL}/admin/delete-all-queues`, {
@@ -1361,7 +1363,7 @@
           modal.hide();
           
           // Show success feedback
-          showFeedback(`✅ Successfully deleted all ${result.deleted_count} queues from the database`, 'success');
+          showFeedback(`<i class="fas fa-check-circle"></i> Successfully deleted all ${result.deleted_count} queues from the database`, 'success');
           
           // Refresh dashboard
           setTimeout(() => {
@@ -1486,7 +1488,7 @@
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="deleteAllModalLabel">⚠️ DELETE ALL QUEUES</h5>
+          <h5 class="modal-title" id="deleteAllModalLabel"><i class="fas fa-triangle-exclamation"></i> DELETE ALL QUEUES</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -1504,7 +1506,7 @@
             <li>Other Departments</li>
           </ul>
           
-          <p><strong>⚠️ This action cannot be undone!</strong></p>
+          <p><strong><i class="fas fa-triangle-exclamation"></i> This action cannot be undone!</strong></p>
           
           <div class="mt-4">
             <label for="confirmationText" class="form-label">

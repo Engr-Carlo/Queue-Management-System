@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>API Test - Queue Management System</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -41,7 +43,7 @@
     </style>
 </head>
 <body>
-    <h1>🚀 Queue Management System - API Test</h1>
+    <h1><i class="fas fa-rocket"></i> Queue Management System - API Test</h1>
     <p>Test your API endpoints below:</p>
 
     <div class="endpoint">
@@ -74,14 +76,14 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    resultDiv.textContent = '✅ Success: ' + JSON.stringify(data, null, 2);
+                    resultDiv.textContent = '✓ Success: ' + JSON.stringify(data, null, 2);
                 } else {
                     resultDiv.className = 'result error';
-                    resultDiv.textContent = '❌ Error: ' + JSON.stringify(data, null, 2);
+                    resultDiv.textContent = '✗ Error: ' + JSON.stringify(data, null, 2);
                 }
             } catch (error) {
                 resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Error: ' + error.message;
+                resultDiv.textContent = '✗ Error: ' + error.message;
             }
         }
     </script>
