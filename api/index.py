@@ -1139,20 +1139,7 @@ def get_hourly_queue_data():
                 if current_hour >= 8:
                     dean_data[8] = 1
                     ie_data[8] = 2
-                    
-        else:
-            print("DEBUG: No database connection, using fallback data")
-            # Add some realistic data based on current time
-            if current_hour >= 6:
-                dean_data[6] = 1
-                ie_data[6] = 2
-            if current_hour >= 7:
-                dean_data[7] = 2
-                ie_data[7] = 3
-                cpe_data[7] = 1
-            if current_hour >= 8:
-                dean_data[8] = 1
-                ie_data[8] = 2
+                conn.close()
         
         # Create datasets
         datasets = [
@@ -1322,3 +1309,23 @@ def get_hourly_department_data():
 #     print("🚀 Starting Queue Management System API...")
 #     print(f"📡 Server running on port: {port}")
 #     app.run(host='0.0.0.0', port=port, debug=False)
+
+@app.route('/home')
+def home_page():
+    return app.send_static_file('home.html')
+
+@app.route('/queue-number')
+def queue_number_page():
+    return app.send_static_file('queue-number.html')
+
+@app.route('/queue-status')
+def queue_status_page():
+    return app.send_static_file('queue-status.html')
+
+@app.route('/admin')
+def admin_login_page():
+    return app.send_static_file('admin-login.html')
+
+@app.route('/admin-dashboard')
+def admin_dashboard_page():
+    return app.send_static_file('admin-dashboard.html')
