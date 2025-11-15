@@ -1317,8 +1317,13 @@
         console.log('🌐 Fetching queue data from API...');
         console.log('🔗 API URL:', `${API_BASE_URL}/queue/${queueId}`);
         
+        // Add timeout to prevent infinite loading
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+        
         // Fetch queue data from backend API
-        const response = await fetch(`${API_BASE_URL}/queue/${queueId}`);
+        const response = await fetch(`${API_BASE_URL}/queue/${queueId}`, { signal: controller.signal });
+        clearTimeout(timeoutId);
         console.log('📡 API Response status:', response.status);
         
         if (!response.ok) {
@@ -1345,6 +1350,9 @@
         
         if (statusResponse.ok) {
           statusData = await statusResponse.json();
+          console.log('✅ Status data received:', statusData);
+        } else {
+          console.warn('⚠️ Could not fetch status, using defaults');
         }
         
         // Try to get the last completed queue for the same department
@@ -1362,11 +1370,17 @@
         }
         
         // Update display with real data
+        console.log('🎨 Updating display with queue data...');
         updateDisplay(queueData, statusData);
+        console.log('✅ Display updated, showing content...');
         showContent();
         
       } catch (error) {
-        console.error('Error fetching queue data:', error);
+        if (error.name === 'AbortError') {
+          console.error('❌ Request timeout - API took too long to respond');
+        } else {
+          console.error('❌ Error fetching queue data:', error);
+        }
         showError();
       }
     }
