@@ -191,7 +191,10 @@ def create_queue():
                 called_at TIMESTAMP DEFAULT NULL,
                 called_by VARCHAR(255) DEFAULT NULL,
                 is_present BOOLEAN DEFAULT FALSE,
-                present_at TIMESTAMP DEFAULT NULL
+                present_at TIMESTAMP DEFAULT NULL,
+                is_muted BOOLEAN DEFAULT FALSE,
+                muted_at TIMESTAMP DEFAULT NULL,
+                muted_by VARCHAR(255) DEFAULT NULL
             )
         """)
         
