@@ -4,6 +4,20 @@ import psycopg2
 import os
 from datetime import datetime, timedelta
 
+class PrefixMiddleware:
+    """Middleware to strip /api prefix from URLs for Vercel deployment."""
+    def __init__(self, app, prefix='/api'):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        if path.startswith(self.prefix):
+            environ['PATH_INFO'] = path[len(self.prefix):]
+            if not environ['PATH_INFO']:
+                environ['PATH_INFO'] = '/'
+        return self.app(environ, start_response)
+
 def parse_date(date_str):
     """Parse a date string into a datetime.date without external dependencies."""
     if not date_str:
@@ -45,6 +59,7 @@ def parse_date(date_str):
     return None
 
 app = Flask(__name__)
+app.wsgi_app = PrefixMiddleware(app.wsgi_app, prefix='/api')
 CORS(app)
 
 # Database connection - Updated for Vercel/Supabase
