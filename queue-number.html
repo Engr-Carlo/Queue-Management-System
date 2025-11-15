@@ -712,8 +712,8 @@
     
     // Generate QR Code
     function generateQRCode() {
-      // Use GitHub Pages URL for the frontend (publicly accessible)
-      const publicBaseUrl = 'https://engr-carlo.github.io/Queue-Management-System/';
+      // Use Vercel deployment URL for the frontend
+      const publicBaseUrl = 'https://queue-management-system-4v7f.vercel.app/';
       const queueUrl = `${publicBaseUrl}queue-status.html?id=${queueData.id}`;
       
       console.log('Generating QR Code for URL:', queueUrl); // Debug log
@@ -831,8 +831,8 @@
     
     // Alternative QR generation using Google Charts API
     function generateAlternativeQR() {
-      // Use GitHub Pages URL for the frontend (publicly accessible)
-      const publicBaseUrl = 'https://engr-carlo.github.io/Queue-Management-System/';
+      // Use Vercel deployment URL for the frontend
+      const publicBaseUrl = 'https://queue-management-system-4v7f.vercel.app/';
       const queueUrl = `${publicBaseUrl}queue-status.html?id=${queueData.id}`;
       
       console.log('Using alternative QR generation method');
