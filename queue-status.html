@@ -748,10 +748,15 @@
       // Check if this specific queue is muted by admin
       try {
         const queueId = getQueueId();
+        console.log('🔍 Checking mute status for queue ID:', queueId);
         if (queueId) {
-          const queueMuteResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/mute-status`);
+          const muteCheckUrl = `${API_BASE_URL}/queue/${queueId}/mute-status`;
+          console.log('📡 Fetching mute status from:', muteCheckUrl);
+          const queueMuteResponse = await fetch(muteCheckUrl);
+          console.log('📥 Mute status response status:', queueMuteResponse.status);
           if (queueMuteResponse.ok) {
             const muteStatus = await queueMuteResponse.json();
+            console.log('📋 Mute status data:', muteStatus);
             if (muteStatus.is_muted) {
               console.log('🔇 This specific queue is muted by admin - skipping sound');
               // Still show visual alerts and browser notifications, but no sound
@@ -773,6 +778,15 @@
               // Still show visual flash effect
               makeUltraScreenFlash();
               return;
+            } else {
+              console.log('✅ Queue is NOT muted, proceeding with alarm sound');
+            }
+          } else {
+            console.warn('⚠️ Failed to fetch mute status, status code:', queueMuteResponse.status);
+          }
+        }
+      } catch (error) {
+        console.log('❌ Could not check queue mute status, proceeding with sound:', error);
             }
           }
         }
