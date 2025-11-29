@@ -1137,6 +1137,9 @@
         ];
         
         const departmentData = {};
+        const currentHour = new Date().getHours();
+        
+        console.log(`[DATA GENERATION] Current time: ${new Date().toLocaleTimeString()}, Hour: ${currentHour}`);
         
         // Fetch stats for each department
         for (const dept of departments) {
@@ -1145,51 +1148,24 @@
             if (response.ok) {
               const stats = await response.json();
               const totalToday = stats.totalToday || 0;
+              
+              console.log(`[${dept.key.toUpperCase()}] Total queues today: ${totalToday}`);
+              
+              // Initialize hourly data array (24 hours)
+              const hourlyData = new Array(24).fill(0);
+              
+              // Put ALL queues in the CURRENT hour - no distribution
+              if (totalToday > 0) {
+                hourlyData[currentHour] = totalToday;
+                console.log(`[${dept.key.toUpperCase()}] Placed ${totalToday} queues at hour ${currentHour}`);
+              }
+              
               departmentData[dept.key] = {
                 totalToday: totalToday,
-                hourlyData: new Array(24).fill(0)
+                hourlyData: hourlyData
               };
               
-              // Create realistic hourly distribution (showing actual queue count per hour)
-              if (totalToday > 0) {
-                const currentHour = new Date().getHours();
-                const startHour = 6; // Business starts at 6 AM
-                
-                // For small queue counts, put them in the current hour
-                if (totalToday <= 5) {
-                  departmentData[dept.key].hourlyData[currentHour] = totalToday;
-                } else {
-                  // For larger counts, distribute across business hours
-                  const activeHours = Math.max(1, currentHour >= startHour ? currentHour - startHour + 1 : 1);
-                  let remaining = totalToday;
-                  
-                  for (let hour = startHour; hour <= currentHour; hour++) {
-                    // Peak hours get more queues
-                    const isPeakMorning = hour >= 9 && hour <= 11;
-                    const isPeakAfternoon = hour >= 14 && hour <= 16;
-                    const isLunchDip = hour >= 12 && hour <= 13;
-                    
-                    let weight = 1.0;
-                    if (isPeakMorning || isPeakAfternoon) {
-                      weight = 1.8; // Peak hours
-                    } else if (isLunchDip) {
-                      weight = 0.5; // Lunch dip
-                    }
-                    
-                    // Calculate share based on weight
-                    const baseAmount = (totalToday / activeHours) * weight;
-                    const hourlyCount = Math.max(0, Math.min(Math.round(baseAmount), remaining));
-                    
-                    departmentData[dept.key].hourlyData[hour] = hourlyCount;
-                    remaining -= hourlyCount;
-                  }
-                  
-                  // Add any remaining queues to current hour
-                  if (remaining > 0) {
-                    departmentData[dept.key].hourlyData[currentHour] += remaining;
-                  }
-                }
-              }
+              console.log(`[${dept.key.toUpperCase()}] Hourly array:`, hourlyData);
             }
           } catch (error) {
             console.log(`Error fetching stats for ${dept.key}:`, error);
@@ -1200,7 +1176,7 @@
           }
         }
         
-        console.log('Hourly distribution data generated:', departmentData);
+        console.log('[DATA GENERATION] Complete department data:', departmentData);
         updateChartsWithData(departmentData);
         
       } catch (error) {
@@ -1215,15 +1191,18 @@
       const departments = ['dean', 'ie', 'cpe', 'ece'];
       const currentHour = new Date().getHours();
       
+      console.log('[CHART UPDATE] Current hour:', currentHour);
       console.log('[CHART UPDATE] Updating charts with data:', data);
       
       departments.forEach(dept => {
         if (departmentCharts[dept] && data[dept]) {
-          // Only use data up to current hour - slice array
-          const hourlyData = data[dept].hourlyData || new Array(24).fill(0);
-          const dataUpToNow = hourlyData.slice(0, currentHour + 1);
+          // IMPORTANT: Only slice up to current hour (0 to currentHour inclusive)
+          const fullHourlyData = data[dept].hourlyData || new Array(24).fill(0);
+          const dataUpToNow = fullHourlyData.slice(0, currentHour + 1);
           
-          console.log(`[${dept.toUpperCase()}] Hourly data (up to ${currentHour}):`, dataUpToNow);
+          console.log(`[${dept.toUpperCase()}] Full 24hr data:`, fullHourlyData);
+          console.log(`[${dept.toUpperCase()}] Sliced to hour ${currentHour}:`, dataUpToNow);
+          console.log(`[${dept.toUpperCase()}] Data length: ${dataUpToNow.length}, Should be: ${currentHour + 1}`);
           
           // Update chart data
           departmentCharts[dept].data.datasets[0].data = dataUpToNow;
@@ -1245,37 +1224,36 @@
     function updateChartsWithSampleData() {
       const currentHour = new Date().getHours();
       
-      // Realistic hourly queue distribution - showing queues per hour with natural peaks and valleys
-      // Only generate data up to current hour to prevent graph from going down
-      const fullSampleData = {
+      console.log('[SAMPLE DATA] Using sample data, current hour:', currentHour);
+      
+      // Create sample data with queues ONLY at current hour
+      const sampleData = {
         dean: { 
-          hourlyData: [0,0,0,0,0,0,3,5,8,6,9,7,4,5,8,6,4,3,2,0,0,0,0,0], 
-          totalToday: 56 
+          hourlyData: new Array(24).fill(0),
+          totalToday: 5 
         },
         ie: { 
-          hourlyData: [0,0,0,0,0,1,4,6,9,7,11,8,5,6,10,7,5,3,1,0,0,0,0,0], 
-          totalToday: 71 
+          hourlyData: new Array(24).fill(0),
+          totalToday: 8 
         },
         cpe: { 
-          hourlyData: [0,0,0,0,0,0,2,4,6,5,8,6,3,4,7,5,3,2,1,0,0,0,0,0], 
-          totalToday: 45 
+          hourlyData: new Array(24).fill(0),
+          totalToday: 3 
         },
         ece: { 
-          hourlyData: [0,0,0,0,0,1,3,5,8,6,9,7,4,5,8,6,4,2,1,0,0,0,0,0], 
-          totalToday: 57 
+          hourlyData: new Array(24).fill(0),
+          totalToday: 6 
         }
       };
       
-      // Trim data to current hour only
-      const trimmedData = {};
-      Object.keys(fullSampleData).forEach(dept => {
-        trimmedData[dept] = {
-          hourlyData: fullSampleData[dept].hourlyData.slice(0, currentHour + 1),
-          totalToday: fullSampleData[dept].totalToday
-        };
-      });
+      // Place all queues at current hour
+      sampleData.dean.hourlyData[currentHour] = 5;
+      sampleData.ie.hourlyData[currentHour] = 8;
+      sampleData.cpe.hourlyData[currentHour] = 3;
+      sampleData.ece.hourlyData[currentHour] = 6;
       
-      updateChartsWithData(trimmedData);
+      console.log('[SAMPLE DATA] Generated:', sampleData);
+      updateChartsWithData(sampleData);
     }
 
     // Set department status
