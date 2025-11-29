@@ -356,16 +356,17 @@
     .viz-card {
       background: white;
       border-radius: 15px;
-      padding: 20px;
+      padding: 25px 20px;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
       border: 1px solid #e5e7eb;
-      margin-bottom: 15px;
-      transition: transform 0.3s ease;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
       height: 100%;
     }
 
     .viz-card:hover {
-      transform: translateY(-2px);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
     }
 
     .viz-header {
@@ -392,13 +393,14 @@
     }
 
     .viz-chart-container {
-      height: 100px;
+      height: 180px;
       position: relative;
-      margin-top: 10px;
+      margin-top: 15px;
+      padding: 10px 5px;
     }
 
     .viz-chart-container canvas {
-      max-height: 100px;
+      max-height: 180px;
     }
     
     @media (max-width: 768px) {
@@ -535,7 +537,7 @@
         <div class="col-md-3">
           <div class="stats-card">
             <div class="stats-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-              ⏳
+              <i class="fas fa-users"></i>
             </div>
             <div class="stats-number text-primary" id="currentQueue">0</div>
             <div class="stats-label">Current Queue</div>
@@ -995,16 +997,21 @@
             data: {
               labels: hourlyLabels,
               datasets: [{
+                label: 'Queue Count',
                 data: new Array(24).fill(0),
                 borderColor: departmentColors[dept],
-                backgroundColor: 'transparent',
-                borderWidth: 2.5,
-                fill: false,
-                tension: 0.3,
-                pointRadius: 0,
-                pointHoverRadius: 0,
-                pointBackgroundColor: departmentColors[dept],
-                pointBorderColor: departmentColors[dept]
+                backgroundColor: departmentColors[dept] + '20',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: departmentColors[dept],
+                pointBorderWidth: 2,
+                pointHoverBackgroundColor: departmentColors[dept],
+                pointHoverBorderColor: '#ffffff',
+                pointHoverBorderWidth: 3
               }]
             },
             options: {
@@ -1020,11 +1027,19 @@
                 },
                 tooltip: {
                   enabled: true,
-                  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  backgroundColor: 'rgba(0, 0, 0, 0.9)',
                   titleColor: 'white',
                   bodyColor: 'white',
+                  titleFont: {
+                    size: 13,
+                    weight: 'bold'
+                  },
+                  bodyFont: {
+                    size: 12
+                  },
+                  padding: 12,
                   borderColor: departmentColors[dept],
-                  borderWidth: 1,
+                  borderWidth: 2,
                   displayColors: false,
                   callbacks: {
                     title: function(context) {
@@ -1038,23 +1053,38 @@
               },
               scales: {
                 x: {
-                  display: false,
+                  display: true,
                   grid: {
-                    display: false
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                  },
+                  ticks: {
+                    color: '#6b7280',
+                    font: {
+                      size: 10
+                    },
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 6
                   }
                 },
                 y: {
-                  display: false,
+                  display: true,
                   beginAtZero: true,
                   grid: {
-                    display: false
+                    display: true,
+                    color: 'rgba(0, 0, 0, 0.05)',
+                    drawBorder: false
+                  },
+                  ticks: {
+                    color: '#6b7280',
+                    font: {
+                      size: 10
+                    },
+                    precision: 0,
+                    maxTicksLimit: 5
                   }
-                }
-              },
-              elements: {
-                point: {
-                  radius: 0,
-                  hoverRadius: 4
                 }
               }
             }
