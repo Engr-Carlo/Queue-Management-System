@@ -983,7 +983,6 @@
     // Initialize visualization charts for all departments
     function initializeVisualizationCharts() {
       const departments = ['dean', 'ie', 'cpe', 'ece'];
-      const hourlyLabels = generateHourlyLabels();
       
       departments.forEach(dept => {
         const canvasId = dept === 'dean' ? 'deanChart' : 
@@ -992,13 +991,22 @@
         
         const ctx = document.getElementById(canvasId);
         if (ctx) {
+          // Generate labels only up to current hour
+          const currentHour = new Date().getHours();
+          const hourlyLabels = [];
+          for (let i = 0; i <= currentHour; i++) {
+            const hour = i % 12 || 12;
+            const period = i < 12 ? 'AM' : 'PM';
+            hourlyLabels.push(`${hour} ${period}`);
+          }
+          
           departmentCharts[dept] = new Chart(ctx.getContext('2d'), {
             type: 'line',
             data: {
               labels: hourlyLabels,
               datasets: [{
                 label: 'Queue Count',
-                data: new Array(24).fill(0),
+                data: new Array(currentHour + 1).fill(0),
                 borderColor: departmentColors[dept],
                 backgroundColor: departmentColors[dept] + '20',
                 borderWidth: 3,
@@ -1207,16 +1215,20 @@
     // Update charts with real data from backend
     function updateChartsWithData(data) {
       const departments = ['dean', 'ie', 'cpe', 'ece'];
+      const currentHour = new Date().getHours();
       
       console.log('[CHART UPDATE] Updating charts with data:', data);
       
       departments.forEach(dept => {
         if (departmentCharts[dept] && data[dept]) {
+          // Only use data up to current hour - slice array
           const hourlyData = data[dept].hourlyData || new Array(24).fill(0);
-          console.log(`[${dept.toUpperCase()}] Hourly data:`, hourlyData);
+          const dataUpToNow = hourlyData.slice(0, currentHour + 1);
+          
+          console.log(`[${dept.toUpperCase()}] Hourly data (up to ${currentHour}):`, dataUpToNow);
           
           // Update chart data
-          departmentCharts[dept].data.datasets[0].data = hourlyData;
+          departmentCharts[dept].data.datasets[0].data = dataUpToNow;
           departmentCharts[dept].update('active');
           
           // Update count display
@@ -1233,8 +1245,11 @@
 
     // Update charts with sample data when backend is not available
     function updateChartsWithSampleData() {
+      const currentHour = new Date().getHours();
+      
       // Realistic hourly queue distribution - showing queues per hour with natural peaks and valleys
-      const sampleData = {
+      // Only generate data up to current hour to prevent graph from going down
+      const fullSampleData = {
         dean: { 
           hourlyData: [0,0,0,0,0,0,3,5,8,6,9,7,4,5,8,6,4,3,2,0,0,0,0,0], 
           totalToday: 56 
@@ -1253,7 +1268,16 @@
         }
       };
       
-      updateChartsWithData(sampleData);
+      // Trim data to current hour only
+      const trimmedData = {};
+      Object.keys(fullSampleData).forEach(dept => {
+        trimmedData[dept] = {
+          hourlyData: fullSampleData[dept].hourlyData.slice(0, currentHour + 1),
+          totalToday: fullSampleData[dept].totalToday
+        };
+      });
+      
+      updateChartsWithData(trimmedData);
     }
 
     // Set department status
