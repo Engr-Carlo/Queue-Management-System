@@ -458,6 +458,20 @@
         </button>
       </div>
 
+      <!-- Queue Volume Chart -->
+      <div class="row" style="margin-bottom: 30px;">
+        <div class="col-md-12">
+          <div class="queue-card">
+            <h3 class="queue-title" style="margin-bottom: 25px;">
+              <i class="fas fa-chart-column"></i> Today's Queue Volume by Department
+            </h3>
+            <div style="height: 300px; position: relative;">
+              <canvas id="departmentVolumeChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Statistics Row -->
       <div class="row">
         <div class="col-md-3">
@@ -915,123 +929,95 @@
       loadStatistics();
     }
 
-    // Initialize visualization charts for all departments
+    // Initialize department volume bar chart
+    let volumeChart = null;
+    
     function initializeVisualizationCharts() {
-      const departments = ['dean', 'ie', 'cpe', 'ece'];
+      const ctx = document.getElementById('departmentVolumeChart');
+      if (!ctx) return;
       
-      departments.forEach(dept => {
-        const canvasId = dept === 'dean' ? 'deanChart' : 
-                        dept === 'ie' ? 'ieChart' :
-                        dept === 'cpe' ? 'cpeChart' : 'eceChart';
-        
-        const ctx = document.getElementById(canvasId);
-        if (ctx) {
-          // Generate labels only up to current hour
-          const currentHour = new Date().getHours();
-          const hourlyLabels = [];
-          for (let i = 0; i <= currentHour; i++) {
-            const hour = i % 12 || 12;
-            const period = i < 12 ? 'AM' : 'PM';
-            hourlyLabels.push(`${hour} ${period}`);
-          }
-          
-          departmentCharts[dept] = new Chart(ctx.getContext('2d'), {
-            type: 'line',
-            data: {
-              labels: hourlyLabels,
-              datasets: [{
-                label: 'Queue Count',
-                data: new Array(currentHour + 1).fill(0),
-                borderColor: departmentColors[dept],
-                backgroundColor: departmentColors[dept] + '20',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: '#ffffff',
-                pointBorderColor: departmentColors[dept],
-                pointBorderWidth: 2,
-                pointHoverBackgroundColor: departmentColors[dept],
-                pointHoverBorderColor: '#ffffff',
-                pointHoverBorderWidth: 3
-              }]
+      volumeChart = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: ['Dean\'s Office', 'IE Department', 'CPE Department', 'ECE Department'],
+          datasets: [{
+            label: 'Total Queues Today',
+            data: [0, 0, 0, 0],
+            backgroundColor: [
+              'rgba(239, 68, 68, 0.8)',    // Red for Dean
+              'rgba(59, 130, 246, 0.8)',    // Blue for IE
+              'rgba(16, 185, 129, 0.8)',    // Green for CPE
+              'rgba(245, 158, 11, 0.8)'     // Orange for ECE
+            ],
+            borderColor: [
+              'rgba(239, 68, 68, 1)',
+              'rgba(59, 130, 246, 1)',
+              'rgba(16, 185, 129, 1)',
+              'rgba(245, 158, 11, 1)'
+            ],
+            borderWidth: 2,
+            borderRadius: 8,
+            borderSkipped: false
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
             },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              interaction: {
-                intersect: false,
-                mode: 'index'
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              titleColor: 'white',
+              bodyColor: 'white',
+              titleFont: {
+                size: 14,
+                weight: 'bold'
               },
-              plugins: {
-                legend: {
-                  display: false
-                },
-                tooltip: {
-                  enabled: true,
-                  backgroundColor: 'rgba(0, 0, 0, 0.9)',
-                  titleColor: 'white',
-                  bodyColor: 'white',
-                  titleFont: {
-                    size: 13,
-                    weight: 'bold'
-                  },
-                  bodyFont: {
-                    size: 12
-                  },
-                  padding: 12,
-                  borderColor: departmentColors[dept],
-                  borderWidth: 2,
-                  displayColors: false,
-                  callbacks: {
-                    title: function(context) {
-                      return context[0].label;
-                    },
-                    label: function(context) {
-                      return `Queues: ${context.parsed.y}`;
-                    }
-                  }
-                }
+              bodyFont: {
+                size: 13
               },
-              scales: {
-                x: {
-                  display: true,
-                  grid: {
-                    display: true,
-                    color: 'rgba(0, 0, 0, 0.05)',
-                    drawBorder: false
-                  },
-                  ticks: {
-                    color: '#6b7280',
-                    font: {
-                      size: 10
-                    },
-                    maxRotation: 0,
-                    autoSkip: true,
-                    maxTicksLimit: 6
-                  }
-                },
-                y: {
-                  display: true,
-                  beginAtZero: true,
-                  grid: {
-                    display: true,
-                    color: 'rgba(0, 0, 0, 0.05)',
-                    drawBorder: false
-                  },
-                  ticks: {
-                    color: '#6b7280',
-                    font: {
-                      size: 10
-                    },
-                    precision: 0,
-                    maxTicksLimit: 5
-                  }
+              padding: 12,
+              borderWidth: 2,
+              borderColor: 'rgba(255, 255, 255, 0.2)',
+              displayColors: false,
+              callbacks: {
+                label: function(context) {
+                  return `Total: ${context.parsed.y} queue${context.parsed.y !== 1 ? 's' : ''}`;
                 }
               }
             }
-          });
+          },
+          scales: {
+            x: {
+              grid: {
+                display: false
+              },
+              ticks: {
+                color: '#1a1a1a',
+                font: {
+                  size: 12,
+                  weight: '600'
+                }
+              }
+            },
+            y: {
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.05)',
+                drawBorder: false
+              },
+              ticks: {
+                color: '#6b7280',
+                font: {
+                  size: 11
+                },
+                precision: 0,
+                stepSize: 1
+              }
+            }
+          }
         }
       });
       
@@ -1042,156 +1028,41 @@
     // Update visualization charts with real data
     async function updateVisualizationCharts() {
       try {
-        // Fetch real hourly data from the database
-        const response = await fetch(`${API_BASE_URL}/analytics/hourly-department-data`);
-        
-        if (response.ok) {
-          const data = await response.json();
-          console.log('Real hourly data received:', data);
-          updateChartsWithData(data);
-        } else {
-          console.log('Analytics endpoint not available, fetching from queue stats');
-          // Fallback: try to get data from existing queue endpoints
-          await fetchDataFromQueueEndpoints();
-        }
-      } catch (error) {
-        console.log('Error loading chart data:', error);
-        // Try fallback method
-        await fetchDataFromQueueEndpoints();
-      }
-    }
-
-    // Fallback method: fetch data from existing queue endpoints
-    async function fetchDataFromQueueEndpoints() {
-      try {
         const departments = [
-          { key: 'dean', filter: 'dean' },
-          { key: 'ie', filter: 'ie-chair' },
-          { key: 'cpe', filter: 'cpe-chair' },
-          { key: 'ece', filter: 'ece-chair' }
+          { key: 'dean', filter: 'dean', index: 0 },
+          { key: 'ie', filter: 'ie-chair', index: 1 },
+          { key: 'cpe', filter: 'cpe-chair', index: 2 },
+          { key: 'ece', filter: 'ece-chair', index: 3 }
         ];
         
-        const departmentData = {};
-        const currentHour = new Date().getHours();
+        const volumeData = [0, 0, 0, 0];
         
-        console.log(`[DATA GENERATION] Current time: ${new Date().toLocaleTimeString()}, Hour: ${currentHour}`);
-        
-        // Fetch stats for each department
         for (const dept of departments) {
           try {
             const response = await fetch(`${API_BASE_URL}/admin/stats/${dept.filter}`);
             if (response.ok) {
               const stats = await response.json();
-              const totalToday = stats.totalToday || 0;
-              
-              console.log(`[${dept.key.toUpperCase()}] Total queues today: ${totalToday}`);
-              
-              // Initialize hourly data array (24 hours)
-              const hourlyData = new Array(24).fill(0);
-              
-              // Put ALL queues in the CURRENT hour - no distribution
-              if (totalToday > 0) {
-                hourlyData[currentHour] = totalToday;
-                console.log(`[${dept.key.toUpperCase()}] Placed ${totalToday} queues at hour ${currentHour}`);
-              }
-              
-              departmentData[dept.key] = {
-                totalToday: totalToday,
-                hourlyData: hourlyData
-              };
-              
-              console.log(`[${dept.key.toUpperCase()}] Hourly array:`, hourlyData);
+              volumeData[dept.index] = stats.totalToday || 0;
+              console.log(`[${dept.key.toUpperCase()}] Total today: ${stats.totalToday}`);
             }
           } catch (error) {
             console.log(`Error fetching stats for ${dept.key}:`, error);
-            departmentData[dept.key] = {
-              totalToday: 0,
-              hourlyData: new Array(24).fill(0)
-            };
           }
         }
         
-        console.log('[DATA GENERATION] Complete department data:', departmentData);
-        updateChartsWithData(departmentData);
+        console.log('[CHART] Department volumes:', volumeData);
+        
+        if (volumeChart) {
+          volumeChart.data.datasets[0].data = volumeData;
+          volumeChart.update();
+        }
         
       } catch (error) {
-        console.log('Error in fallback method:', error);
-        // Final fallback: use sample data
-        updateChartsWithSampleData();
+        console.log('Error updating volume chart:', error);
       }
     }
 
-    // Update charts with real data from backend
-    function updateChartsWithData(data) {
-      const departments = ['dean', 'ie', 'cpe', 'ece'];
-      const currentHour = new Date().getHours();
-      
-      console.log('[CHART UPDATE] Current hour:', currentHour);
-      console.log('[CHART UPDATE] Updating charts with data:', data);
-      
-      departments.forEach(dept => {
-        if (departmentCharts[dept] && data[dept]) {
-          // IMPORTANT: Only slice up to current hour (0 to currentHour inclusive)
-          const fullHourlyData = data[dept].hourlyData || new Array(24).fill(0);
-          const dataUpToNow = fullHourlyData.slice(0, currentHour + 1);
-          
-          console.log(`[${dept.toUpperCase()}] Full 24hr data:`, fullHourlyData);
-          console.log(`[${dept.toUpperCase()}] Sliced to hour ${currentHour}:`, dataUpToNow);
-          console.log(`[${dept.toUpperCase()}] Data length: ${dataUpToNow.length}, Should be: ${currentHour + 1}`);
-          
-          // Update chart data
-          departmentCharts[dept].data.datasets[0].data = dataUpToNow;
-          departmentCharts[dept].update('active');
-          
-          // Update count display
-          const countElementId = `${dept}Count`;
-          const countElement = document.getElementById(countElementId);
-          if (countElement) {
-            countElement.textContent = data[dept].totalToday || 0;
-          }
-        }
-      });
-      
-      console.log('[CHART UPDATE] All charts updated successfully');
-    }
-
-    // Update charts with sample data when backend is not available
-    function updateChartsWithSampleData() {
-      const currentHour = new Date().getHours();
-      
-      console.log('[SAMPLE DATA] Using sample data, current hour:', currentHour);
-      
-      // Create sample data with queues ONLY at current hour
-      const sampleData = {
-        dean: { 
-          hourlyData: new Array(24).fill(0),
-          totalToday: 5 
-        },
-        ie: { 
-          hourlyData: new Array(24).fill(0),
-          totalToday: 8 
-        },
-        cpe: { 
-          hourlyData: new Array(24).fill(0),
-          totalToday: 3 
-        },
-        ece: { 
-          hourlyData: new Array(24).fill(0),
-          totalToday: 6 
-        }
-      };
-      
-      // Place all queues at current hour
-      sampleData.dean.hourlyData[currentHour] = 5;
-      sampleData.ie.hourlyData[currentHour] = 8;
-      sampleData.cpe.hourlyData[currentHour] = 3;
-      sampleData.ece.hourlyData[currentHour] = 6;
-      
-      console.log('[SAMPLE DATA] Generated:', sampleData);
-      updateChartsWithData(sampleData);
-    }
-
-    // Set department status
+    // Fallback method: fetch data from existing queue endpoints
     // Load current admin status
     async function loadAdminStatus() {
       try {
