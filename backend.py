@@ -590,7 +590,7 @@ def get_queue_status(queue_id):
         # Determine status based on actual conditions and admin status
         if admin_status == 'away':
             status = {
-                "text": "⚪ Admin Away",
+                "text": "Admin Away",
                 "class": "status-away",
                 "priority": "low"
             }

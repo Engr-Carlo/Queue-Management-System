@@ -452,7 +452,7 @@
           <strong>Warning:</strong> This action will permanently delete ALL queues from the entire system across all departments.
         </p>
         <button class="btn btn-danger" onclick="showDeleteAllModal()">
-          🗑️ Delete All Queues (ALL DEPARTMENTS)
+          <i class="fas fa-trash-can"></i> Delete All Queues (ALL DEPARTMENTS)
         </button>
       </div>
 
@@ -482,7 +482,7 @@
           <div class="viz-card">
             <div class="viz-header">
               <div>
-                <h5 class="viz-title">⚙️ IE Department</h5>
+                <h5 class="viz-title"><i class="fas fa-cog"></i> IE Department</h5>
                 <div class="viz-count" style="color: #3b82f6;" id="ieCount">0</div>
               </div>
             </div>
@@ -496,7 +496,7 @@
           <div class="viz-card">
             <div class="viz-header">
               <div>
-                <h5 class="viz-title">💻 CPE Department</h5>
+                <h5 class="viz-title"><i class="fas fa-laptop-code"></i> CPE Department</h5>
                 <div class="viz-count" style="color: #10b981;" id="cpeCount">0</div>
               </div>
             </div>
@@ -510,7 +510,7 @@
           <div class="viz-card">
             <div class="viz-header">
               <div>
-                <h5 class="viz-title">🔌 ECE Department</h5>
+                <h5 class="viz-title"><i class="fas fa-bolt"></i> ECE Department</h5>
                 <div class="viz-count" style="color: #f59e0b;" id="eceCount">0</div>
               </div>
             </div>
@@ -723,7 +723,7 @@
       if (queues.length === 0) {
         queueList.innerHTML = `
           <div class="no-queues">
-            <div class="no-queues-icon">📭</div>
+            <div class="no-queues-icon"><i class="fas fa-inbox"></i></div>
             <h5>No queues available</h5>
             <p>All caught up! No one is waiting in your queue.</p>
           </div>
@@ -739,15 +739,15 @@
           <div class="queue-details">
             <div class="queue-info">
               <div class="queue-person">${queue.person}</div>
-              <div class="queue-meta">📅 ${queue.date} • ⏰ ${queue.time}</div>
+              <div class="queue-meta"><i class="fas fa-calendar"></i> ${queue.date} • <i class="fas fa-clock"></i> ${queue.time}</div>
               <div class="queue-meta">Status: ${queue.status}</div>
               ${queue.is_present ? 
                 `<div class="queue-meta" style="color: #16a34a; font-weight: 600; margin-top: 5px;">
-                  ✋ Student is here and ready!
+                  <i class="fas fa-hand"></i> Student is here and ready!
                   ${queue.present_at ? `<span style="font-size: 0.8rem; color: #6b7280;">(${new Date(queue.present_at).toLocaleTimeString()})</span>` : ''}
                 </div>` : 
                 `<div class="queue-meta" style="color: #6b7280; font-style: italic; margin-top: 5px;">
-                  📍 Student status unknown
+                  <i class="fas fa-location-dot"></i> Student status unknown
                 </div>`
               }
               ${isMuted ? 
@@ -1384,7 +1384,7 @@
         
         // Restore button
         const deleteBtn = document.getElementById('confirmDeleteBtn');
-        deleteBtn.innerHTML = '🗑️ DELETE ALL QUEUES';
+        deleteBtn.innerHTML = '<i class="fas fa-trash-can"></i> DELETE ALL QUEUES';
         deleteBtn.disabled = false;
       }
     }
@@ -1518,7 +1518,7 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="deleteAllQueues()" disabled>
-            🗑️ DELETE ALL QUEUES
+            <i class="fas fa-trash-can"></i> DELETE ALL QUEUES
           </button>
         </div>
       </div>
