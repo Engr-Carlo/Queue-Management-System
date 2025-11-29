@@ -1,4 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" fill="#dc2626" rx="6"/>
-  <text x="16" y="23" font-family="Arial,sans-serif" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">Q</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b91c1c;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Rounded rectangle background -->
+  <rect width="64" height="64" fill="url(#bgGrad)" rx="12"/>
+  
+  <!-- Queue icon - people in line -->
+  <g transform="translate(12, 16)">
+    <!-- Person 1 -->
+    <circle cx="8" cy="6" r="4" fill="#ffffff" opacity="0.9"/>
+    <rect x="5" y="11" width="6" height="10" rx="3" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Person 2 -->
+    <circle cx="20" cy="6" r="4" fill="#ffffff" opacity="0.75"/>
+    <rect x="17" y="11" width="6" height="10" rx="3" fill="#ffffff" opacity="0.75"/>
+    
+    <!-- Person 3 -->
+    <circle cx="32" cy="6" r="4" fill="#ffffff" opacity="0.6"/>
+    <rect x="29" y="11" width="6" height="10" rx="3" fill="#ffffff" opacity="0.6"/>
+  </g>
+  
+  <!-- Bottom accent - queue line -->
+  <rect x="12" y="52" width="40" height="3" rx="1.5" fill="#ffffff" opacity="0.3"/>
 </svg>
