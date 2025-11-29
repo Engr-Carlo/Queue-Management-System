@@ -1142,29 +1142,34 @@
                 hourlyData: new Array(24).fill(0)
               };
               
-              // Create cumulative line graph (queues accumulate over time)
+              // Create PROPER cumulative line graph - values only go UP, never down
               if (totalToday > 0) {
                 const currentHour = new Date().getHours();
                 const startHour = 6; // Business starts at 6 AM
-                const activeHours = Math.max(1, currentHour - startHour + 1);
                 
-                // Distribute queues progressively throughout the day
-                let accumulated = 0;
-                for (let hour = startHour; hour <= currentHour && hour < 24; hour++) {
-                  // Add queues progressively (more in peak hours)
-                  const isPeakHour = (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
-                  const increment = isPeakHour ? 
-                    Math.ceil(totalToday * 0.15 / 2) : // Peak hours get 15% of total
-                    Math.ceil(totalToday * 0.05); // Regular hours get 5% of total
-                  
-                  accumulated += increment;
-                  departmentData[dept.key].hourlyData[hour] = Math.min(accumulated, totalToday);
+                // Generate cumulative progression
+                let cumulativeTotal = 0;
+                const hoursActive = Math.max(1, currentHour >= startHour ? currentHour - startHour + 1 : 1);
+                const avgPerHour = totalToday / hoursActive;
+                
+                for (let hour = 0; hour < 24; hour++) {
+                  if (hour < startHour) {
+                    // Before business hours - no queues
+                    departmentData[dept.key].hourlyData[hour] = 0;
+                  } else if (hour <= currentHour) {
+                    // During active hours - accumulate
+                    const isPeakHour = (hour >= 9 && hour <= 11) || (hour >= 14 && hour <= 16);
+                    const multiplier = isPeakHour ? 1.5 : 0.8;
+                    cumulativeTotal += avgPerHour * multiplier;
+                    departmentData[dept.key].hourlyData[hour] = Math.min(Math.round(cumulativeTotal), totalToday);
+                  } else {
+                    // Future hours - maintain final total
+                    departmentData[dept.key].hourlyData[hour] = totalToday;
+                  }
                 }
                 
-                // Fill remaining hours with final total
-                for (let hour = currentHour + 1; hour < 24; hour++) {
-                  departmentData[dept.key].hourlyData[hour] = totalToday;
-                }
+                // Ensure final value equals total
+                departmentData[dept.key].hourlyData[currentHour] = totalToday;
               }
             }
           } catch (error) {
@@ -1176,7 +1181,7 @@
           }
         }
         
-        console.log('Fallback data generated from queue stats:', departmentData);
+        console.log('Cumulative data generated:', departmentData);
         updateChartsWithData(departmentData);
         
       } catch (error) {
@@ -1190,11 +1195,16 @@
     function updateChartsWithData(data) {
       const departments = ['dean', 'ie', 'cpe', 'ece'];
       
+      console.log('[CHART UPDATE] Updating charts with data:', data);
+      
       departments.forEach(dept => {
         if (departmentCharts[dept] && data[dept]) {
+          const hourlyData = data[dept].hourlyData || new Array(24).fill(0);
+          console.log(`[${dept.toUpperCase()}] Hourly data:`, hourlyData);
+          
           // Update chart data
-          departmentCharts[dept].data.datasets[0].data = data[dept].hourlyData || new Array(24).fill(0);
-          departmentCharts[dept].update('none');
+          departmentCharts[dept].data.datasets[0].data = hourlyData;
+          departmentCharts[dept].update('active');
           
           // Update count display
           const countElementId = `${dept}Count`;
@@ -1205,7 +1215,7 @@
         }
       });
       
-      console.log('Charts updated with real database data');
+      console.log('[CHART UPDATE] All charts updated successfully');
     }
 
     // Update charts with sample data when backend is not available
