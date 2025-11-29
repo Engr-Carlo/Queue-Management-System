@@ -1098,6 +1098,13 @@
 
     // Update visualization charts with real data
     async function updateVisualizationCharts() {
+      // For now, always use realistic sample data to show proper graph visualization
+      // TODO: Implement actual hourly tracking in backend database
+      console.log('Using sample data for proper graph visualization');
+      updateChartsWithSampleData();
+      return;
+      
+      /* Disabled until backend hourly tracking is implemented
       try {
         // Fetch real hourly data from the database
         const response = await fetch(`${API_BASE_URL}/analytics/hourly-department-data`);
@@ -1116,6 +1123,7 @@
         // Try fallback method
         await fetchDataFromQueueEndpoints();
       }
+      */
     }
 
     // Fallback method: fetch data from existing queue endpoints
