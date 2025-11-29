@@ -1154,33 +1154,39 @@
               if (totalToday > 0) {
                 const currentHour = new Date().getHours();
                 const startHour = 6; // Business starts at 6 AM
-                const endHour = 18; // Business ends at 6 PM
                 
-                // Distribute queues realistically across business hours
-                let remaining = totalToday;
-                const activeHours = Math.min(currentHour >= startHour ? currentHour - startHour + 1 : 0, endHour - startHour);
-                
-                if (activeHours > 0) {
-                  for (let hour = startHour; hour < startHour + activeHours; hour++) {
+                // For small queue counts, put them in the current hour
+                if (totalToday <= 5) {
+                  departmentData[dept.key].hourlyData[currentHour] = totalToday;
+                } else {
+                  // For larger counts, distribute across business hours
+                  const activeHours = Math.max(1, currentHour >= startHour ? currentHour - startHour + 1 : 1);
+                  let remaining = totalToday;
+                  
+                  for (let hour = startHour; hour <= currentHour; hour++) {
                     // Peak hours get more queues
                     const isPeakMorning = hour >= 9 && hour <= 11;
                     const isPeakAfternoon = hour >= 14 && hour <= 16;
                     const isLunchDip = hour >= 12 && hour <= 13;
                     
-                    let baseAmount = totalToday / activeHours;
-                    
+                    let weight = 1.0;
                     if (isPeakMorning || isPeakAfternoon) {
-                      baseAmount *= 1.8; // Peak hours have 80% more
+                      weight = 1.8; // Peak hours
                     } else if (isLunchDip) {
-                      baseAmount *= 0.5; // Lunch time has 50% less
+                      weight = 0.5; // Lunch dip
                     }
                     
-                    // Add some natural variation
-                    const variation = (Math.random() - 0.5) * 0.4 * baseAmount;
-                    const hourlyCount = Math.max(0, Math.round(baseAmount + variation));
+                    // Calculate share based on weight
+                    const baseAmount = (totalToday / activeHours) * weight;
+                    const hourlyCount = Math.max(0, Math.min(Math.round(baseAmount), remaining));
                     
-                    departmentData[dept.key].hourlyData[hour] = Math.min(hourlyCount, remaining);
-                    remaining -= departmentData[dept.key].hourlyData[hour];
+                    departmentData[dept.key].hourlyData[hour] = hourlyCount;
+                    remaining -= hourlyCount;
+                  }
+                  
+                  // Add any remaining queues to current hour
+                  if (remaining > 0) {
+                    departmentData[dept.key].hourlyData[currentHour] += remaining;
                   }
                 }
               }
