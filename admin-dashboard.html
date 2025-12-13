@@ -541,64 +541,71 @@
         </div>
       </div>
 
-      <!-- Statistics Row -->
-      <div class="row">
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(34, 197, 94, 0.1); color: #16a34a;">
-              <i class="fas fa-chart-line"></i>
+      <!-- Queue Management Section -->
+      <div class="row" style="margin-bottom: 30px;">
+        <!-- Current Queue List - Left Side -->
+        <div class="col-lg-7">
+          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); min-height: 600px;">
+            <div style="padding: 30px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #f1f5f9;">
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
+                  <i class="fas fa-list" style="margin-right: 10px; color: #3b82f6;"></i>Current Queue
+                </h3>
+                <button class="refresh-btn" onclick="refreshQueue()" style="background: #3b82f6; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                  <i class="fas fa-rotate"></i> Refresh
+                </button>
+              </div>
+              <div id="queueList" style="max-height: 480px; overflow-y: auto;">
+                <!-- Queue items will be loaded here -->
+              </div>
             </div>
-            <div class="stats-number text-success" id="totalToday">0</div>
-            <div class="stats-label">Total Today</div>
           </div>
         </div>
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
-              <i class="fas fa-users"></i>
-            </div>
-            <div class="stats-number text-primary" id="currentQueue">0</div>
-            <div class="stats-label">Current Queue</div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
-              <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="stats-number text-warning" id="completedToday">0</div>
-            <div class="stats-label">Completed Today</div>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="stats-card">
-            <div class="stats-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
-              <i class="fas fa-clock"></i>
-            </div>
-            <div class="stats-number text-purple" id="avgWaitTime">0m</div>
-            <div class="stats-label">Avg Wait Time</div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Current Queue -->
-      <div class="queue-card">
-        <div class="queue-header">
-          <h3 class="queue-title">Current Queue</h3>
-          <button class="refresh-btn" onclick="refreshQueue()">
-            <i class="fas fa-rotate"></i> Refresh
-          </button>
-        </div>
-        <div id="queueList">
-          <!-- Queue items will be loaded here -->
-        </div>
-      </div>
+        <!-- Dashboard Metrics - Right Side -->
+        <div class="col-lg-5">
+          <div style="display: flex; flex-direction: column; gap: 20px; height: 100%;">
+            
+            <!-- Quick Stats Card -->
+            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); flex: 0 0 auto;">
+              <div style="padding: 25px; color: white;">
+                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; opacity: 0.95;">
+                  <i class="fas fa-gauge-high" style="margin-right: 8px;"></i>QUICK STATS
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Total Today</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="totalToday">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">In Queue</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="currentQueue">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Completed</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="completedToday">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Avg Wait</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="avgWaitTime">0m</div>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-      <!-- Recent Activity -->
-      <div class="queue-card">
-        <h3 class="queue-title">Recent Activity</h3>
-        <div id="recentActivity">
-          <!-- Recent activity will be loaded here -->
+            <!-- Recent Activity Card -->
+            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); flex: 1; min-height: 0;">
+              <div style="padding: 25px; display: flex; flex-direction: column; height: 100%;">
+                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9;">
+                  <i class="fas fa-clock-rotate-left" style="margin-right: 8px; color: #3b82f6;"></i>RECENT ACTIVITY
+                </h4>
+                <div id="recentActivity" style="flex: 1; overflow-y: auto; max-height: 320px;">
+                  <!-- Recent activity will be loaded here -->
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     </div>
