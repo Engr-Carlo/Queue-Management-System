@@ -458,148 +458,37 @@
         </button>
       </div>
 
-      <!-- Analytics Dashboard - Professional Enterprise Design -->
-      
-      <!-- Top Row: Main Charts - Equal Heights -->
+      <!-- Main Dashboard Layout -->
       <div class="row" style="margin-bottom: 30px;">
-        <!-- Performance Line Chart -->
-        <div class="col-lg-6">
-          <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 420px; display: flex; flex-direction: column;">
-            <div style="padding: 30px; color: white; flex: 1; display: flex; flex-direction: column;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
-                  <i class="fas fa-chart-line" style="margin-right: 10px;"></i>Performance Trend
-                </h3>
-                <div style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Today</div>
-              </div>
-              <div style="flex: 1; position: relative; min-height: 0;">
-                <canvas id="performanceChart"></canvas>
-              </div>
-              <div style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.85rem; font-weight: 500; justify-content: center;">
-                <div style="display: flex; align-items: center;">
-                  <div style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; margin-right: 8px;"></div>
-                  Completed
-                </div>
-                <div style="display: flex; align-items: center;">
-                  <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; margin-right: 8px;"></div>
-                  Active
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         
-        <!-- Department Distribution Chart -->
-        <div class="col-lg-6">
-          <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 420px; display: flex; flex-direction: column;">
-            <div style="padding: 30px; color: white; flex: 1; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
-                <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>Department Distribution
-              </h3>
-              <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0;">
-                <canvas id="departmentPieChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Bottom Row: Volume Analysis & Stats - Equal Heights -->
-      <div class="row" style="margin-bottom: 30px;">
-        <!-- Queue Volume Bar Chart -->
-        <div class="col-lg-8">
-          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); height: 380px; display: flex; flex-direction: column;">
-            <div style="padding: 30px; flex: 1; display: flex; flex-direction: column;">
-              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
-                <i class="fas fa-chart-bar" style="margin-right: 10px; color: #3b82f6;"></i>Department Volume
-              </h3>
-              <div style="flex: 1; position: relative; min-height: 0;">
-                <canvas id="departmentVolumeChart"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Stats Summary Cards -->
-        <div class="col-lg-4">
-          <div style="display: flex; flex-direction: column; height: 380px; gap: 20px;">
-            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.15); flex: 1; display: flex; align-items: center; justify-content: center;">
-              <div style="padding: 25px; color: white; text-align: center; width: 100%;">
-                <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px;">Total Today</div>
-                <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px;" id="statTotalToday">0</div>
-                <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
-              </div>
-            </div>
-            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); flex: 1; display: flex; align-items: center; justify-content: center;">
-              <div style="padding: 25px; text-align: center; width: 100%;">
-                <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
-                <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #1e3a8a;" id="statActiveNow">0</div>
-                <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">In Queue</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Queue Management Section -->
-      <div class="row" style="margin-bottom: 30px;">
-        <!-- Current Queue List - Left Side -->
-        <div class="col-lg-7">
-          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); min-height: 600px;">
-            <div style="padding: 30px;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #f1f5f9;">
-                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
-                  <i class="fas fa-list" style="margin-right: 10px; color: #3b82f6;"></i>Current Queue
-                </h3>
-                <button class="refresh-btn" onclick="refreshQueue()" style="background: #3b82f6; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
-                  <i class="fas fa-rotate"></i> Refresh
-                </button>
-              </div>
-              <div id="queueList" style="max-height: 480px; overflow-y: auto;">
-                <!-- Queue items will be loaded here -->
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Dashboard Metrics - Right Side -->
+        <!-- LEFT SIDE: Queue List -->
         <div class="col-lg-5">
-          <div style="display: flex; flex-direction: column; gap: 20px; height: 100%;">
+          <div style="display: flex; flex-direction: column; gap: 25px;">
             
-            <!-- Quick Stats Card -->
-            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); flex: 0 0 auto;">
-              <div style="padding: 25px; color: white;">
-                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; opacity: 0.95;">
-                  <i class="fas fa-gauge-high" style="margin-right: 8px;"></i>QUICK STATS
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Total Today</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="totalToday">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">In Queue</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="currentQueue">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Completed</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="completedToday">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px);">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Avg Wait</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="avgWaitTime">0m</div>
-                  </div>
+            <!-- Current Queue List -->
+            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+              <div style="padding: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 20px; border-bottom: 2px solid #f1f5f9;">
+                  <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
+                    <i class="fas fa-list" style="margin-right: 10px; color: #3b82f6;"></i>Current Queue
+                  </h3>
+                  <button class="refresh-btn" onclick="refreshQueue()" style="background: #3b82f6; color: white; border: none; padding: 8px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+                    <i class="fas fa-rotate"></i> Refresh
+                  </button>
+                </div>
+                <div id="queueList" style="max-height: 450px; overflow-y: auto;">
+                  <!-- Queue items will be loaded here -->
                 </div>
               </div>
             </div>
 
-            <!-- Recent Activity Card -->
-            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); flex: 1; min-height: 0;">
-              <div style="padding: 25px; display: flex; flex-direction: column; height: 100%;">
+            <!-- Recent Activity -->
+            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+              <div style="padding: 25px;">
                 <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9;">
                   <i class="fas fa-clock-rotate-left" style="margin-right: 8px; color: #3b82f6;"></i>RECENT ACTIVITY
                 </h4>
-                <div id="recentActivity" style="flex: 1; overflow-y: auto; max-height: 320px;">
+                <div id="recentActivity" style="overflow-y: auto; max-height: 350px;">
                   <!-- Recent activity will be loaded here -->
                 </div>
               </div>
@@ -607,6 +496,119 @@
 
           </div>
         </div>
+
+        <!-- RIGHT SIDE: Analytics -->
+        <div class="col-lg-7" style="padding-left: 25px;">
+          <div style="display: flex; flex-direction: column; gap: 25px;">
+            
+            <!-- Quick Stats Card -->
+            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);">
+              <div style="padding: 25px; color: white;">
+                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; opacity: 0.95;">
+                  <i class="fas fa-gauge-high" style="margin-right: 8px;"></i>QUICK STATS
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Total Today</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="totalToday">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">In Queue</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="currentQueue">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Completed</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="completedToday">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Avg Wait</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="avgWaitTime">0m</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Performance Line Chart -->
+            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);">
+              <div style="padding: 30px; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
+                    <i class="fas fa-chart-line" style="margin-right: 10px;"></i>Performance Trend
+                  </h3>
+                  <div style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Today</div>
+                </div>
+                <div style="height: 280px; position: relative;">
+                  <canvas id="performanceChart"></canvas>
+                </div>
+                <div style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.85rem; font-weight: 500; justify-content: center;">
+                  <div style="display: flex; align-items: center;">
+                    <div style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; margin-right: 8px;"></div>
+                    Completed
+                  </div>
+                  <div style="display: flex; align-items: center;">
+                    <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; margin-right: 8px;"></div>
+                    Active
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Distribution and Volume Charts Row -->
+            <div class="row" style="margin: 0; gap: 25px;">
+              <!-- Department Pie Chart -->
+              <div class="col" style="padding: 0;">
+                <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 380px;">
+                  <div style="padding: 30px; color: white; display: flex; flex-direction: column; height: 100%;">
+                    <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
+                      <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>Distribution
+                    </h3>
+                    <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0;">
+                      <canvas id="departmentPieChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Queue Volume Bar Chart -->
+              <div class="col" style="padding: 0;">
+                <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); height: 380px;">
+                  <div style="padding: 30px; display: flex; flex-direction: column; height: 100%;">
+                    <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
+                      <i class="fas fa-chart-bar" style="margin-right: 10px; color: #3b82f6;"></i>Volume
+                    </h3>
+                    <div style="flex: 1; position: relative; min-height: 0;">
+                      <canvas id="departmentVolumeChart"></canvas>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats Summary Cards -->
+            <div class="row" style="margin: 0; gap: 25px;">
+              <div class="col" style="padding: 0;">
+                <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.15); display: flex; align-items: center; justify-content: center; height: 150px;">
+                  <div style="padding: 25px; color: white; text-align: center; width: 100%;">
+                    <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px;">Total Today</div>
+                    <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px;" id="statTotalToday">0</div>
+                    <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col" style="padding: 0;">
+                <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); display: flex; align-items: center; justify-content: center; height: 150px;">
+                  <div style="padding: 25px; text-align: center; width: 100%;">
+                    <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
+                    <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #1e3a8a;" id="statActiveNow">0</div>
+                    <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">In Queue</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
