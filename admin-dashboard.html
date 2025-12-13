@@ -458,45 +458,45 @@
         </button>
       </div>
 
-      <!-- Analytics Dashboard - Modern Professional Design -->
+      <!-- Analytics Dashboard - Professional Enterprise Design -->
       
-      <!-- Top Row: Performance & Distribution -->
+      <!-- Top Row: Main Charts - Equal Heights -->
       <div class="row" style="margin-bottom: 30px;">
         <!-- Performance Line Chart -->
-        <div class="col-lg-7">
-          <div class="queue-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; box-shadow: 0 15px 35px rgba(102, 126, 234, 0.3); overflow: hidden;">
-            <div style="padding: 30px; color: white;">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                <h3 style="margin: 0; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.3px;">
+        <div class="col-lg-6">
+          <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 420px; display: flex; flex-direction: column;">
+            <div style="padding: 30px; color: white; flex: 1; display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
                   <i class="fas fa-chart-line" style="margin-right: 10px;"></i>Performance Trend
                 </h3>
-                <div style="background: rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">Today</div>
+                <div style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Today</div>
               </div>
-              <div style="height: 280px; position: relative;">
+              <div style="flex: 1; position: relative; min-height: 0;">
                 <canvas id="performanceChart"></canvas>
               </div>
-              <div style="display: flex; gap: 25px; margin-top: 20px; font-size: 0.9rem; font-weight: 500;">
+              <div style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.85rem; font-weight: 500; justify-content: center;">
                 <div style="display: flex; align-items: center;">
-                  <div style="width: 16px; height: 16px; background: #10b981; border-radius: 4px; margin-right: 8px; box-shadow: 0 0 15px rgba(16,185,129,0.6);"></div>
-                  Completed Queues
+                  <div style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; margin-right: 8px;"></div>
+                  Completed
                 </div>
                 <div style="display: flex; align-items: center;">
-                  <div style="width: 16px; height: 16px; background: #f59e0b; border-radius: 4px; margin-right: 8px; box-shadow: 0 0 15px rgba(245,158,11,0.6);"></div>
-                  Active Queues
+                  <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; margin-right: 8px;"></div>
+                  Active
                 </div>
               </div>
             </div>
           </div>
         </div>
         
-        <!-- Department Pie Chart -->
-        <div class="col-lg-5">
-          <div class="queue-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border: none; box-shadow: 0 15px 35px rgba(240, 147, 251, 0.3); overflow: hidden;">
-            <div style="padding: 30px; color: white;">
-              <h3 style="margin: 0 0 25px 0; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.3px;">
-                <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>Distribution
+        <!-- Department Distribution Chart -->
+        <div class="col-lg-6">
+          <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 420px; display: flex; flex-direction: column;">
+            <div style="padding: 30px; color: white; flex: 1; display: flex; flex-direction: column;">
+              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
+                <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>Department Distribution
               </h3>
-              <div style="height: 280px; position: relative; display: flex; align-items: center; justify-content: center;">
+              <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0;">
                 <canvas id="departmentPieChart"></canvas>
               </div>
             </div>
@@ -504,16 +504,16 @@
         </div>
       </div>
 
-      <!-- Bottom Row: Volume Analysis & Stats -->
+      <!-- Bottom Row: Volume Analysis & Stats - Equal Heights -->
       <div class="row" style="margin-bottom: 30px;">
         <!-- Queue Volume Bar Chart -->
         <div class="col-lg-8">
-          <div class="queue-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border: none; box-shadow: 0 15px 35px rgba(79, 172, 254, 0.3); overflow: hidden;">
-            <div style="padding: 30px; color: white;">
-              <h3 style="margin: 0 0 25px 0; font-size: 1.3rem; font-weight: 700; letter-spacing: 0.3px;">
-                <i class="fas fa-chart-bar" style="margin-right: 10px;"></i>Department Volume
+          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); height: 380px; display: flex; flex-direction: column;">
+            <div style="padding: 30px; flex: 1; display: flex; flex-direction: column;">
+              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
+                <i class="fas fa-chart-bar" style="margin-right: 10px; color: #3b82f6;"></i>Department Volume
               </h3>
-              <div style="height: 320px; position: relative;">
+              <div style="flex: 1; position: relative; min-height: 0;">
                 <canvas id="departmentVolumeChart"></canvas>
               </div>
             </div>
@@ -522,18 +522,20 @@
         
         <!-- Stats Summary Cards -->
         <div class="col-lg-4">
-          <div class="queue-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); border: none; box-shadow: 0 15px 35px rgba(250, 112, 154, 0.3); margin-bottom: 20px; overflow: hidden;">
-            <div style="padding: 25px; color: white; text-align: center;">
-              <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; opacity: 0.95; text-transform: uppercase; letter-spacing: 1px;">Total Today</div>
-              <div style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 5px;" id="statTotalToday">0</div>
-              <div style="font-size: 0.85rem; opacity: 0.9; font-weight: 500;">Queues Processed</div>
+          <div style="display: flex; flex-direction: column; height: 380px; gap: 20px;">
+            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.15); flex: 1; display: flex; align-items: center; justify-content: center;">
+              <div style="padding: 25px; color: white; text-align: center; width: 100%;">
+                <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px;">Total Today</div>
+                <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px;" id="statTotalToday">0</div>
+                <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
+              </div>
             </div>
-          </div>
-          <div class="queue-card" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); border: none; box-shadow: 0 15px 35px rgba(48, 207, 208, 0.3); overflow: hidden;">
-            <div style="padding: 25px; color: white; text-align: center;">
-              <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 10px; opacity: 0.95; text-transform: uppercase; letter-spacing: 1px;">Active Now</div>
-              <div style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 5px;" id="statActiveNow">0</div>
-              <div style="font-size: 0.85rem; opacity: 0.9; font-weight: 500;">In Queue</div>
+            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); flex: 1; display: flex; align-items: center; justify-content: center;">
+              <div style="padding: 25px; text-align: center; width: 100%;">
+                <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
+                <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #1e3a8a;" id="statActiveNow">0</div>
+                <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">In Queue</div>
+              </div>
             </div>
           </div>
         </div>
@@ -1002,18 +1004,19 @@
     let departmentPieChart = null;
     
     function initializeVisualizationCharts() {
-      // 1. Performance Line Chart - Modern gradient style
+      // Professional Enterprise Color Scheme: Navy Blue (#1e3a8a), Blue (#3b82f6), Gray (#64748b)
+      
+      // 1. Performance Line Chart
       const perfCtx = document.getElementById('performanceChart');
       if (perfCtx) {
         const ctx2d = perfCtx.getContext('2d');
         
-        // Vibrant gradients
         const gradientCompleted = ctx2d.createLinearGradient(0, 0, 0, 280);
-        gradientCompleted.addColorStop(0, 'rgba(16, 185, 129, 0.5)');
+        gradientCompleted.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
         gradientCompleted.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
         
         const gradientQueue = ctx2d.createLinearGradient(0, 0, 0, 280);
-        gradientQueue.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+        gradientQueue.addColorStop(0, 'rgba(245, 158, 11, 0.3)');
         gradientQueue.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
         
         performanceChart = new Chart(ctx2d, {
@@ -1025,33 +1028,27 @@
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#10b981',
               backgroundColor: gradientCompleted,
-              borderWidth: 4,
+              borderWidth: 3,
               fill: true,
               tension: 0.4,
-              pointRadius: 6,
-              pointHoverRadius: 10,
+              pointRadius: 5,
+              pointHoverRadius: 8,
               pointBackgroundColor: '#10b981',
               pointBorderColor: '#fff',
-              pointBorderWidth: 3,
-              pointHoverBackgroundColor: '#10b981',
-              pointHoverBorderColor: '#fff',
-              pointHoverBorderWidth: 4
+              pointBorderWidth: 2
             }, {
               label: 'Active',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#f59e0b',
               backgroundColor: gradientQueue,
-              borderWidth: 4,
+              borderWidth: 3,
               fill: true,
               tension: 0.4,
-              pointRadius: 6,
-              pointHoverRadius: 10,
+              pointRadius: 5,
+              pointHoverRadius: 8,
               pointBackgroundColor: '#f59e0b',
               pointBorderColor: '#fff',
-              pointBorderWidth: 3,
-              pointHoverBackgroundColor: '#f59e0b',
-              pointHoverBorderColor: '#fff',
-              pointHoverBorderWidth: 4
+              pointBorderWidth: 2
             }]
           },
           options: {
@@ -1063,55 +1060,44 @@
                 backgroundColor: 'rgba(255, 255, 255, 0.98)',
                 titleColor: '#1e293b',
                 bodyColor: '#475569',
-                borderColor: 'rgba(102, 126, 234, 0.2)',
-                borderWidth: 2,
-                padding: 16,
-                titleFont: { size: 14, weight: 'bold' },
-                bodyFont: { size: 13, weight: '600' },
+                borderColor: '#e5e7eb',
+                borderWidth: 1,
+                padding: 12,
+                titleFont: { size: 13, weight: '600' },
+                bodyFont: { size: 12, weight: '500' },
                 displayColors: true,
-                boxWidth: 12,
-                boxHeight: 12,
-                usePointStyle: true,
-                callbacks: {
-                  label: function(context) {
-                    return context.dataset.label + ': ' + context.parsed.y + ' queues';
-                  }
-                }
+                boxWidth: 10,
+                boxHeight: 10
               }
             },
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  color: 'rgba(255, 255, 255, 0.9)', 
-                  font: { size: 13, weight: '600' },
-                  padding: 10
+                  color: 'rgba(255, 255, 255, 0.85)', 
+                  font: { size: 11, weight: '600' },
+                  padding: 8
                 }
               },
               y: {
                 beginAtZero: true,
                 grid: { 
                   color: 'rgba(255, 255, 255, 0.1)', 
-                  drawBorder: false,
-                  lineWidth: 1
+                  drawBorder: false
                 },
                 ticks: { 
-                  color: 'rgba(255, 255, 255, 0.8)', 
-                  font: { size: 12, weight: '600' }, 
+                  color: 'rgba(255, 255, 255, 0.75)', 
+                  font: { size: 10, weight: '600' }, 
                   precision: 0,
-                  padding: 12
+                  padding: 8
                 }
               }
-            },
-            interaction: {
-              intersect: false,
-              mode: 'index'
             }
           }
         });
       }
       
-      // 2. Department Pie Chart - Modern with shadow effects
+      // 2. Department Pie Chart - Enterprise colors only
       const pieCtx = document.getElementById('departmentPieChart');
       if (pieCtx) {
         departmentPieChart = new Chart(pieCtx.getContext('2d'), {
@@ -1121,15 +1107,15 @@
             datasets: [{
               data: [0, 0, 0, 0],
               backgroundColor: [
-                '#ef4444',
-                '#3b82f6',
-                '#10b981',
-                '#f59e0b'
+                '#1e3a8a',  // Navy
+                '#3b82f6',  // Blue
+                '#60a5fa',  // Light Blue
+                '#93c5fd'   // Lighter Blue
               ],
-              borderColor: 'rgba(255, 255, 255, 0.95)',
-              borderWidth: 5,
-              hoverOffset: 20,
-              hoverBorderWidth: 6
+              borderColor: '#ffffff',
+              borderWidth: 4,
+              hoverOffset: 12,
+              hoverBorderWidth: 5
             }]
           },
           options: {
@@ -1139,10 +1125,10 @@
               legend: {
                 position: 'bottom',
                 labels: {
-                  padding: 18,
+                  padding: 15,
                   font: { 
-                    size: 13, 
-                    weight: '700',
+                    size: 11.5, 
+                    weight: '600',
                     family: "'Inter', sans-serif"
                   },
                   color: 'rgba(255, 255, 255, 0.95)',
@@ -1171,28 +1157,18 @@
                 backgroundColor: 'rgba(255, 255, 255, 0.98)',
                 titleColor: '#1e293b',
                 bodyColor: '#475569',
-                borderColor: 'rgba(240, 147, 251, 0.3)',
-                borderWidth: 2,
-                padding: 16,
-                titleFont: { size: 15, weight: 'bold' },
-                bodyFont: { size: 14, weight: '600' },
-                displayColors: true,
-                callbacks: {
-                  label: function(context) {
-                    const label = context.label || '';
-                    const value = context.parsed;
-                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                    return `${label}: ${value} (${percentage}%)`;
-                  }
-                }
+                borderColor: '#e5e7eb',
+                borderWidth: 1,
+                padding: 12,
+                titleFont: { size: 13, weight: '600' },
+                bodyFont: { size: 12, weight: '500' }
               }
             }
           }
         });
       }
       
-      // 3. Volume Bar Chart - Horizontal with vibrant colors
+      // 3. Volume Bar Chart - Professional with blue accent
       const volCtx = document.getElementById('departmentVolumeChart');
       if (volCtx) {
         volumeChart = new Chart(volCtx.getContext('2d'), {
@@ -1202,63 +1178,50 @@
             datasets: [{
               label: 'Total Queues',
               data: [0, 0, 0, 0],
-              backgroundColor: [
-                'rgba(255, 255, 255, 0.95)',
-                'rgba(255, 255, 255, 0.95)',
-                'rgba(255, 255, 255, 0.95)',
-                'rgba(255, 255, 255, 0.95)'
-              ],
-              borderColor: 'rgba(255, 255, 255, 1)',
+              backgroundColor: '#3b82f6',
+              borderColor: '#1e3a8a',
               borderWidth: 0,
-              borderRadius: 12,
+              borderRadius: 8,
               borderSkipped: false,
-              barThickness: 45
+              barThickness: 40
             }]
           },
           options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                titleColor: '#1e293b',
-                bodyColor: '#475569',
-                borderColor: 'rgba(79, 172, 254, 0.3)',
-                borderWidth: 2,
-                padding: 16,
-                titleFont: { size: 15, weight: 'bold' },
-                bodyFont: { size: 14, weight: '600' },
-                displayColors: false,
-                callbacks: {
-                  label: function(context) {
-                    return 'Total: ' + context.parsed.x + ' queue' + (context.parsed.x !== 1 ? 's' : '');
-                  }
-                }
+                backgroundColor: 'rgba(30, 58, 138, 0.95)',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                borderWidth: 0,
+                padding: 12,
+                titleFont: { size: 13, weight: '600' },
+                bodyFont: { size: 12, weight: '500' },
+                displayColors: false
               }
             },
             scales: {
               x: {
-                beginAtZero: true,
-                grid: { 
-                  color: 'rgba(255, 255, 255, 0.15)', 
-                  drawBorder: false,
-                  lineWidth: 1
-                },
+                grid: { display: false, drawBorder: false },
                 ticks: { 
-                  color: 'rgba(255, 255, 255, 0.9)', 
-                  font: { size: 12, weight: '600' }, 
-                  precision: 0,
+                  color: '#1e293b', 
+                  font: { size: 11.5, weight: '600' },
                   padding: 10
                 }
               },
               y: {
-                grid: { display: false, drawBorder: false },
+                beginAtZero: true,
+                grid: { 
+                  color: '#e5e7eb', 
+                  drawBorder: false
+                },
                 ticks: { 
-                  color: 'rgba(255, 255, 255, 0.95)', 
-                  font: { size: 13, weight: '700' },
-                  padding: 12
+                  color: '#64748b', 
+                  font: { size: 10.5, weight: '600' }, 
+                  precision: 0,
+                  padding: 8
                 }
               }
             }
@@ -1286,7 +1249,6 @@
         let totalToday = 0;
         let activeNow = 0;
         
-        // Fetch data for each department
         for (const dept of departments) {
           try {
             const response = await fetch(`${API_BASE_URL}/admin/stats/${dept.filter}`);
@@ -1303,25 +1265,21 @@
           }
         }
         
-        // Update stats cards
         const statTotal = document.getElementById('statTotalToday');
         const statActive = document.getElementById('statActiveNow');
         if (statTotal) statTotal.textContent = totalToday;
         if (statActive) statActive.textContent = activeNow;
         
-        // Update Volume Bar Chart
         if (volumeChart) {
           volumeChart.data.datasets[0].data = volumeData;
-          volumeChart.update('active');
+          volumeChart.update('none');
         }
         
-        // Update Department Pie Chart
         if (departmentPieChart) {
           departmentPieChart.data.datasets[0].data = volumeData;
-          departmentPieChart.update('active');
+          departmentPieChart.update('none');
         }
         
-        // Update Performance Line Chart
         if (performanceChart) {
           const currentHour = new Date().getHours();
           const startHour = 8;
@@ -1354,7 +1312,7 @@
           
           performanceChart.data.datasets[0].data = completedHourly;
           performanceChart.data.datasets[1].data = queueHourly;
-          performanceChart.update('active');
+          performanceChart.update('none');
         }
         
       } catch (error) {
