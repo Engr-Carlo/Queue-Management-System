@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="icons.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Queue Management System</title>
-  <link rel="icon" type="image/png" href="images/favicon.png">
+  <link rel="icon" type="image/svg+xml" href="images/favicon-32x32.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.svg">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -18,7 +20,7 @@
     }
 
     .navbar {
-      background: linear-gradient(135deg, #667eea, #764ba2);
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
       padding: 15px 0;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
@@ -140,8 +142,8 @@
     }
 
     .queue-item:hover {
-      border-color: #667eea;
-      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
     }
 
     .queue-item[data-present="true"] {
@@ -162,7 +164,7 @@
     .queue-number {
       font-size: 1.8rem;
       font-weight: 900;
-      color: #dc2626;
+      color: #3b82f6;
       margin-bottom: 10px;
     }
 
@@ -230,7 +232,7 @@
     }
 
     .btn-remove {
-      background: linear-gradient(135deg, #ef4444, #dc2626);
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
       color: white;
       border: none;
       border-radius: 8px;
@@ -285,7 +287,7 @@
 
     .status-busy {
       background: rgba(239, 68, 68, 0.1);
-      color: #dc2626;
+      color: #3b82f6;
     }
 
     .no-queues {
@@ -323,8 +325,8 @@
     }
 
     .status-btn.active {
-      border-color: #667eea;
-      background: #667eea;
+      border-color: #3b82f6;
+      background: #3b82f6;
       color: white;
     }
 
@@ -449,8 +451,8 @@
 
 
       <!-- Dean-only Delete All Queues Section -->
-      <div id="deanControls" class="department-status" style="display: none; border: 2px solid #dc2626; background: rgba(239, 68, 68, 0.05);">
-        <h5 class="mb-3" style="color: #dc2626;"><i class="fas fa-triangle-exclamation"></i> Dean Administrative Controls</h5>
+      <div id="deanControls" class="department-status" style="display: none; border: 2px solid #3b82f6; background: rgba(239, 68, 68, 0.05);">
+        <h5 class="mb-3" style="color: #3b82f6;"><i class="fas fa-triangle-exclamation"></i> Dean Administrative Controls</h5>
         <p style="color: #6b7280; font-size: 0.9rem; margin-bottom: 15px;">
           <strong>Warning:</strong> This action will permanently delete ALL queues from the entire system across all departments.
         </p>
@@ -628,7 +630,7 @@
 
     // Chart colors for each department
     const departmentColors = {
-      dean: '#ef4444',
+      dean: '#60a5fa',
       ie: '#3b82f6',
       cpe: '#10b981',
       ece: '#f59e0b'
@@ -1462,7 +1464,7 @@
         confirmBtn.disabled = !isValidText;
         
         if (isValidText) {
-          confirmBtn.style.background = '#dc2626';
+          confirmBtn.style.background = '#3b82f6';
         } else {
           confirmBtn.style.background = '#6b7280';
         }
@@ -1611,7 +1613,7 @@
       if (isMuted) {
         muteBtn.classList.add('active');
         statusText.textContent = 'Users will NOT hear audio alerts when called (MUTED)';
-        statusText.style.color = '#dc2626';
+        statusText.style.color = '#3b82f6';
         statusText.style.fontWeight = '600';
       } else {
         unmuteBtn.classList.add('active');
@@ -1663,7 +1665,7 @@
           
           <div class="mt-4">
             <label for="confirmationText" class="form-label">
-              To confirm, type: <code style="background: #f8f9fa; padding: 2px 4px; color: #dc2626;">DELETE_ALL_QUEUES_PERMANENTLY</code>
+              To confirm, type: <code style="background: #f8f9fa; padding: 2px 4px; color: #3b82f6;">DELETE_ALL_QUEUES_PERMANENTLY</code>
             </label>
             <input type="text" class="form-control" id="confirmationText" placeholder="Type confirmation text here">
           </div>

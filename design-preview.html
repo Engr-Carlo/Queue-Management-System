@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design System Preview - Queue Management System</title>
+  <link rel="icon" type="image/svg+xml" href="images/favicon-32x32.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      padding: var(--space-6);
+      background: var(--color-neutral-lightest);
+    }
+    
+    .preview-section {
+      margin-bottom: var(--space-8);
+      padding: var(--space-6);
+      background: var(--color-white);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .preview-title {
+      font-size: var(--font-size-2xl);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-neutral-dark);
+      margin-bottom: var(--space-4);
+      padding-bottom: var(--space-3);
+      border-bottom: 2px solid var(--color-primary);
+    }
+    
+    .color-swatch {
+      display: inline-block;
+      width: 100px;
+      height: 100px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      margin: var(--space-2);
+    }
+    
+    .color-label {
+      display: block;
+      text-align: center;
+      margin-top: var(--space-2);
+      font-size: var(--font-size-sm);
+      font-weight: var(--font-weight-medium);
+    }
+    
+    .icon-preview {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 80px;
+      height: 80px;
+      margin: var(--space-3);
+      border: 2px solid var(--color-neutral-light);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-base);
+    }
+    
+    .icon-preview:hover {
+      border-color: var(--color-primary);
+      background: var(--color-primary-lighter);
+    }
+    
+    .icon-preview svg {
+      width: 40px;
+      height: 40px;
+      color: var(--color-primary);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="text-center mb-6">
+      <img src="images/logo.svg" alt="Queue System Logo" style="width: 120px; height: 120px; margin-bottom: var(--space-4);">
+      <h1 style="font-size: var(--font-size-5xl); font-weight: var(--font-weight-extrabold); color: var(--color-primary); margin-bottom: var(--space-2);">
+        Design System Preview
+      </h1>
+      <p style="font-size: var(--font-size-xl); color: var(--color-neutral);">
+        Queue Management System - Blue Theme
+      </p>
+    </header>
+    
+    <!-- Colors -->
+    <section class="preview-section">
+      <h2 class="preview-title">Color Palette</h2>
+      
+      <h3 class="mb-4">Primary Colors</h3>
+      <div class="flex flex-wrap gap-4 mb-5">
+        <div>
+          <div class="color-swatch" style="background: var(--color-primary);"></div>
+          <span class="color-label">Primary<br>#3b82f6</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-primary-dark);"></div>
+          <span class="color-label">Primary Dark<br>#1d4ed8</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-primary-light);"></div>
+          <span class="color-label">Primary Light<br>#60a5fa</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-primary-lighter);"></div>
+          <span class="color-label">Primary Lighter<br>#dbeafe</span>
+        </div>
+      </div>
+      
+      <h3 class="mb-4">Neutral Colors</h3>
+      <div class="flex flex-wrap gap-4 mb-5">
+        <div>
+          <div class="color-swatch" style="background: var(--color-neutral-dark);"></div>
+          <span class="color-label">Dark<br>#1e293b</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-neutral);"></div>
+          <span class="color-label">Neutral<br>#475569</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-neutral-light);"></div>
+          <span class="color-label">Light<br>#cbd5e1</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-neutral-lightest);"></div>
+          <span class="color-label">Lightest<br>#f8fafc</span>
+        </div>
+      </div>
+      
+      <h3 class="mb-4">Status Colors</h3>
+      <div class="flex flex-wrap gap-4">
+        <div>
+          <div class="color-swatch" style="background: var(--color-success);"></div>
+          <span class="color-label">Success<br>#10b981</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-warning);"></div>
+          <span class="color-label">Warning<br>#f59e0b</span>
+        </div>
+        <div>
+          <div class="color-swatch" style="background: var(--color-error);"></div>
+          <span class="color-label">Error<br>#ef4444</span>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Typography -->
+    <section class="preview-section">
+      <h2 class="preview-title">Typography</h2>
+      <div style="font-family: var(--font-family);">
+        <h1>Heading 1 - Queue Management System</h1>
+        <h2>Heading 2 - Welcome to Our Service</h2>
+        <h3>Heading 3 - Queue Status Information</h3>
+        <h4>Heading 4 - Your Queue Number</h4>
+        <h5>Heading 5 - Department Information</h5>
+        <h6>Heading 6 - Additional Details</h6>
+        <p style="font-size: var(--font-size-lg);">
+          Large paragraph text - This is how larger body text appears in the system.
+        </p>
+        <p>
+          Regular paragraph text - This is the default body text size used throughout the application for general content and descriptions.
+        </p>
+        <p style="font-size: var(--font-size-sm); color: var(--color-neutral);">
+          Small text - Used for secondary information, captions, and metadata.
+        </p>
+      </div>
+    </section>
+    
+    <!-- Buttons -->
+    <section class="preview-section">
+      <h2 class="preview-title">Buttons</h2>
+      
+      <h3 class="mb-4">Button Variants</h3>
+      <div class="flex flex-wrap gap-3 mb-5">
+        <button class="btn btn-primary">Primary Button</button>
+        <button class="btn btn-secondary">Secondary Button</button>
+        <button class="btn btn-success">Success Button</button>
+        <button class="btn btn-danger">Danger Button</button>
+        <button class="btn btn-primary" disabled>Disabled Button</button>
+      </div>
+      
+      <h3 class="mb-4">Button Sizes</h3>
+      <div class="flex flex-wrap items-center gap-3">
+        <button class="btn btn-primary btn-sm">Small Button</button>
+        <button class="btn btn-primary">Default Button</button>
+        <button class="btn btn-primary btn-lg">Large Button</button>
+      </div>
+    </section>
+    
+    <!-- Cards -->
+    <section class="preview-section">
+      <h2 class="preview-title">Cards</h2>
+      
+      <div class="grid grid-cols-3 gap-4">
+        <div class="card">
+          <div class="icon-circle mb-4">
+            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="4" y="6" width="16" height="12" rx="2"/>
+              <line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2" opacity="0.5"/>
+              <circle cx="8" cy="15" r="1" fill="currentColor"/>
+              <circle cx="12" cy="15" r="1" fill="currentColor"/>
+              <circle cx="16" cy="15" r="1" fill="currentColor"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Queue Ticket</h3>
+          <p class="card-subtitle">Generate your queue number instantly</p>
+          <button class="btn btn-primary btn-sm mt-4">Get Ticket</button>
+        </div>
+        
+        <div class="card">
+          <div class="icon-circle mb-4">
+            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 6V12L16 14" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Queue Status</h3>
+          <p class="card-subtitle">Track your position in real-time</p>
+          <button class="btn btn-primary btn-sm mt-4">Check Status</button>
+        </div>
+        
+        <div class="card">
+          <div class="icon-circle mb-4">
+            <svg class="icon icon-lg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="8" height="8" rx="2"/>
+              <rect x="3" y="13" width="8" height="8" rx="2"/>
+              <rect x="13" y="3" width="8" height="8" rx="2"/>
+              <rect x="13" y="13" width="8" height="8" rx="2"/>
+            </svg>
+          </div>
+          <h3 class="card-title">Dashboard</h3>
+          <p class="card-subtitle">Admin queue management panel</p>
+          <button class="btn btn-primary btn-sm mt-4">Open Dashboard</button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Badges -->
+    <section class="preview-section">
+      <h2 class="preview-title">Badges</h2>
+      
+      <div class="flex flex-wrap gap-3">
+        <span class="badge badge-primary">Primary</span>
+        <span class="badge badge-success">Active</span>
+        <span class="badge badge-warning">Pending</span>
+        <span class="badge badge-error">Error</span>
+        <span class="badge badge-primary">Queue #A001</span>
+        <span class="badge badge-success">Called</span>
+        <span class="badge badge-warning">Waiting</span>
+      </div>
+    </section>
+    
+    <!-- Icons -->
+    <section class="preview-section">
+      <h2 class="preview-title">Custom Icons</h2>
+      <p class="mb-4 text-neutral">Our custom SVG icon library - all icons use currentColor for easy theming</p>
+      
+      <div class="flex flex-wrap">
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="6" width="16" height="12" rx="2"/>
+            <line x1="6" y1="12" x2="18" y2="12" stroke-dasharray="2 2" opacity="0.5"/>
+          </svg>
+        </div>
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M6 20C6 16.6863 8.68629 14 12 14C15.3137 14 18 16.6863 18 20"/>
+          </svg>
+        </div>
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M12 6V12L16 14"/>
+          </svg>
+        </div>
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="8" height="8" rx="1"/>
+            <rect x="13" y="3" width="8" height="8" rx="1"/>
+            <rect x="3" y="13" width="8" height="8" rx="1"/>
+          </svg>
+        </div>
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10C21 10 18.995 7.26822 17.3662 5.63824C15.7373 4.00827 13.4864 3 11 3C6.02944 3 2 7.02944 2 12C2 16.9706 6.02944 21 11 21C15.1031 21 18.5649 18.2543 19.6482 14.5"/>
+            <path d="M21 3V10H14"/>
+          </svg>
+        </div>
+        <div class="icon-preview">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/>
+            <path d="M8 12L11 15L16 9"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Spacing -->
+    <section class="preview-section">
+      <h2 class="preview-title">Spacing Scale (8px Grid)</h2>
+      
+      <div class="mb-5">
+        <div style="background: var(--color-primary-lighter); padding: var(--space-1); display: inline-block; margin-right: var(--space-3);">
+          <span style="font-size: var(--font-size-sm);">--space-1 (4px)</span>
+        </div>
+        <div style="background: var(--color-primary-lighter); padding: var(--space-2); display: inline-block; margin-right: var(--space-3);">
+          <span style="font-size: var(--font-size-sm);">--space-2 (8px)</span>
+        </div>
+        <div style="background: var(--color-primary-lighter); padding: var(--space-3); display: inline-block; margin-right: var(--space-3);">
+          <span style="font-size: var(--font-size-sm);">--space-3 (12px)</span>
+        </div>
+        <div style="background: var(--color-primary-lighter); padding: var(--space-4); display: inline-block; margin-right: var(--space-3);">
+          <span style="font-size: var(--font-size-sm);">--space-4 (16px)</span>
+        </div>
+        <div style="background: var(--color-primary-lighter); padding: var(--space-5); display: inline-block; margin-right: var(--space-3);">
+          <span style="font-size: var(--font-size-sm);">--space-5 (24px)</span>
+        </div>
+      </div>
+    </section>
+    
+    <footer class="text-center mt-6" style="padding: var(--space-6); color: var(--color-neutral);">
+      <p style="font-size: var(--font-size-sm);">
+        <strong>Queue Management System Design System v2.0</strong><br>
+        Developed by Engr. Carlo Cimacio | Blue Theme
+      </p>
+      <div class="flex justify-center gap-3 mt-4">
+        <a href="index.html" class="btn btn-primary">Back to System</a>
+        <a href="DESIGN_SYSTEM.md" class="btn btn-secondary">View Documentation</a>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>

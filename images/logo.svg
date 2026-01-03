@@ -1,0 +1,52 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Modern Queue Management Logo -->
+  <!-- Circular background with gradient -->
+  <defs>
+    <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main circle background -->
+  <circle cx="100" cy="100" r="95" fill="url(#blueGradient)"/>
+  
+  <!-- Queue ticket icon -->
+  <g transform="translate(100, 100)">
+    <!-- Ticket outline with perforated edge -->
+    <rect x="-45" y="-55" width="90" height="110" rx="8" fill="white" opacity="0.95"/>
+    
+    <!-- Perforated line decoration -->
+    <line x1="-40" y1="15" x2="40" y2="15" stroke="#3b82f6" stroke-width="2" stroke-dasharray="4 4" opacity="0.4"/>
+    
+    <!-- Queue number display -->
+    <text x="0" y="-15" font-family="Inter, sans-serif" font-size="36" font-weight="800" fill="#3b82f6" text-anchor="middle">001</text>
+    
+    <!-- Small icon indicators -->
+    <circle cx="-25" cy="35" r="8" fill="url(#accentGradient)"/>
+    <circle cx="0" cy="35" r="8" fill="url(#accentGradient)"/>
+    <circle cx="25" cy="35" r="8" fill="url(#accentGradient)"/>
+    
+    <!-- Queue people indicator at bottom -->
+    <g transform="translate(0, -75)">
+      <circle cx="-15" cy="0" r="6" fill="#1e293b" opacity="0.2"/>
+      <rect x="-18" y="6" width="6" height="10" rx="2" fill="#1e293b" opacity="0.2"/>
+      
+      <circle cx="0" cy="0" r="6" fill="#1e293b" opacity="0.4"/>
+      <rect x="-3" y="6" width="6" height="10" rx="2" fill="#1e293b" opacity="0.4"/>
+      
+      <circle cx="15" cy="0" r="6" fill="#3b82f6"/>
+      <rect x="12" y="6" width="6" height="10" rx="2" fill="#3b82f6"/>
+    </g>
+  </g>
+  
+  <!-- Decorative corner elements -->
+  <path d="M 15 15 L 25 15 L 25 25" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" fill="none"/>
+  <path d="M 185 15 L 175 15 L 175 25" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" fill="none"/>
+  <path d="M 15 185 L 25 185 L 25 175" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" fill="none"/>
+  <path d="M 185 185 L 175 185 L 175 175" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.3" fill="none"/>
+</svg>
