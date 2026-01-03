@@ -178,6 +178,11 @@
       color: #4b5563;
     }
 
+    .badge-archived {
+      background: #e2e8f0;
+      color: #475569;
+    }
+
     .action-btn {
       padding: 8px 12px;
       border: none;
@@ -406,13 +411,13 @@
         <div class="stat-label">Waiting</div>
         <div class="stat-value" style="color: #f59e0b;" id="statWaiting">0</div>
       </div>
-      <div class="stat-card" style="border-left-color: #3b82f6;">
-        <div class="stat-label">Being Served</div>
-        <div class="stat-value" style="color: #3b82f6;" id="statServing">0</div>
-      </div>
       <div class="stat-card" style="border-left-color: #10b981;">
         <div class="stat-label">Completed Today</div>
         <div class="stat-value" style="color: #10b981;" id="statCompleted">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #64748b;">
+        <div class="stat-label">Archived</div>
+        <div class="stat-value" style="color: #64748b;" id="statArchived">0</div>
       </div>
     </div>
 
@@ -425,11 +430,11 @@
           <input type="text" id="searchInput" placeholder="Search by queue number, person, or department...">
         </div>
         <div class="filter-buttons">
-          <button class="filter-btn active" data-filter="all">All</button>
-          <button class="filter-btn" data-filter="waiting">Waiting</button>
+          <button class="filter-btn" data-filter="all">All</button>
+          <button class="filter-btn active" data-filter="waiting">Waiting</button>
           <button class="filter-btn" data-filter="called">Called</button>
-          <button class="filter-btn" data-filter="serving">Serving</button>
           <button class="filter-btn" data-filter="completed">Completed</button>
+          <button class="filter-btn" data-filter="archived">Archived</button>
         </div>
         <button class="btn btn-primary" onclick="refreshQueue()" style="margin-left: 16px;">
           <i class="fas fa-rotate" id="refreshIcon"></i> Refresh
@@ -477,7 +482,7 @@
   <script>
     let adminSession = null;
     let allQueues = [];
-    let currentFilter = 'all';
+    let currentFilter = 'waiting';
     let refreshInterval = null;
 
     // Initialize
@@ -626,16 +631,16 @@
       // Waiting = Only queues with "waiting" status
       const waiting = allQueues.filter(q => q.status === 'waiting').length;
       
-      // Being Served = Queues that are called or being served
-      const serving = allQueues.filter(q => q.status === 'serving' || q.status === 'called').length;
-      
       // Completed = Queues that are completed
       const completed = allQueues.filter(q => q.status === 'completed').length;
+      
+      // Archived = Queues that are archived
+      const archived = allQueues.filter(q => q.status === 'archived').length;
 
       document.getElementById('statTotal').textContent = total;
       document.getElementById('statWaiting').textContent = waiting;
-      document.getElementById('statServing').textContent = serving;
       document.getElementById('statCompleted').textContent = completed;
+      document.getElementById('statArchived').textContent = archived;
     }
 
     async function callQueue(queueId, queueNumber) {
