@@ -492,7 +492,37 @@
         </div>
       </div>
 
-
+      <!-- Bottom Stats Row -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px;">
+        <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.15); text-align: center;">
+          <div style="padding: 25px; color: white;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px;">Total Today</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px;" id="statTotalToday">0</div>
+            <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
+          </div>
+        </div>
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+          <div style="padding: 25px;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #1e3a8a;" id="statActiveNow">0</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">In Queue</div>
+          </div>
+        </div>
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+          <div style="padding: 25px;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Completed</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #10b981;" id="statCompleted">0</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Today</div>
+          </div>
+        </div>
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+          <div style="padding: 25px;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Avg Wait</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #f59e0b;" id="statAvgWait">0m</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Minutes</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Dean-only Delete All Queues Section -->
       <div id="deanControls" class="department-status" style="display: none; border: 2px solid #3b82f6; background: rgba(239, 68, 68, 0.05);">
@@ -603,38 +633,6 @@
             </div>
           </div>
 
-        </div>
-      </div>
-
-      <!-- Bottom Stats Row -->
-      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;">
-        <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.15); text-align: center;">
-          <div style="padding: 25px; color: white;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px;">Total Today</div>
-            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px;" id="statTotalToday">0</div>
-            <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
-          </div>
-        </div>
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
-          <div style="padding: 25px;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
-            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #1e3a8a;" id="statActiveNow">0</div>
-            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">In Queue</div>
-          </div>
-        </div>
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
-          <div style="padding: 25px;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Completed</div>
-            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #10b981;" id="statCompleted">0</div>
-            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Today</div>
-          </div>
-        </div>
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
-          <div style="padding: 25px;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Avg Wait</div>
-            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #f59e0b;" id="statAvgWait">0m</div>
-            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Minutes</div>
-          </div>
         </div>
       </div>
 
