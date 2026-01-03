@@ -304,13 +304,13 @@ def get_admin_queue(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get ALL queues for this department from today (including completed), ordered by creation time
+        # Get ALL queues for this department from today (including completed)
         cur.execute("""
             SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
             FROM queue 
             WHERE person LIKE %s 
-            AND DATE(created_at) = CURRENT_DATE
-            ORDER BY created_at DESC
+            AND date = CURRENT_DATE
+            ORDER BY id DESC
         """, (person_filter,))
         
         rows = cur.fetchall()
