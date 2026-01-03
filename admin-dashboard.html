@@ -1362,39 +1362,43 @@
           statusBarChart.update('none');
         }
         
-        // Update Hourly Activity Chart
+        // Update Hourly Activity Chart - Use REAL timestamps from database
         if (hourlyActivityChart) {
-          const currentHour = new Date().getHours();
-          const startHour = 8;
-          const hoursElapsed = Math.max(0, Math.min(currentHour - startHour + 1, 10));
+          const hourlyCompleted = Array(10).fill(0);
+          const hourlyActive = Array(10).fill(0);
           
-          const completedHourly = Array(10).fill(0);
-          const activeHourly = Array(10).fill(0);
-          
-          if (hoursElapsed > 0 && totalCompleted > 0) {
-            // Distribute completed queues across elapsed hours
-            const avgPerHour = totalCompleted / hoursElapsed;
-            for (let i = 0; i < hoursElapsed; i++) {
-              const variation = 0.7 + (Math.random() * 0.6);
-              completedHourly[i] = Math.max(0, Math.round(avgPerHour * variation));
-            }
-            // Normalize to match actual total
-            const sum = completedHourly.reduce((a,b) => a+b, 0);
-            if (sum > 0) {
-              const factor = totalCompleted / sum;
-              for (let i = 0; i < hoursElapsed; i++) {
-                completedHourly[i] = Math.round(completedHourly[i] * factor);
+          // Process actual queue timestamps to get hourly distribution
+          for (const dept of departments) {
+            try {
+              const response = await fetch(`${API_BASE_URL}/admin/queue/${dept.filter}`);
+              if (response.ok) {
+                const queues = await response.json();
+                
+                queues.forEach(q => {
+                  if (q.created_at) {
+                    const queueTime = new Date(q.created_at);
+                    const hour = queueTime.getHours();
+                    
+                    // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
+                    if (hour >= 8 && hour <= 17) {
+                      const hourIndex = hour - 8;
+                      
+                      if (q.status === 'completed') {
+                        hourlyCompleted[hourIndex]++;
+                      } else if (q.status === 'waiting' || q.status === 'called') {
+                        hourlyActive[hourIndex]++;
+                      }
+                    }
+                  }
+                });
               }
+            } catch (error) {
+              console.log(`Error fetching queue timestamps for ${dept.key}:`, error);
             }
           }
           
-          // Show current active queues in the current hour
-          if (hoursElapsed > 0) {
-            activeHourly[hoursElapsed - 1] = activeNow;
-          }
-          
-          hourlyActivityChart.data.datasets[0].data = completedHourly;
-          hourlyActivityChart.data.datasets[1].data = activeHourly;
+          hourlyActivityChart.data.datasets[0].data = hourlyCompleted;
+          hourlyActivityChart.data.datasets[1].data = hourlyActive;
           hourlyActivityChart.update('none');
         }
         
