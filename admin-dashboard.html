@@ -525,103 +525,56 @@
       </div>
 
       <!-- Analytics Grid -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
-        <!-- LEFT COLUMN -->
-            
-            <!-- Quick Stats Card -->
-            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);">
-              <div style="padding: 25px; color: white;">
-                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; opacity: 0.95;">
-                  <i class="fas fa-gauge-high" style="margin-right: 8px;"></i>QUICK STATS
-                </h4>
-                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Total Today</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="totalToday">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">In Queue</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="currentQueue">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Completed</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="completedToday">0</div>
-                  </div>
-                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
-                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Avg Wait</div>
-                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="avgWaitTime">0m</div>
-                  </div>
-                </div>
-              </div>
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- LEFT COLUMN - Hourly Queue Activity Line Chart -->
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
+          <div style="padding: 30px;">
+            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+              <i class="fas fa-chart-line" style="margin-right: 10px; color: #3b82f6;"></i>Hourly Queue Activity
+            </h3>
+            <div style="height: 380px; position: relative;">
+              <canvas id="hourlyActivityChart"></canvas>
             </div>
-
-            <!-- Performance Line Chart -->
-            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);">
-              <div style="padding: 30px; color: white;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                  <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
-                    <i class="fas fa-chart-line" style="margin-right: 10px;"></i>Performance Trend
-                  </h3>
-                  <div style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Today</div>
-                </div>
-                <div style="height: 220px; position: relative;">
-                  <canvas id="performanceChart"></canvas>
-                </div>
-                <div style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.85rem; font-weight: 500; justify-content: center;">
-                  <div style="display: flex; align-items: center;">
-                    <div style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; margin-right: 8px;"></div>
-                    Completed
-                  </div>
-                  <div style="display: flex; align-items: center;">
-                    <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; margin-right: 8px;"></div>
-                    Active
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            
-            <!-- Recent Activity -->
-            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
-              <div style="padding: 25px;">
-                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9;">
-                  <i class="fas fa-clock-rotate-left" style="margin-right: 8px; color: #3b82f6;"></i>RECENT ACTIVITY
-                </h4>
-                <div id="recentActivity" style="overflow-y: auto; max-height: 400px;">
-                  <!-- Recent activity will be loaded here -->
-                </div>
-              </div>
-            </div>
-
+          </div>
         </div>
 
-        <!-- RIGHT COLUMN -->
-        <div style="display: flex; flex-direction: column; gap: 24px;">
-          
-          <!-- Distribution Pie Chart -->
-          <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 400px;">
-            <div style="padding: 30px; color: white; display: flex; flex-direction: column; height: 100%;">
-              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
-                <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>Distribution
-              </h3>
-              <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0;">
-                <canvas id="departmentPieChart"></canvas>
-              </div>
+        <!-- RIGHT COLUMN - Department Distribution Donut -->
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
+          <div style="padding: 30px;">
+            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+              <i class="fas fa-chart-pie" style="margin-right: 10px; color: #3b82f6;"></i>Department Distribution
+            </h3>
+            <div style="height: 380px; position: relative; display: flex; align-items: center; justify-content: center;">
+              <canvas id="departmentDonutChart"></canvas>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Volume Bar Chart -->
-          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); height: 400px;">
-            <div style="padding: 30px; display: flex; flex-direction: column; height: 100%;">
-              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
-                <i class="fas fa-chart-bar" style="margin-right: 10px; color: #3b82f6;"></i>Volume
-              </h3>
-              <div style="flex: 1; position: relative; min-height: 0;">
-                <canvas id="departmentVolumeChart"></canvas>
-              </div>
+      <!-- Second Row - Bar Charts -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+        <!-- Queue Status Breakdown -->
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
+          <div style="padding: 30px;">
+            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+              <i class="fas fa-list-check" style="margin-right: 10px; color: #3b82f6;"></i>Queue Status Breakdown
+            </h3>
+            <div style="height: 300px; position: relative;">
+              <canvas id="statusBarChart"></canvas>
             </div>
           </div>
+        </div>
 
+        <!-- Department Volume Comparison -->
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
+          <div style="padding: 30px;">
+            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
+              <i class="fas fa-chart-column" style="margin-right: 10px; color: #3b82f6;"></i>Department Volume
+            </h3>
+            <div style="height: 300px; position: relative;">
+              <canvas id="departmentBarChart"></canvas>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1011,40 +964,6 @@
       return mutedQueues.has(queueId);
     }
 
-    // Load recent activity
-    async function loadRecentActivity() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/admin/activity/${adminSession.department}`);
-        if (response.ok) {
-          const activities = await response.json();
-          displayRecentActivity(activities);
-        }
-      } catch (error) {
-        console.error('Error loading recent activity:', error);
-      }
-    }
-
-    // Display recent activity
-    function displayRecentActivity(activities) {
-      const activityContainer = document.getElementById('recentActivity');
-      
-      if (activities.length === 0) {
-        activityContainer.innerHTML = '<p class="text-muted">No recent activity</p>';
-        return;
-      }
-
-      activityContainer.innerHTML = activities.map(activity => `
-        <div class="queue-item">
-          <div class="queue-details">
-            <div class="queue-info">
-              <div class="queue-person">${activity.number} - ${activity.person}</div>
-              <div class="queue-meta">Completed: ${activity.completedAt}</div>
-            </div>
-          </div>
-        </div>
-      `).slice(0, 5).join('');
-    }
-
     // Refresh queue
     function refreshQueue() {
       loadCurrentQueue();
@@ -1052,27 +971,16 @@
     }
 
     // Initialize charts
-    let volumeChart = null;
-    let performanceChart = null;
-    let departmentPieChart = null;
+    let hourlyActivityChart = null;
+    let departmentDonutChart = null;
+    let statusBarChart = null;
+    let departmentBarChart = null;
     
     function initializeVisualizationCharts() {
-      // Professional Enterprise Color Scheme: Navy Blue (#1e3a8a), Blue (#3b82f6), Gray (#64748b)
-      
-      // 1. Performance Line Chart
-      const perfCtx = document.getElementById('performanceChart');
-      if (perfCtx) {
-        const ctx2d = perfCtx.getContext('2d');
-        
-        const gradientCompleted = ctx2d.createLinearGradient(0, 0, 0, 280);
-        gradientCompleted.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
-        gradientCompleted.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
-        
-        const gradientQueue = ctx2d.createLinearGradient(0, 0, 0, 280);
-        gradientQueue.addColorStop(0, 'rgba(245, 158, 11, 0.3)');
-        gradientQueue.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
-        
-        performanceChart = new Chart(ctx2d, {
+      // 1. Hourly Queue Activity Line Chart
+      const hourlyCtx = document.getElementById('hourlyActivityChart');
+      if (hourlyCtx) {
+        hourlyActivityChart = new Chart(hourlyCtx.getContext('2d'), {
           type: 'line',
           data: {
             labels: ['8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM'],
@@ -1080,26 +988,26 @@
               label: 'Completed',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#10b981',
-              backgroundColor: gradientCompleted,
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
               borderWidth: 3,
               fill: true,
               tension: 0.4,
-              pointRadius: 5,
-              pointHoverRadius: 8,
+              pointRadius: 4,
+              pointHoverRadius: 7,
               pointBackgroundColor: '#10b981',
               pointBorderColor: '#fff',
               pointBorderWidth: 2
             }, {
-              label: 'Active',
+              label: 'In Queue',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-              borderColor: '#f59e0b',
-              backgroundColor: gradientQueue,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
               borderWidth: 3,
               fill: true,
               tension: 0.4,
-              pointRadius: 5,
-              pointHoverRadius: 8,
-              pointBackgroundColor: '#f59e0b',
+              pointRadius: 4,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#3b82f6',
               pointBorderColor: '#fff',
               pointBorderWidth: 2
             }]
@@ -1110,16 +1018,21 @@
             animation: {
               duration: 2000,
               easing: 'easeInOutQuart',
-              delay: (context) => {
-                let delay = 0;
-                if (context.type === 'data' && context.mode === 'default') {
-                  delay = context.dataIndex * 100;
-                }
-                return delay;
-              }
+              delay: (context) => context.type === 'data' ? context.dataIndex * 100 : 0
             },
             plugins: {
-              legend: { display: false },
+              legend: {
+                display: true,
+                position: 'top',
+                align: 'end',
+                labels: {
+                  padding: 15,
+                  font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
+                  color: '#64748b',
+                  usePointStyle: true,
+                  pointStyle: 'circle'
+                }
+              },
               tooltip: {
                 backgroundColor: 'rgba(255, 255, 255, 0.98)',
                 titleColor: '#1e293b',
@@ -1129,62 +1042,43 @@
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
                 bodyFont: { size: 12, weight: '500' },
-                displayColors: true,
-                boxWidth: 10,
-                boxHeight: 10
+                displayColors: true
               }
             },
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { 
-                  color: 'rgba(255, 255, 255, 0.85)', 
-                  font: { size: 11, weight: '600' },
-                  padding: 8
-                }
+                ticks: { color: '#64748b', font: { size: 11, weight: '600' }, padding: 8 }
               },
               y: {
                 beginAtZero: true,
-                grid: { 
-                  color: 'rgba(255, 255, 255, 0.1)', 
-                  drawBorder: false
-                },
-                ticks: { 
-                  color: 'rgba(255, 255, 255, 0.75)', 
-                  font: { size: 10, weight: '600' }, 
-                  precision: 0,
-                  padding: 8
-                }
+                grid: { color: '#f1f5f9', drawBorder: false },
+                ticks: { color: '#64748b', font: { size: 10.5, weight: '600' }, precision: 0, padding: 8 }
               }
             }
           }
         });
       }
       
-      // 2. Department Pie Chart - Enterprise colors only
-      const pieCtx = document.getElementById('departmentPieChart');
-      if (pieCtx) {
-        departmentPieChart = new Chart(pieCtx.getContext('2d'), {
-          type: 'pie',
+      // 2. Department Distribution Donut Chart
+      const donutCtx = document.getElementById('departmentDonutChart');
+      if (donutCtx) {
+        departmentDonutChart = new Chart(donutCtx.getContext('2d'), {
+          type: 'doughnut',
           data: {
             labels: ['Dean\'s Office', 'IE Dept', 'CPE Dept', 'ECE Dept'],
             datasets: [{
               data: [0, 0, 0, 0],
-              backgroundColor: [
-                '#1e3a8a',  // Navy
-                '#3b82f6',  // Blue
-                '#60a5fa',  // Light Blue
-                '#93c5fd'   // Lighter Blue
-              ],
+              backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
               borderColor: '#ffffff',
-              borderWidth: 4,
-              hoverOffset: 12,
-              hoverBorderWidth: 5
+              borderWidth: 3,
+              hoverOffset: 10
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '65%',
             animation: {
               animateRotate: true,
               animateScale: true,
@@ -1195,13 +1089,9 @@
               legend: {
                 position: 'bottom',
                 labels: {
-                  padding: 15,
-                  font: { 
-                    size: 11.5, 
-                    weight: '600',
-                    family: "'Inter', sans-serif"
-                  },
-                  color: 'rgba(255, 255, 255, 0.95)',
+                  padding: 20,
+                  font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
+                  color: '#1e293b',
                   usePointStyle: true,
                   pointStyle: 'circle',
                   generateLabels: function(chart) {
@@ -1210,9 +1100,9 @@
                       const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
                       return data.labels.map((label, i) => {
                         const value = data.datasets[0].data[i];
-                        const percentage = total > 0 ? ((value / total) * 100).toFixed(0) : 0;
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
                         return {
-                          text: `${label}: ${percentage}%`,
+                          text: `${label}: ${value} (${percentage}%)`,
                           fillStyle: data.datasets[0].backgroundColor[i],
                           hidden: false,
                           index: i
@@ -1238,22 +1128,19 @@
         });
       }
       
-      // 3. Volume Bar Chart - Professional with blue accent
-      const volCtx = document.getElementById('departmentVolumeChart');
-      if (volCtx) {
-        volumeChart = new Chart(volCtx.getContext('2d'), {
+      // 3. Queue Status Breakdown Bar Chart
+      const statusCtx = document.getElementById('statusBarChart');
+      if (statusCtx) {
+        statusBarChart = new Chart(statusCtx.getContext('2d'), {
           type: 'bar',
           data: {
-            labels: ['Dean\'s Office', 'IE Department', 'CPE Department', 'ECE Department'],
+            labels: ['Waiting', 'Called', 'Completed'],
             datasets: [{
-              label: 'Total Queues',
-              data: [0, 0, 0, 0],
-              backgroundColor: '#3b82f6',
-              borderColor: '#1e3a8a',
-              borderWidth: 0,
+              label: 'Queue Count',
+              data: [0, 0, 0],
+              backgroundColor: ['#3b82f6', '#f59e0b', '#10b981'],
               borderRadius: 8,
-              borderSkipped: false,
-              barThickness: 40
+              barThickness: 60
             }]
           },
           options: {
@@ -1262,44 +1149,81 @@
             animation: {
               duration: 1500,
               easing: 'easeOutBounce',
-              delay: (context) => {
-                return context.dataIndex * 150;
-              }
+              delay: (context) => context.dataIndex * 150
             },
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: 'rgba(30, 58, 138, 0.95)',
-                titleColor: '#ffffff',
-                bodyColor: '#ffffff',
-                borderWidth: 0,
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                titleColor: '#1e293b',
+                bodyColor: '#475569',
+                borderColor: '#e5e7eb',
+                borderWidth: 1,
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
-                bodyFont: { size: 12, weight: '500' },
-                displayColors: false
+                bodyFont: { size: 12, weight: '500' }
               }
             },
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { 
-                  color: '#1e293b', 
-                  font: { size: 11.5, weight: '600' },
-                  padding: 10
-                }
+                ticks: { color: '#1e293b', font: { size: 12, weight: '600' }, padding: 10 }
               },
               y: {
                 beginAtZero: true,
-                grid: { 
-                  color: '#e5e7eb', 
-                  drawBorder: false
-                },
-                ticks: { 
-                  color: '#64748b', 
-                  font: { size: 10.5, weight: '600' }, 
-                  precision: 0,
-                  padding: 8
-                }
+                grid: { color: '#f1f5f9', drawBorder: false },
+                ticks: { color: '#64748b', font: { size: 11, weight: '600' }, precision: 0, padding: 8 }
+              }
+            }
+          }
+        });
+      }
+      
+      // 4. Department Volume Bar Chart
+      const deptBarCtx = document.getElementById('departmentBarChart');
+      if (deptBarCtx) {
+        departmentBarChart = new Chart(deptBarCtx.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: ['Dean', 'IE', 'CPE', 'ECE'],
+            datasets: [{
+              label: 'Total Queues',
+              data: [0, 0, 0, 0],
+              backgroundColor: '#3b82f6',
+              borderRadius: 8,
+              barThickness: 50
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+              duration: 1500,
+              easing: 'easeOutBounce',
+              delay: (context) => context.dataIndex * 150
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                titleColor: '#1e293b',
+                bodyColor: '#475569',
+                borderColor: '#e5e7eb',
+                borderWidth: 1,
+                padding: 12,
+                titleFont: { size: 13, weight: '600' },
+                bodyFont: { size: 12, weight: '500' }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false, drawBorder: false },
+                ticks: { color: '#1e293b', font: { size: 12, weight: '600' }, padding: 10 }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { color: '#f1f5f9', drawBorder: false },
+                ticks: { color: '#64748b', font: { size: 11, weight: '600' }, precision: 0, padding: 8 }
               }
             }
           }
@@ -1342,30 +1266,66 @@
           }
         }
         
+        // Update stat cards
         const statTotal = document.getElementById('statTotalToday');
         const statActive = document.getElementById('statActiveNow');
-        if (statTotal) statTotal.textContent = totalToday;
-        if (statActive) statActive.textContent = activeNow;
+        const statCompleted = document.getElementById('statCompleted');
+        const totalCompleted = completedData.reduce((a,b) => a+b, 0);
         
-        if (volumeChart) {
-          volumeChart.data.datasets[0].data = volumeData;
-          volumeChart.update('none');
+        if (statTotal) animateValue('statTotalToday', 0, totalToday, 1500);
+        if (statActive) animateValue('statActiveNow', 0, activeNow, 1500);
+        if (statCompleted) animateValue('statCompleted', 0, totalCompleted, 1500);
+        
+        // Update Department Donut Chart
+        if (departmentDonutChart) {
+          departmentDonutChart.data.datasets[0].data = volumeData;
+          departmentDonutChart.update('none');
         }
         
-        if (departmentPieChart) {
-          departmentPieChart.data.datasets[0].data = volumeData;
-          departmentPieChart.update('none');
+        // Update Department Bar Chart
+        if (departmentBarChart) {
+          departmentBarChart.data.datasets[0].data = volumeData;
+          departmentBarChart.update('none');
         }
         
-        if (performanceChart) {
+        // Update Status Bar Chart - Fetch status breakdown from all departments
+        if (statusBarChart) {
+          let waitingCount = 0;
+          let calledCount = 0;
+          let completedCount = 0;
+          
+          for (const dept of departments) {
+            try {
+              const response = await fetch(`${API_BASE_URL}/admin/queue/${dept.filter}`);
+              if (response.ok) {
+                const queues = await response.json();
+                queues.forEach(q => {
+                  if (q.completed) {
+                    completedCount++;
+                  } else if (q.status === 'called') {
+                    calledCount++;
+                  } else {
+                    waitingCount++;
+                  }
+                });
+              }
+            } catch (error) {
+              console.log(`Error fetching queue for ${dept.key}:`, error);
+            }
+          }
+          
+          statusBarChart.data.datasets[0].data = [waitingCount, calledCount, completedCount];
+          statusBarChart.update('none');
+        }
+        
+        // Update Hourly Activity Chart
+        if (hourlyActivityChart) {
           const currentHour = new Date().getHours();
           const startHour = 8;
           const hoursElapsed = Math.max(0, Math.min(currentHour - startHour + 1, 10));
           
           const completedHourly = Array(10).fill(0);
           const queueHourly = Array(10).fill(0);
-          
-          const totalCompleted = completedData.reduce((a,b) => a+b, 0);
           const totalQueue = currentData.reduce((a,b) => a+b, 0);
           
           if (hoursElapsed > 0 && totalCompleted > 0) {
@@ -1387,9 +1347,9 @@
             queueHourly[hoursElapsed - 1] = totalQueue;
           }
           
-          performanceChart.data.datasets[0].data = completedHourly;
-          performanceChart.data.datasets[1].data = queueHourly;
-          performanceChart.update('none');
+          hourlyActivityChart.data.datasets[0].data = completedHourly;
+          hourlyActivityChart.data.datasets[1].data = queueHourly;
+          hourlyActivityChart.update('none');
         }
         
       } catch (error) {
