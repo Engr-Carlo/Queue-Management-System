@@ -478,16 +478,16 @@ def complete_queue(queue_id):
         data = request.json
         cur = conn.cursor()
         
-        # Mark queue as completed
+        # Mark queue as completed (allow completing from any status)
         cur.execute("""
             UPDATE queue 
-            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed'
-            WHERE id = %s AND called = TRUE
+            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
+            WHERE id = %s
         """, (data.get('completedBy'), queue_id))
         
         if cur.rowcount == 0:
             conn.close()
-            return jsonify({"error": "Queue not found, not called yet, or already completed"}), 404
+            return jsonify({"error": "Queue not found"}), 404
         
         conn.commit()
         conn.close()
