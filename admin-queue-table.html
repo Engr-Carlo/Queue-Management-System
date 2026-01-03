@@ -399,7 +399,7 @@
     <!-- Stats Summary -->
     <div class="stats-summary">
       <div class="stat-card">
-        <div class="stat-label">Total in Queue</div>
+        <div class="stat-label">Total Today</div>
         <div class="stat-value" id="statTotal">0</div>
       </div>
       <div class="stat-card" style="border-left-color: #f59e0b;">
@@ -620,9 +620,16 @@
     }
 
     function updateStats() {
-      const total = allQueues.filter(q => q.status !== 'completed' && q.status !== 'cancelled').length;
+      // Total in Queue = ALL queues recorded today (never decreases)
+      const total = allQueues.length;
+      
+      // Waiting = Only queues with "waiting" status
       const waiting = allQueues.filter(q => q.status === 'waiting').length;
+      
+      // Being Served = Queues that are called or being served
       const serving = allQueues.filter(q => q.status === 'serving' || q.status === 'called').length;
+      
+      // Completed = Queues that are completed
       const completed = allQueues.filter(q => q.status === 'completed').length;
 
       document.getElementById('statTotal').textContent = total;
