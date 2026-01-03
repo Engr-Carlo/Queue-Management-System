@@ -621,6 +621,7 @@
       
       if (queue.status === 'called' || queue.status === 'serving') {
         buttons.push(`<button class="action-btn btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')"><i class="fas fa-check"></i> Complete</button>`);
+        buttons.push(`<button class="action-btn btn-warning" onclick="returnQueue('${queue.id}', '${queue.number}')"><i class="fas fa-undo"></i> Return</button>`);
       }
       
       if (queue.status !== 'completed') {
@@ -690,7 +691,25 @@
         console.error('Error completing queue:', error);
       }
     }
+    async function returnQueue(queueId, queueNumber) {
+      if (!confirm(`Return queue ${queueNumber} back to waiting? This will put them back in the queue.`)) return;
 
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/return-queue/${queueId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            returnedBy: adminSession.department
+          })
+        });
+        
+        if (response.ok) {
+          refreshQueue();
+        }
+      } catch (error) {
+        console.error('Error returning queue:', error);
+      }
+    }
     async function deleteQueue(queueId, queueNumber) {
       if (!confirm(`Delete queue ${queueNumber}? This cannot be undone.`)) return;
 

@@ -508,14 +508,9 @@ def complete_queue(queue_id):
         data = request.json
         cur = conn.cursor()
         
-        # Get current local time
-        from datetime import datetime
-        import pytz
-        
-        # Use Philippine timezone
-        ph_tz = pytz.timezone('Asia/Manila')
-        local_time = datetime.now(ph_tz)
-        completed_time = local_time.strftime('%I:%M %p')
+        # Get current local time (simplified - no pytz needed)
+        now = datetime.now()
+        completed_time = now.strftime('%I:%M %p')
         
         # Mark queue as completed (allow from any status)
         cur.execute("""
@@ -532,6 +527,36 @@ def complete_queue(queue_id):
         conn.close()
         
         return jsonify({"success": True, "message": "Queue completed successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/admin/return-queue/<queue_id>', methods=['POST'])
+def return_queue(queue_id):
+    """Return a called queue back to waiting status"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        data = request.json
+        cur = conn.cursor()
+        
+        # Return queue to waiting status
+        cur.execute("""
+            UPDATE queue 
+            SET status = 'waiting', called = FALSE, called_at = NULL, called_by = NULL,
+                returned_by = %s, returned_at = NOW()
+            WHERE id = %s AND status = 'called'
+        """, (data.get('returnedBy'), queue_id))
+        
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found or not in called status"}), 404
+        
+        conn.commit()
+        conn.close()
+        
+        return jsonify({"success": True, "message": "Queue returned to waiting successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
