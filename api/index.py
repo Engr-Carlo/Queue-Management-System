@@ -365,6 +365,11 @@ def get_admin_queue(department):
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
 
 # DEBUG ENDPOINTS
+@app.route('/debug/test')
+def debug_test():
+    """Simple test endpoint"""
+    return jsonify({"success": True, "message": "API is working"}), 200
+
 @app.route('/debug/db')
 def debug_db():
     """Test database connection"""
