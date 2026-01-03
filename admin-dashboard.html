@@ -731,14 +731,33 @@
     }
 
     // Load statistics
+    // Animate number counter
+    function animateValue(id, start, end, duration) {
+      const obj = document.getElementById(id);
+      if (!obj) return;
+      
+      const range = end - start;
+      const increment = range / (duration / 16);
+      let current = start;
+      
+      const timer = setInterval(() => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+          current = end;
+          clearInterval(timer);
+        }
+        obj.textContent = Math.round(current);
+      }, 16);
+    }
+
     async function loadStatistics() {
       try {
         const response = await fetch(`${API_BASE_URL}/admin/stats/${adminSession.department}`);
         if (response.ok) {
           const stats = await response.json();
-          document.getElementById('totalToday').textContent = stats.totalToday || 0;
-          document.getElementById('currentQueue').textContent = stats.currentQueue || 0;
-          document.getElementById('completedToday').textContent = stats.completedToday || 0;
+          animateValue('totalToday', 0, stats.totalToday || 0, 1500);
+          animateValue('currentQueue', 0, stats.currentQueue || 0, 1500);
+          animateValue('completedToday', 0, stats.completedToday || 0, 1500);
           document.getElementById('avgWaitTime').textContent = `${stats.avgWaitTime || 0}m`;
         }
       } catch (error) {
@@ -1088,6 +1107,17 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 2000,
+              easing: 'easeInOutQuart',
+              delay: (context) => {
+                let delay = 0;
+                if (context.type === 'data' && context.mode === 'default') {
+                  delay = context.dataIndex * 100;
+                }
+                return delay;
+              }
+            },
             plugins: {
               legend: { display: false },
               tooltip: {
@@ -1155,6 +1185,12 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              animateRotate: true,
+              animateScale: true,
+              duration: 2000,
+              easing: 'easeInOutQuart'
+            },
             plugins: {
               legend: {
                 position: 'bottom',
@@ -1223,6 +1259,13 @@
           options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+              duration: 1500,
+              easing: 'easeOutBounce',
+              delay: (context) => {
+                return context.dataIndex * 150;
+              }
+            },
             plugins: {
               legend: { display: false },
               tooltip: {
