@@ -331,12 +331,12 @@ def get_admin_queue(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get current queue (not completed) for this department, ordered by creation time
+        # Get ALL queues for this department from today (including completed)
         cur.execute("""
             SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
             FROM queue 
-            WHERE person LIKE %s AND (completed IS NULL OR completed = FALSE)
-            ORDER BY created_at ASC
+            WHERE person LIKE %s AND date = CURRENT_DATE
+            ORDER BY id DESC
         """, (person_filter,))
         
         rows = cur.fetchall()
@@ -504,16 +504,16 @@ def complete_queue(queue_id):
         data = request.json
         cur = conn.cursor()
         
-        # Mark queue as completed
+        # Mark queue as completed (allow from any status)
         cur.execute("""
             UPDATE queue 
-            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed'
-            WHERE id = %s AND called = TRUE
+            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
+            WHERE id = %s
         """, (data.get('completedBy'), queue_id))
         
         if cur.rowcount == 0:
             conn.close()
-            return jsonify({"error": "Queue not found, not called yet, or already completed"}), 404
+            return jsonify({"error": "Queue not found"}), 404
         
         conn.commit()
         conn.close()
