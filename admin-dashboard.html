@@ -534,7 +534,7 @@
                 <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                   <i class="fas fa-chart-line" style="color: white; font-size: 0.85rem;"></i>
                 </div>
-                Hourly Queue Activity
+                Daily Queue Activity
               </h3>
               <span style="background: #f1f5f9; color: #64748b; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">Live Data</span>
             </div>
@@ -1004,10 +1004,19 @@
         gradientBlue.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
         gradientBlue.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
         
+        // Get last 7 days labels
+        const last7Days = [];
+        const today = new Date();
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - i);
+          last7Days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+        
         hourlyActivityChart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+            labels: last7Days,
             datasets: [{
               label: 'Completed',
               data: [0, 0, 0, 0, 0, 0, 0],
@@ -1345,46 +1354,47 @@
           statusBarChart.update('none');
         }
         
-        // Update Weekly Activity Chart - Use REAL timestamps from current department only
+        // Update Daily Activity Chart - Show last 7 days
         if (hourlyActivityChart) {
-          const weeklyCompleted = Array(7).fill(0);
-          const weeklyTotal = Array(7).fill(0);
+          const dailyCompleted = Array(7).fill(0);
+          const dailyTotal = Array(7).fill(0);
           
-          console.log('Total queues for weekly chart:', allQueues.length);
+          console.log('Total queues for daily chart:', allQueues.length);
+          
+          // Get date range for last 7 days
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
           
           // Process actual queue timestamps from current department
-          allQueues.forEach((q, index) => {
-            // For Total Queues: use creation date
+          allQueues.forEach((q) => {
             if (q.date) {
               try {
                 const queueDate = new Date(q.date);
-                const dayOfWeek = queueDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-                // Convert to our index (0 = Monday, 6 = Sunday)
-                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                weeklyTotal[dayIndex]++;
+                queueDate.setHours(0, 0, 0, 0);
+                
+                // Calculate days ago
+                const daysDiff = Math.floor((today - queueDate) / (1000 * 60 * 60 * 24));
+                
+                // Only count if within last 7 days
+                if (daysDiff >= 0 && daysDiff < 7) {
+                  const dayIndex = 6 - daysDiff; // 0 = 7 days ago, 6 = today
+                  dailyTotal[dayIndex]++;
+                  
+                  if (q.status === 'completed') {
+                    dailyCompleted[dayIndex]++;
+                  }
+                }
               } catch (e) {
                 console.log('Error parsing date:', q.date);
               }
             }
-            
-            // For Completed: also use creation date (since we don't have completed_date)
-            if (q.status === 'completed' && q.date) {
-              try {
-                const queueDate = new Date(q.date);
-                const dayOfWeek = queueDate.getDay();
-                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-                weeklyCompleted[dayIndex]++;
-              } catch (e) {
-                console.log('Error parsing completion date:', q.date);
-              }
-            }
           });
           
-          console.log('Weekly completed:', weeklyCompleted);
-          console.log('Weekly total:', weeklyTotal);
+          console.log('Daily completed:', dailyCompleted);
+          console.log('Daily total:', dailyTotal);
           
-          hourlyActivityChart.data.datasets[0].data = weeklyCompleted;
-          hourlyActivityChart.data.datasets[1].data = weeklyTotal;
+          hourlyActivityChart.data.datasets[0].data = dailyCompleted;
+          hourlyActivityChart.data.datasets[1].data = dailyTotal;
           hourlyActivityChart.update('none');
         }
         
