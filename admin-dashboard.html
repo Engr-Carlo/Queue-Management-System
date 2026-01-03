@@ -1354,7 +1354,7 @@
           
           // Process actual queue timestamps from current department
           allQueues.forEach((q, index) => {
-            // Parse the local time field (e.g., "1:43 PM") instead of UTC created_at
+            // For Total Queues: use creation time
             if (q.time) {
               const timeMatch = q.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
               if (timeMatch) {
@@ -1369,20 +1369,23 @@
                   hour = 0;
                 }
                 
-                console.log(`Queue ${index}: time=${q.time}, parsed hour=${hour}`);
-                
                 // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
                 if (hour >= 8 && hour <= 17) {
                   const hourIndex = hour - 8;
-                  
                   // Count ALL queues created in this hour (shows peak hours)
                   hourlyTotal[hourIndex]++;
-                  
-                  // Also track completed separately
-                  if (q.status === 'completed') {
-                    hourlyCompleted[hourIndex]++;
-                  }
                 }
+              }
+            }
+            
+            // For Completed: use completion time (completed_at)
+            if (q.status === 'completed' && q.completed_at) {
+              const completedTime = new Date(q.completed_at);
+              const completedHour = completedTime.getHours();
+              
+              if (completedHour >= 8 && completedHour <= 17) {
+                const hourIndex = completedHour - 8;
+                hourlyCompleted[hourIndex]++;
               }
             }
           });

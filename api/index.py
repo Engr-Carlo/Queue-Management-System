@@ -334,7 +334,7 @@ def get_admin_queue(department):
         # Get ALL queues for this department (including completed)
         # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
-            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
+            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at 
             FROM queue 
             WHERE person LIKE %s
             ORDER BY created_at ASC, id ASC
@@ -355,7 +355,8 @@ def get_admin_queue(department):
                 "created_at": row[6].isoformat() if row[6] else None,
                 "is_present": row[7] if len(row) > 7 else False,
                 "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None,
-                "is_muted": row[9] if len(row) > 9 else False
+                "is_muted": row[9] if len(row) > 9 else False,
+                "completed_at": row[10].isoformat() if len(row) > 10 and row[10] else None
             })
         
         return jsonify(queues)
