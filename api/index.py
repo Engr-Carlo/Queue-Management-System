@@ -335,24 +335,30 @@ def get_admin_queue(department):
         # Get ALL queues for this department (including completed)
         # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
-            SELECT * 
+            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at 
             FROM queue 
             WHERE person LIKE %s
             ORDER BY created_at ASC, id ASC
         """, (person_filter,))
         
-        columns = [desc[0] for desc in cur.description]
         rows = cur.fetchall()
         conn.close()
         
         queues = []
         for row in rows:
-            queue_dict = dict(zip(columns, row))
-            # Convert datetime objects to ISO format
-            for key in ['created_at', 'completed_at', 'present_at', 'called_at', 'returned_at', 'muted_at', 'accessed_at']:
-                if key in queue_dict and queue_dict[key]:
-                    queue_dict[key] = queue_dict[key].isoformat()
-            queues.append(queue_dict)
+            queues.append({
+                "id": row[0],
+                "number": row[1],
+                "person": row[2],
+                "date": row[3],
+                "time": row[4],
+                "status": row[5],
+                "created_at": row[6].isoformat() if row[6] else None,
+                "is_present": row[7] if len(row) > 7 else False,
+                "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None,
+                "is_muted": row[9] if len(row) > 9 else False,
+                "completed_at": row[10].isoformat() if len(row) > 10 and row[10] else None
+            })
         
         return jsonify(queues)
     except Exception as e:
@@ -504,16 +510,12 @@ def complete_queue(queue_id):
         data = request.json
         cur = conn.cursor()
         
-        # Get current local time (simplified - no pytz needed)
-        now = datetime.now()
-        completed_time = now.strftime('%I:%M %p')
-        
         # Mark queue as completed (allow from any status)
         cur.execute("""
             UPDATE queue 
-            SET completed = TRUE, completed_at = NOW(), completed_by = %s, completed_time = %s, status = 'completed', called = TRUE
+            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
             WHERE id = %s
-        """, (data.get('completedBy'), completed_time, queue_id))
+        """, (data.get('completedBy'), queue_id))
         
         if cur.rowcount == 0:
             conn.close()
