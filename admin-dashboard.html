@@ -551,7 +551,7 @@
               <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
                 <i class="fas fa-chart-pie" style="color: white; font-size: 0.85rem;"></i>
               </div>
-              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Department Split</h3>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Status Distribution</h3>
             </div>
             <div style="height: 260px; position: relative; display: flex; align-items: center; justify-content: center;">
               <canvas id="departmentDonutChart"></canvas>
@@ -584,7 +584,7 @@
               <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
                 <i class="fas fa-chart-column" style="color: white; font-size: 0.85rem;"></i>
               </div>
-              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Department Volume</h3>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Queue Status</h3>
             </div>
             <div style="height: 220px; position: relative;">
               <canvas id="departmentBarChart"></canvas>
@@ -1094,14 +1094,14 @@
         departmentDonutChart = new Chart(donutCtx.getContext('2d'), {
           type: 'doughnut',
           data: {
-            labels: ['Dean\'s Office', 'IE Dept', 'CPE Dept', 'ECE Dept'],
+            labels: ['Waiting', 'Called', 'Completed', 'Archived'],
             datasets: [{
               data: [0, 0, 0, 0],
               backgroundColor: [
-                '#3b82f6',  // Blue
-                '#10b981',  // Green
-                '#f59e0b',  // Orange
-                '#ef4444'   // Red
+                '#3b82f6',  // Blue - Waiting
+                '#f59e0b',  // Orange - Called
+                '#10b981',  // Green - Completed
+                '#6b7280'   // Gray - Archived
               ],
               borderColor: '#ffffff',
               borderWidth: 4,
@@ -1237,9 +1237,9 @@
         departmentBarChart = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: ['Dean', 'IE', 'CPE', 'ECE'],
+            labels: ['Waiting', 'Called', 'Completed', 'Archived'],
             datasets: [{
-              label: 'Total Queues',
+              label: 'Queue Count',
               data: [0, 0, 0, 0],
               backgroundColor: gradient,
               borderRadius: 10,
@@ -1289,50 +1289,31 @@
     // Update visualization charts with real data
     async function updateVisualizationCharts() {
       try {
-        const departments = [
-          { key: 'dean', filter: 'dean', index: 0, label: 'Dean' },
-          { key: 'ie', filter: 'ie-chair', index: 1, label: 'IE' },
-          { key: 'cpe', filter: 'cpe-chair', index: 2, label: 'CPE' },
-          { key: 'ece', filter: 'ece-chair', index: 3, label: 'ECE' }
-        ];
+        // Get current admin's department (same as queue table)
+        const currentDept = adminSession.department;
         
-        const volumeData = [0, 0, 0, 0];
-        const completedData = [0, 0, 0, 0];
-        const waitingData = [0, 0, 0, 0];
-        const calledData = [0, 0, 0, 0];
         let totalToday = 0;
         let activeNow = 0;
         let totalCompleted = 0;
         let totalWaiting = 0;
         let totalCalled = 0;
+        let allQueues = [];
         
-        // Fetch actual queue data from each department (same as queue table)
-        for (const dept of departments) {
-          try {
-            const response = await fetch(`${API_BASE_URL}/admin/queue/${dept.filter}`);
-            if (response.ok) {
-              const queues = await response.json();
-              
-              // Count queues by status
-              const total = queues.length;
-              const completed = queues.filter(q => q.status === 'completed').length;
-              const waiting = queues.filter(q => q.status === 'waiting').length;
-              const called = queues.filter(q => q.status === 'called').length;
-              
-              volumeData[dept.index] = total;
-              completedData[dept.index] = completed;
-              waitingData[dept.index] = waiting;
-              calledData[dept.index] = called;
-              
-              totalToday += total;
-              totalCompleted += completed;
-              totalWaiting += waiting;
-              totalCalled += called;
-              activeNow += waiting + called; // Active = waiting + called
-            }
-          } catch (error) {
-            console.log(`Error fetching queue for ${dept.key}:`, error);
+        // Fetch ONLY current department's data (matching queue table)
+        try {
+          const response = await fetch(`${API_BASE_URL}/admin/queue/${currentDept}`);
+          if (response.ok) {
+            allQueues = await response.json();
+            
+            // Count queues by status (same logic as queue table)
+            totalToday = allQueues.length;
+            totalCompleted = allQueues.filter(q => q.status === 'completed').length;
+            totalWaiting = allQueues.filter(q => q.status === 'waiting').length;
+            totalCalled = allQueues.filter(q => q.status === 'called').length;
+            activeNow = totalWaiting + totalCalled; // Active = waiting + called
           }
+        } catch (error) {
+          console.log('Error fetching queue data:', error);
         }
         
         // Update stat cards
@@ -1344,15 +1325,19 @@
         if (statActive) animateValue('statActiveNow', 0, activeNow, 1500);
         if (statCompleted) animateValue('statCompleted', 0, totalCompleted, 1500);
         
-        // Update Department Donut Chart - use total volume
+        // Update Department Donut Chart - show breakdown by status for current department
         if (departmentDonutChart) {
-          departmentDonutChart.data.datasets[0].data = volumeData;
+          departmentDonutChart.data.labels = ['Waiting', 'Called', 'Completed', 'Archived'];
+          const archived = allQueues.filter(q => q.status === 'archived').length;
+          departmentDonutChart.data.datasets[0].data = [totalWaiting, totalCalled, totalCompleted, archived];
           departmentDonutChart.update('none');
         }
         
-        // Update Department Bar Chart - use total volume
+        // Update Department Bar Chart - show counts by status
         if (departmentBarChart) {
-          departmentBarChart.data.datasets[0].data = volumeData;
+          departmentBarChart.data.labels = ['Waiting', 'Called', 'Completed', 'Archived'];
+          const archived = allQueues.filter(q => q.status === 'archived').length;
+          departmentBarChart.data.datasets[0].data = [totalWaiting, totalCalled, totalCompleted, archived];
           departmentBarChart.update('none');
         }
         
@@ -1362,40 +1347,29 @@
           statusBarChart.update('none');
         }
         
-        // Update Hourly Activity Chart - Use REAL timestamps from database
+        // Update Hourly Activity Chart - Use REAL timestamps from current department only
         if (hourlyActivityChart) {
           const hourlyCompleted = Array(10).fill(0);
           const hourlyActive = Array(10).fill(0);
           
-          // Process actual queue timestamps to get hourly distribution
-          for (const dept of departments) {
-            try {
-              const response = await fetch(`${API_BASE_URL}/admin/queue/${dept.filter}`);
-              if (response.ok) {
-                const queues = await response.json();
+          // Process actual queue timestamps from current department
+          allQueues.forEach(q => {
+            if (q.created_at) {
+              const queueTime = new Date(q.created_at);
+              const hour = queueTime.getHours();
+              
+              // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
+              if (hour >= 8 && hour <= 17) {
+                const hourIndex = hour - 8;
                 
-                queues.forEach(q => {
-                  if (q.created_at) {
-                    const queueTime = new Date(q.created_at);
-                    const hour = queueTime.getHours();
-                    
-                    // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
-                    if (hour >= 8 && hour <= 17) {
-                      const hourIndex = hour - 8;
-                      
-                      if (q.status === 'completed') {
-                        hourlyCompleted[hourIndex]++;
-                      } else if (q.status === 'waiting' || q.status === 'called') {
-                        hourlyActive[hourIndex]++;
-                      }
-                    }
-                  }
-                });
+                if (q.status === 'completed') {
+                  hourlyCompleted[hourIndex]++;
+                } else if (q.status === 'waiting' || q.status === 'called') {
+                  hourlyActive[hourIndex]++;
+                }
               }
-            } catch (error) {
-              console.log(`Error fetching queue timestamps for ${dept.key}:`, error);
             }
-          }
+          });
           
           hourlyActivityChart.data.datasets[0].data = hourlyCompleted;
           hourlyActivityChart.data.datasets[1].data = hourlyActive;
