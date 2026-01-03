@@ -334,22 +334,12 @@ def get_admin_queue(department):
         
         # Get ALL queues for this department (including completed)
         # Sort by created_at ASC for first-come-first-serve order
-        try:
-            cur.execute("""
-                SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at, completed_time 
-                FROM queue 
-                WHERE person LIKE %s
-                ORDER BY created_at ASC, id ASC
-            """, (person_filter,))
-        except Exception as col_error:
-            # If completed_time column doesn't exist, try without it
-            print(f"Column error: {col_error}")
-            cur.execute("""
-                SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at 
-                FROM queue 
-                WHERE person LIKE %s
-                ORDER BY created_at ASC, id ASC
-            """, (person_filter,))
+        cur.execute("""
+            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at, completed_time 
+            FROM queue 
+            WHERE person LIKE %s
+            ORDER BY created_at ASC, id ASC
+        """, (person_filter,))
         
         rows = cur.fetchall()
         conn.close()
@@ -373,6 +363,10 @@ def get_admin_queue(department):
         
         return jsonify(queues)
     except Exception as e:
+        print(f"Error in get_queue: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
         return jsonify({"error": str(e)}), 500
 
 @app.route('/admin/stats/<department>')
