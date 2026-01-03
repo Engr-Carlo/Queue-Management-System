@@ -1023,7 +1023,7 @@
               pointBorderWidth: 3,
               pointHoverBorderWidth: 3
             }, {
-              label: 'In Queue',
+              label: 'Total Queues',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#3b82f6',
               backgroundColor: gradientBlue,
@@ -1348,7 +1348,7 @@
         // Update Hourly Activity Chart - Use REAL timestamps from current department only
         if (hourlyActivityChart) {
           const hourlyCompleted = Array(10).fill(0);
-          const hourlyActive = Array(10).fill(0);
+          const hourlyTotal = Array(10).fill(0);
           
           console.log('Total queues for hourly chart:', allQueues.length);
           
@@ -1375,10 +1375,12 @@
                 if (hour >= 8 && hour <= 17) {
                   const hourIndex = hour - 8;
                   
+                  // Count ALL queues created in this hour (shows peak hours)
+                  hourlyTotal[hourIndex]++;
+                  
+                  // Also track completed separately
                   if (q.status === 'completed') {
                     hourlyCompleted[hourIndex]++;
-                  } else if (q.status === 'waiting' || q.status === 'called') {
-                    hourlyActive[hourIndex]++;
                   }
                 }
               }
@@ -1386,10 +1388,10 @@
           });
           
           console.log('Hourly completed:', hourlyCompleted);
-          console.log('Hourly active:', hourlyActive);
+          console.log('Hourly total:', hourlyTotal);
           
           hourlyActivityChart.data.datasets[0].data = hourlyCompleted;
-          hourlyActivityChart.data.datasets[1].data = hourlyActive;
+          hourlyActivityChart.data.datasets[1].data = hourlyTotal;
           hourlyActivityChart.update('none');
         }
         
