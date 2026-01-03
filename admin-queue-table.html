@@ -454,6 +454,23 @@
         </tbody>
       </table>
     </div>
+
+    <!-- Recent Activity Section -->
+    <div style="margin-top: 32px;">
+      <div style="background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); overflow: hidden;">
+        <div style="padding: 24px; border-bottom: 2px solid #f1f5f9;">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;">
+            <i class="fas fa-clock-rotate-left" style="margin-right: 10px; color: #3b82f6;"></i>Recent Activity
+          </h3>
+          <p style="margin: 8px 0 0 0; color: #64748b; font-size: 0.9rem;">
+            Recently completed queues in your department
+          </p>
+        </div>
+        <div id="recentActivity">
+          <!-- Recent activity will be loaded here -->
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -494,25 +511,31 @@
       });
     });
 
-    function refreshQueue() {
+    async function refreshQueue() {
       const icon = document.getElementById('refreshIcon');
       icon.classList.add('spinning');
 
-      fetch(`${API_BASE_URL}/queue`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(response => response.json())
-      .then(data => {
-        allQueues = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/queue/${adminSession.department}`);
+        if (response.ok) {
+          const data = await response.json();
+          allQueues = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+          filterQueues();
+          updateStats();
+        } else {
+          allQueues = [];
+          filterQueues();
+          updateStats();
+        }
+      } catch (error) {
+        console.error('Error fetching queue:', error);
+        allQueues = [];
         filterQueues();
         updateStats();
-        icon.classList.remove('spinning');
-      })
-      .catch(error => {
-        console.error('Error fetching queue:', error);
-        icon.classList.remove('spinning');
-      });
+      }
+      
+      icon.classList.remove('spinning');
+      loadRecentActivity();
     }
 
     function filterQueues() {
@@ -555,16 +578,16 @@
 
       tbody.innerHTML = queues.map(queue => `
         <tr>
-          <td><span class="queue-number">${queue.queue_number}</span></td>
-          <td><strong>${formatPersonType(queue.person_type)}</strong></td>
-          <td>${queue.person_name || '-'}</td>
+          <td><span class="queue-number">${queue.number}</span></td>
+          <td><strong>${queue.person}</strong></td>
+          <td>${adminSession.department || '-'}</td>
           <td><span class="badge badge-${queue.status}">${queue.status.toUpperCase()}</span></td>
           <td>
             <div class="time-badge">
-              <i class="fas fa-clock"></i> ${formatTime(queue.created_at)}
+              <i class="fas fa-clock"></i> ${queue.time}
             </div>
           </td>
-          <td>${calculateWaitTime(queue.created_at)}</td>
+          <td>${calculateWaitTime(queue.date)}</td>
           <td style="text-align: center; white-space: nowrap;">
             ${getActionButtons(queue)}
           </td>
@@ -576,15 +599,15 @@
       const buttons = [];
       
       if (queue.status === 'waiting') {
-        buttons.push(`<button class="action-btn btn-call" onclick="callQueue('${queue.queue_number}')"><i class="fas fa-phone"></i> Call</button>`);
+        buttons.push(`<button class="action-btn btn-call" onclick="callQueue('${queue.id}', '${queue.number}')"><i class="fas fa-phone"></i> Call</button>`);
       }
       
       if (queue.status === 'called' || queue.status === 'serving') {
-        buttons.push(`<button class="action-btn btn-complete" onclick="completeQueue('${queue.queue_number}')"><i class="fas fa-check"></i> Complete</button>`);
+        buttons.push(`<button class="action-btn btn-complete" onclick="completeQueue('${queue.id}', '${queue.number}')"><i class="fas fa-check"></i> Complete</button>`);
       }
       
       if (queue.status !== 'completed') {
-        buttons.push(`<button class="action-btn btn-delete" onclick="deleteQueue('${queue.queue_number}')"><i class="fas fa-trash"></i> Delete</button>`);
+        buttons.push(`<button class="action-btn btn-delete" onclick="deleteQueue('${queue.id}', '${queue.number}')"><i class="fas fa-trash"></i> Delete</button>`);
       }
 
       return buttons.join(' ');
@@ -602,60 +625,68 @@
       document.getElementById('statCompleted').textContent = completed;
     }
 
-    function callQueue(queueNumber) {
-      if (!confirm(`Call queue ${queueNumber}?`)) return;
+    async function callQueue(queueId, queueNumber) {
+      if (!confirm(`Call queue ${queueNumber}? This will notify the user that they are being called.`)) return;
 
-      fetch(`${API_BASE_URL}/queue/${queueNumber}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          status: 'called',
-          called_at: new Date().toISOString()
-        })
-      })
-      .then(() => refreshQueue())
-      .catch(error => console.error('Error:', error));
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/call-queue/${queueId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            calledBy: adminSession.department,
+            calledAt: new Date().toISOString()
+          })
+        });
+        
+        if (response.ok) {
+          refreshQueue();
+        }
+      } catch (error) {
+        console.error('Error calling queue:', error);
+      }
     }
 
-    function completeQueue(queueNumber) {
+    async function completeQueue(queueId, queueNumber) {
       if (!confirm(`Mark queue ${queueNumber} as completed?`)) return;
 
-      fetch(`${API_BASE_URL}/queue/${queueNumber}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-      })
-      .then(() => refreshQueue())
-      .catch(error => console.error('Error:', error));
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/complete-queue/${queueId}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            completedBy: adminSession.department,
+            completedAt: new Date().toISOString()
+          })
+        });
+        
+        if (response.ok) {
+          refreshQueue();
+        }
+      } catch (error) {
+        console.error('Error completing queue:', error);
+      }
     }
 
-    function deleteQueue(queueNumber) {
+    async function deleteQueue(queueId, queueNumber) {
       if (!confirm(`Delete queue ${queueNumber}? This cannot be undone.`)) return;
 
-      fetch(`${API_BASE_URL}/queue/${queueNumber}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      .then(() => refreshQueue())
-      .catch(error => console.error('Error:', error));
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/delete-queue/${queueId}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (response.ok) {
+          refreshQueue();
+        }
+      } catch (error) {
+        console.error('Error deleting queue:', error);
+      }
     }
 
-    function formatPersonType(type) {
-      const types = {
-        'dean': 'Dean - College of Engineering',
-        'ie-chair': 'Industrial Engineering Chair',
-        'cpe-chair': 'Computer Engineering Chair',
-        'ece-chair': 'Electronics Engineering Chair',
-        'others': 'Other Staff/Faculty'
-      };
-      return types[type] || type;
-    }
-
-    function formatTime(timestamp) {
-      const date = new Date(timestamp);
+    function formatTime(dateString) {
+      if (!dateString) return '-';
+      const date = new Date(dateString);
       return date.toLocaleTimeString('en-US', { 
         hour: '2-digit', 
         minute: '2-digit',
@@ -675,6 +706,44 @@
       const hours = Math.floor(diff / 60);
       const mins = diff % 60;
       return `${hours}h ${mins}m`;
+    }
+
+    // Load recent activity
+    async function loadRecentActivity() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/activity/${adminSession.department}`);
+        if (response.ok) {
+          const activities = await response.json();
+          displayRecentActivity(activities);
+        }
+      } catch (error) {
+        console.error('Error loading recent activity:', error);
+      }
+    }
+
+    function displayRecentActivity(activities) {
+      const activityContainer = document.getElementById('recentActivity');
+      
+      if (!activities || activities.length === 0) {
+        activityContainer.innerHTML = '<p style="text-align: center; color: #94a3b8; padding: 20px;">No recent activity</p>';
+        return;
+      }
+
+      activityContainer.innerHTML = activities.slice(0, 10).map(activity => `
+        <div style="padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+              ${activity.number} - ${activity.person}
+            </div>
+            <div style="font-size: 0.85rem; color: #64748b;">
+              <i class="fas fa-check-circle" style="color: #10b981;"></i> Completed
+            </div>
+          </div>
+          <div style="text-align: right; font-size: 0.85rem; color: #64748b;">
+            ${activity.completedAt}
+          </div>
+        </div>
+      `).join('');
     }
 
     // Cleanup on page unload
