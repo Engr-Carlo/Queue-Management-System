@@ -728,8 +728,7 @@
     async function loadDashboard() {
       await Promise.all([
         loadStatistics(),
-        loadCurrentQueue(),
-        loadRecentActivity()
+        loadCurrentQueue()
       ]);
     }
 
