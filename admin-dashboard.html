@@ -492,61 +492,34 @@
         </div>
       </div>
 
-      <!-- Stats Cards with Mini Charts -->
+      <!-- Bottom Stats Row -->
       <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 24px;">
-        <!-- Total Applications -->
-        <div class="queue-card" style="background: #3b82f6; border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(59, 130, 246, 0.25);">
-          <div style="padding: 25px; color: white; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-              <div style="font-size: 0.75rem; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.2px;">TOTAL APPLICATIONS</div>
-              <i class="fas fa-file-lines" style="opacity: 0.3; font-size: 1.2rem;"></i>
-            </div>
-            <div style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 20px;" id="statTotalToday">0</div>
-            <div style="height: 50px; margin: 0 -5px;">
-              <canvas id="miniChart1"></canvas>
-            </div>
+        <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 4px 15px rgba(30, 58, 138, 0.15); text-align: center;">
+          <div style="padding: 25px; color: white;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.5px;">Total Today</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px;" id="statTotalToday">0</div>
+            <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
           </div>
         </div>
-
-        <!-- Pending Review -->
-        <div class="queue-card" style="background: #14b8a6; border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(20, 184, 166, 0.25);">
-          <div style="padding: 25px; color: white; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-              <div style="font-size: 0.75rem; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.2px;">PENDING REVIEW</div>
-              <i class="fas fa-clock" style="opacity: 0.3; font-size: 1.2rem;"></i>
-            </div>
-            <div style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 20px;" id="statActiveNow">0</div>
-            <div style="height: 50px; margin: 0 -5px;">
-              <canvas id="miniChart2"></canvas>
-            </div>
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+          <div style="padding: 25px;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #1e3a8a;" id="statActiveNow">0</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">In Queue</div>
           </div>
         </div>
-
-        <!-- Approved -->
-        <div class="queue-card" style="background: #10b981; border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(16, 185, 129, 0.25);">
-          <div style="padding: 25px; color: white; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-              <div style="font-size: 0.75rem; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.2px;">APPROVED</div>
-              <i class="fas fa-circle-check" style="opacity: 0.3; font-size: 1.2rem;"></i>
-            </div>
-            <div style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 20px;" id="statCompleted">0</div>
-            <div style="height: 50px; margin: 0 -5px;">
-              <canvas id="miniChart3"></canvas>
-            </div>
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+          <div style="padding: 25px;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Completed</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #10b981;" id="statCompleted">0</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Today</div>
           </div>
         </div>
-
-        <!-- Needs Revision -->
-        <div class="queue-card" style="background: #f59e0b; border: none; border-radius: 20px; box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25);">
-          <div style="padding: 25px; color: white; position: relative;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
-              <div style="font-size: 0.75rem; font-weight: 700; opacity: 0.9; text-transform: uppercase; letter-spacing: 1.2px;">NEEDS REVISION</div>
-              <i class="fas fa-rotate" style="opacity: 0.3; font-size: 1.2rem;"></i>
-            </div>
-            <div style="font-size: 3.5rem; font-weight: 900; line-height: 1; margin-bottom: 20px;" id="statAvgWait">0</div>
-            <div style="height: 50px; margin: 0 -5px;">
-              <canvas id="miniChart4"></canvas>
-            </div>
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); text-align: center;">
+          <div style="padding: 25px;">
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 1.5px;">Avg Wait</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #f59e0b;" id="statAvgWait">0m</div>
+            <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">Minutes</div>
           </div>
         </div>
       </div>
@@ -555,33 +528,96 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
         <!-- LEFT COLUMN -->
             
-            <!-- Application Submissions Over Time -->
-            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
-              <div style="padding: 30px;">
-                <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
-                  Application Submissions Over Time
-                </h3>
-                <div style="height: 350px; position: relative;">
-                  <canvas id="performanceChart"></canvas>
+            <!-- Quick Stats Card -->
+            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);">
+              <div style="padding: 25px; color: white;">
+                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; letter-spacing: 0.5px; opacity: 0.95;">
+                  <i class="fas fa-gauge-high" style="margin-right: 8px;"></i>QUICK STATS
+                </h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Total Today</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="totalToday">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">In Queue</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="currentQueue">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Completed</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="completedToday">0</div>
+                  </div>
+                  <div style="background: rgba(255,255,255,0.15); padding: 18px; border-radius: 10px; backdrop-filter: blur(10px); text-align: center;">
+                    <div style="font-size: 0.7rem; font-weight: 600; margin-bottom: 8px; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px;">Avg Wait</div>
+                    <div style="font-size: 2rem; font-weight: 900; line-height: 1;" id="avgWaitTime">0m</div>
+                  </div>
                 </div>
               </div>
             </div>
 
+            <!-- Performance Line Chart -->
+            <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25);">
+              <div style="padding: 30px; color: white;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                  <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
+                    <i class="fas fa-chart-line" style="margin-right: 10px;"></i>Performance Trend
+                  </h3>
+                  <div style="background: rgba(255,255,255,0.2); padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">Today</div>
+                </div>
+                <div style="height: 220px; position: relative;">
+                  <canvas id="performanceChart"></canvas>
+                </div>
+                <div style="display: flex; gap: 20px; margin-top: 15px; font-size: 0.85rem; font-weight: 500; justify-content: center;">
+                  <div style="display: flex; align-items: center;">
+                    <div style="width: 12px; height: 12px; background: #10b981; border-radius: 3px; margin-right: 8px;"></div>
+                    Completed
+                  </div>
+                  <div style="display: flex; align-items: center;">
+                    <div style="width: 12px; height: 12px; background: #f59e0b; border-radius: 3px; margin-right: 8px;"></div>
+                    Active
+                  </div>
+                </div>
+              </div>
+            </div>
 
+            
+            <!-- Recent Activity -->
+            <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+              <div style="padding: 25px;">
+                <h4 style="margin: 0 0 20px 0; font-size: 1rem; font-weight: 700; color: #1e293b; letter-spacing: 0.5px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9;">
+                  <i class="fas fa-clock-rotate-left" style="margin-right: 8px; color: #3b82f6;"></i>RECENT ACTIVITY
+                </h4>
+                <div id="recentActivity" style="overflow-y: auto; max-height: 400px;">
+                  <!-- Recent activity will be loaded here -->
+                </div>
+              </div>
+            </div>
 
         </div>
 
         <!-- RIGHT COLUMN -->
         <div style="display: flex; flex-direction: column; gap: 24px;">
           
-          <!-- Status Distribution -->
-          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
-            <div style="padding: 30px;">
-              <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
-                Status Distribution
+          <!-- Distribution Pie Chart -->
+          <div class="queue-card" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border: none; box-shadow: 0 8px 20px rgba(30, 58, 138, 0.25); height: 400px;">
+            <div style="padding: 30px; color: white; display: flex; flex-direction: column; height: 100%;">
+              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.3px;">
+                <i class="fas fa-chart-pie" style="margin-right: 10px;"></i>Distribution
               </h3>
-              <div style="height: 350px; position: relative; display: flex; align-items: center; justify-content: center;">
+              <div style="flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0;">
                 <canvas id="departmentPieChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Volume Bar Chart -->
+          <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); height: 400px;">
+            <div style="padding: 30px; display: flex; flex-direction: column; height: 100%;">
+              <h3 style="margin: 0 0 20px 0; font-size: 1.15rem; font-weight: 700; color: #1e293b; letter-spacing: 0.3px;">
+                <i class="fas fa-chart-bar" style="margin-right: 10px; color: #3b82f6;"></i>Volume
+              </h3>
+              <div style="flex: 1; position: relative; min-height: 0;">
+                <canvas id="departmentVolumeChart"></canvas>
               </div>
             </div>
           </div>
@@ -975,7 +1011,39 @@
       return mutedQueues.has(queueId);
     }
 
+    // Load recent activity
+    async function loadRecentActivity() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/activity/${adminSession.department}`);
+        if (response.ok) {
+          const activities = await response.json();
+          displayRecentActivity(activities);
+        }
+      } catch (error) {
+        console.error('Error loading recent activity:', error);
+      }
+    }
 
+    // Display recent activity
+    function displayRecentActivity(activities) {
+      const activityContainer = document.getElementById('recentActivity');
+      
+      if (activities.length === 0) {
+        activityContainer.innerHTML = '<p class="text-muted">No recent activity</p>';
+        return;
+      }
+
+      activityContainer.innerHTML = activities.map(activity => `
+        <div class="queue-item">
+          <div class="queue-details">
+            <div class="queue-info">
+              <div class="queue-person">${activity.number} - ${activity.person}</div>
+              <div class="queue-meta">Completed: ${activity.completedAt}</div>
+            </div>
+          </div>
+        </div>
+      `).slice(0, 5).join('');
+    }
 
     // Refresh queue
     function refreshQueue() {
@@ -984,75 +1052,54 @@
     }
 
     // Initialize charts
+    let volumeChart = null;
     let performanceChart = null;
     let departmentPieChart = null;
-    let miniChart1 = null;
-    let miniChart2 = null;
-    let miniChart3 = null;
-    let miniChart4 = null;
     
     function initializeVisualizationCharts() {
       // Professional Enterprise Color Scheme: Navy Blue (#1e3a8a), Blue (#3b82f6), Gray (#64748b)
       
-      // 1. Performance Line Chart - Multi-line
+      // 1. Performance Line Chart
       const perfCtx = document.getElementById('performanceChart');
       if (perfCtx) {
         const ctx2d = perfCtx.getContext('2d');
         
+        const gradientCompleted = ctx2d.createLinearGradient(0, 0, 0, 280);
+        gradientCompleted.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+        gradientCompleted.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+        
+        const gradientQueue = ctx2d.createLinearGradient(0, 0, 0, 280);
+        gradientQueue.addColorStop(0, 'rgba(245, 158, 11, 0.3)');
+        gradientQueue.addColorStop(1, 'rgba(245, 158, 11, 0.0)');
+        
         performanceChart = new Chart(ctx2d, {
           type: 'line',
           data: {
-            labels: ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+            labels: ['8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM'],
             datasets: [{
-              label: 'Approved',
-              data: [45, 88, 145, 192, 225, 352],
+              label: 'Completed',
+              data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#10b981',
-              backgroundColor: 'transparent',
+              backgroundColor: gradientCompleted,
               borderWidth: 3,
-              fill: false,
+              fill: true,
               tension: 0.4,
-              pointRadius: 4,
-              pointHoverRadius: 7,
+              pointRadius: 5,
+              pointHoverRadius: 8,
               pointBackgroundColor: '#10b981',
               pointBorderColor: '#fff',
               pointBorderWidth: 2
             }, {
-              label: 'Needs Revision',
-              data: [85, 125, 168, 248, 395, 575],
-              borderColor: '#ef4444',
-              backgroundColor: 'transparent',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointRadius: 4,
-              pointHoverRadius: 7,
-              pointBackgroundColor: '#ef4444',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2
-            }, {
-              label: 'Pending Review',
-              data: [35, 52, 68, 88, 112, 145],
+              label: 'Active',
+              data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#f59e0b',
-              backgroundColor: 'transparent',
+              backgroundColor: gradientQueue,
               borderWidth: 3,
-              fill: false,
+              fill: true,
               tension: 0.4,
-              pointRadius: 4,
-              pointHoverRadius: 7,
+              pointRadius: 5,
+              pointHoverRadius: 8,
               pointBackgroundColor: '#f59e0b',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2
-            }, {
-              label: 'Total Applications',
-              data: [165, 265, 381, 528, 732, 960],
-              borderColor: '#3b82f6',
-              backgroundColor: 'transparent',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointRadius: 4,
-              pointHoverRadius: 7,
-              pointBackgroundColor: '#3b82f6',
               pointBorderColor: '#fff',
               pointBorderWidth: 2
             }]
@@ -1072,21 +1119,7 @@
               }
             },
             plugins: {
-              legend: { 
-                display: true,
-                position: 'bottom',
-                labels: {
-                  padding: 15,
-                  font: { 
-                    size: 11.5, 
-                    weight: '600',
-                    family: "'Inter', sans-serif"
-                  },
-                  color: '#64748b',
-                  usePointStyle: true,
-                  pointStyle: 'circle'
-                }
-              },
+              legend: { display: false },
               tooltip: {
                 backgroundColor: 'rgba(255, 255, 255, 0.98)',
                 titleColor: '#1e293b',
@@ -1105,20 +1138,20 @@
               x: {
                 grid: { display: false, drawBorder: false },
                 ticks: { 
-                  color: '#64748b', 
-                  font: { size: 11.5, weight: '600' },
+                  color: 'rgba(255, 255, 255, 0.85)', 
+                  font: { size: 11, weight: '600' },
                   padding: 8
                 }
               },
               y: {
                 beginAtZero: true,
                 grid: { 
-                  color: '#f1f5f9', 
+                  color: 'rgba(255, 255, 255, 0.1)', 
                   drawBorder: false
                 },
                 ticks: { 
-                  color: '#64748b', 
-                  font: { size: 10.5, weight: '600' }, 
+                  color: 'rgba(255, 255, 255, 0.75)', 
+                  font: { size: 10, weight: '600' }, 
                   precision: 0,
                   padding: 8
                 }
@@ -1128,30 +1161,30 @@
         });
       }
       
-      // 2. Department Pie Chart - Donut style with updated colors
+      // 2. Department Pie Chart - Enterprise colors only
       const pieCtx = document.getElementById('departmentPieChart');
       if (pieCtx) {
         departmentPieChart = new Chart(pieCtx.getContext('2d'), {
-          type: 'doughnut',
+          type: 'pie',
           data: {
-            labels: ['Approved', 'Needs Revision', 'Pending'],
+            labels: ['Dean\'s Office', 'IE Dept', 'CPE Dept', 'ECE Dept'],
             datasets: [{
-              data: [352, 575, 33],
+              data: [0, 0, 0, 0],
               backgroundColor: [
-                '#10b981',  // Green for Approved
-                '#f59e0b',  // Orange for Needs Revision
-                '#3b82f6'   // Blue for Pending
+                '#1e3a8a',  // Navy
+                '#3b82f6',  // Blue
+                '#60a5fa',  // Light Blue
+                '#93c5fd'   // Lighter Blue
               ],
               borderColor: '#ffffff',
               borderWidth: 4,
-              hoverOffset: 8,
+              hoverOffset: 12,
               hoverBorderWidth: 5
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '70%',
             animation: {
               animateRotate: true,
               animateScale: true,
@@ -1162,13 +1195,13 @@
               legend: {
                 position: 'bottom',
                 labels: {
-                  padding: 20,
+                  padding: 15,
                   font: { 
-                    size: 13, 
+                    size: 11.5, 
                     weight: '600',
                     family: "'Inter', sans-serif"
                   },
-                  color: '#1e293b',
+                  color: 'rgba(255, 255, 255, 0.95)',
                   usePointStyle: true,
                   pointStyle: 'circle',
                   generateLabels: function(chart) {
@@ -1205,112 +1238,69 @@
         });
       }
       
-      // Mini Charts for Stat Cards
-      // Mini Chart 1 - Simple bars
-      const mini1 = document.getElementById('miniChart1');
-      if (mini1) {
-        miniChart1 = new Chart(mini1.getContext('2d'), {
+      // 3. Volume Bar Chart - Professional with blue accent
+      const volCtx = document.getElementById('departmentVolumeChart');
+      if (volCtx) {
+        volumeChart = new Chart(volCtx.getContext('2d'), {
           type: 'bar',
           data: {
-            labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+            labels: ['Dean\'s Office', 'IE Department', 'CPE Department', 'ECE Department'],
             datasets: [{
-              data: [35, 50, 65, 80, 95, 110],
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
-              borderRadius: 4,
-              barThickness: 8
+              label: 'Total Queues',
+              data: [0, 0, 0, 0],
+              backgroundColor: '#3b82f6',
+              borderColor: '#1e3a8a',
+              borderWidth: 0,
+              borderRadius: 8,
+              borderSkipped: false,
+              barThickness: 40
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            animation: {
+              duration: 1500,
+              easing: 'easeOutBounce',
+              delay: (context) => {
+                return context.dataIndex * 150;
+              }
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: 'rgba(30, 58, 138, 0.95)',
+                titleColor: '#ffffff',
+                bodyColor: '#ffffff',
+                borderWidth: 0,
+                padding: 12,
+                titleFont: { size: 13, weight: '600' },
+                bodyFont: { size: 12, weight: '500' },
+                displayColors: false
+              }
+            },
             scales: {
-              x: { display: false },
-              y: { display: false, beginAtZero: true }
-            }
-          }
-        });
-      }
-
-      // Mini Chart 2 - Line chart
-      const mini2 = document.getElementById('miniChart2');
-      if (mini2) {
-        miniChart2 = new Chart(mini2.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
-            datasets: [{
-              data: [20, 35, 28, 45, 33],
-              borderColor: 'rgba(255, 255, 255, 0.8)',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-              x: { display: false },
-              y: { display: false, beginAtZero: true }
-            }
-          }
-        });
-      }
-
-      // Mini Chart 3 - Bars
-      const mini3 = document.getElementById('miniChart3');
-      if (mini3) {
-        miniChart3 = new Chart(mini3.getContext('2d'), {
-          type: 'bar',
-          data: {
-            labels: ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
-            datasets: [{
-              data: [45, 60, 80, 95, 110, 125],
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
-              borderRadius: 4,
-              barThickness: 8
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-              x: { display: false },
-              y: { display: false, beginAtZero: true }
-            }
-          }
-        });
-      }
-
-      // Mini Chart 4 - Line chart
-      const mini4 = document.getElementById('miniChart4');
-      if (mini4) {
-        miniChart4 = new Chart(mini4.getContext('2d'), {
-          type: 'line',
-          data: {
-            labels: ['Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
-            datasets: [{
-              data: [85, 72, 68, 55, 48],
-              borderColor: 'rgba(255, 255, 255, 0.8)',
-              backgroundColor: 'rgba(255, 255, 255, 0.1)',
-              borderWidth: 2,
-              fill: true,
-              tension: 0.4,
-              pointRadius: 0
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: { enabled: false } },
-            scales: {
-              x: { display: false },
-              y: { display: false, beginAtZero: true }
+              x: {
+                grid: { display: false, drawBorder: false },
+                ticks: { 
+                  color: '#1e293b', 
+                  font: { size: 11.5, weight: '600' },
+                  padding: 10
+                }
+              },
+              y: {
+                beginAtZero: true,
+                grid: { 
+                  color: '#e5e7eb', 
+                  drawBorder: false
+                },
+                ticks: { 
+                  color: '#64748b', 
+                  font: { size: 10.5, weight: '600' }, 
+                  precision: 0,
+                  padding: 8
+                }
+              }
             }
           }
         });
@@ -1354,29 +1344,53 @@
         
         const statTotal = document.getElementById('statTotalToday');
         const statActive = document.getElementById('statActiveNow');
-        const statCompleted = document.getElementById('statCompleted');
-        const statAvgWait = document.getElementById('statAvgWait');
+        if (statTotal) statTotal.textContent = totalToday;
+        if (statActive) statActive.textContent = activeNow;
         
-        if (statTotal) animateValue('statTotalToday', 0, totalToday, 1500);
-        if (statActive) animateValue('statActiveNow', 0, activeNow, 1500);
-        
-        // Update completed count
-        const totalCompleted = completedData.reduce((a,b) => a+b, 0);
-        if (statCompleted) animateValue('statCompleted', 0, totalCompleted, 1500);
-        
-        // Calculate average wait (dummy data for now)
-        if (statAvgWait) statAvgWait.textContent = Math.floor(Math.random() * 30) + 5;
+        if (volumeChart) {
+          volumeChart.data.datasets[0].data = volumeData;
+          volumeChart.update('none');
+        }
         
         if (departmentPieChart) {
-          // Update with status distribution (using dummy data based on totals)
-          const approved = Math.floor(totalCompleted * 0.6);
-          const needsRevision = Math.floor(totalToday * 0.3);
-          const pending = activeNow;
-          departmentPieChart.data.datasets[0].data = [approved, needsRevision, pending];
+          departmentPieChart.data.datasets[0].data = volumeData;
           departmentPieChart.update('none');
         }
         
-        // Performance chart uses static historical data, no need to update
+        if (performanceChart) {
+          const currentHour = new Date().getHours();
+          const startHour = 8;
+          const hoursElapsed = Math.max(0, Math.min(currentHour - startHour + 1, 10));
+          
+          const completedHourly = Array(10).fill(0);
+          const queueHourly = Array(10).fill(0);
+          
+          const totalCompleted = completedData.reduce((a,b) => a+b, 0);
+          const totalQueue = currentData.reduce((a,b) => a+b, 0);
+          
+          if (hoursElapsed > 0 && totalCompleted > 0) {
+            const avgPerHour = totalCompleted / hoursElapsed;
+            for (let i = 0; i < hoursElapsed; i++) {
+              const variation = 0.7 + (Math.random() * 0.6);
+              completedHourly[i] = Math.max(0, Math.round(avgPerHour * variation));
+            }
+            const sum = completedHourly.reduce((a,b) => a+b, 0);
+            if (sum > 0) {
+              const factor = totalCompleted / sum;
+              for (let i = 0; i < hoursElapsed; i++) {
+                completedHourly[i] = Math.round(completedHourly[i] * factor);
+              }
+            }
+          }
+          
+          if (hoursElapsed > 0) {
+            queueHourly[hoursElapsed - 1] = totalQueue;
+          }
+          
+          performanceChart.data.datasets[0].data = completedHourly;
+          performanceChart.data.datasets[1].data = queueHourly;
+          performanceChart.update('none');
+        }
         
       } catch (error) {
         console.log('Error updating charts:', error);
