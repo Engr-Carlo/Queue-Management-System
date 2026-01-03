@@ -1290,31 +1290,48 @@
     async function updateVisualizationCharts() {
       try {
         const departments = [
-          { key: 'dean', filter: 'dean', index: 0 },
-          { key: 'ie', filter: 'ie-chair', index: 1 },
-          { key: 'cpe', filter: 'cpe-chair', index: 2 },
-          { key: 'ece', filter: 'ece-chair', index: 3 }
+          { key: 'dean', filter: 'dean', index: 0, label: 'Dean' },
+          { key: 'ie', filter: 'ie-chair', index: 1, label: 'IE' },
+          { key: 'cpe', filter: 'cpe-chair', index: 2, label: 'CPE' },
+          { key: 'ece', filter: 'ece-chair', index: 3, label: 'ECE' }
         ];
         
         const volumeData = [0, 0, 0, 0];
         const completedData = [0, 0, 0, 0];
-        const currentData = [0, 0, 0, 0];
+        const waitingData = [0, 0, 0, 0];
+        const calledData = [0, 0, 0, 0];
         let totalToday = 0;
         let activeNow = 0;
+        let totalCompleted = 0;
+        let totalWaiting = 0;
+        let totalCalled = 0;
         
+        // Fetch actual queue data from each department (same as queue table)
         for (const dept of departments) {
           try {
-            const response = await fetch(`${API_BASE_URL}/admin/stats/${dept.filter}`);
+            const response = await fetch(`${API_BASE_URL}/admin/queue/${dept.filter}`);
             if (response.ok) {
-              const stats = await response.json();
-              volumeData[dept.index] = stats.totalToday || 0;
-              completedData[dept.index] = stats.completed || 0;
-              currentData[dept.index] = stats.currentQueue || 0;
-              totalToday += stats.totalToday || 0;
-              activeNow += stats.currentQueue || 0;
+              const queues = await response.json();
+              
+              // Count queues by status
+              const total = queues.length;
+              const completed = queues.filter(q => q.status === 'completed').length;
+              const waiting = queues.filter(q => q.status === 'waiting').length;
+              const called = queues.filter(q => q.status === 'called').length;
+              
+              volumeData[dept.index] = total;
+              completedData[dept.index] = completed;
+              waitingData[dept.index] = waiting;
+              calledData[dept.index] = called;
+              
+              totalToday += total;
+              totalCompleted += completed;
+              totalWaiting += waiting;
+              totalCalled += called;
+              activeNow += waiting + called; // Active = waiting + called
             }
           } catch (error) {
-            console.log(`Error fetching stats for ${dept.key}:`, error);
+            console.log(`Error fetching queue for ${dept.key}:`, error);
           }
         }
         
@@ -1322,51 +1339,26 @@
         const statTotal = document.getElementById('statTotalToday');
         const statActive = document.getElementById('statActiveNow');
         const statCompleted = document.getElementById('statCompleted');
-        const totalCompleted = completedData.reduce((a,b) => a+b, 0);
         
         if (statTotal) animateValue('statTotalToday', 0, totalToday, 1500);
         if (statActive) animateValue('statActiveNow', 0, activeNow, 1500);
         if (statCompleted) animateValue('statCompleted', 0, totalCompleted, 1500);
         
-        // Update Department Donut Chart
+        // Update Department Donut Chart - use total volume
         if (departmentDonutChart) {
           departmentDonutChart.data.datasets[0].data = volumeData;
           departmentDonutChart.update('none');
         }
         
-        // Update Department Bar Chart
+        // Update Department Bar Chart - use total volume
         if (departmentBarChart) {
           departmentBarChart.data.datasets[0].data = volumeData;
           departmentBarChart.update('none');
         }
         
-        // Update Status Bar Chart - Fetch status breakdown from all departments
+        // Update Status Bar Chart - use actual counts
         if (statusBarChart) {
-          let waitingCount = 0;
-          let calledCount = 0;
-          let completedCount = 0;
-          
-          for (const dept of departments) {
-            try {
-              const response = await fetch(`${API_BASE_URL}/admin/queue/${dept.filter}`);
-              if (response.ok) {
-                const queues = await response.json();
-                queues.forEach(q => {
-                  if (q.completed) {
-                    completedCount++;
-                  } else if (q.status === 'called') {
-                    calledCount++;
-                  } else {
-                    waitingCount++;
-                  }
-                });
-              }
-            } catch (error) {
-              console.log(`Error fetching queue for ${dept.key}:`, error);
-            }
-          }
-          
-          statusBarChart.data.datasets[0].data = [waitingCount, calledCount, completedCount];
+          statusBarChart.data.datasets[0].data = [totalWaiting, totalCalled, totalCompleted];
           statusBarChart.update('none');
         }
         
@@ -1377,15 +1369,16 @@
           const hoursElapsed = Math.max(0, Math.min(currentHour - startHour + 1, 10));
           
           const completedHourly = Array(10).fill(0);
-          const queueHourly = Array(10).fill(0);
-          const totalQueue = currentData.reduce((a,b) => a+b, 0);
+          const activeHourly = Array(10).fill(0);
           
           if (hoursElapsed > 0 && totalCompleted > 0) {
+            // Distribute completed queues across elapsed hours
             const avgPerHour = totalCompleted / hoursElapsed;
             for (let i = 0; i < hoursElapsed; i++) {
               const variation = 0.7 + (Math.random() * 0.6);
               completedHourly[i] = Math.max(0, Math.round(avgPerHour * variation));
             }
+            // Normalize to match actual total
             const sum = completedHourly.reduce((a,b) => a+b, 0);
             if (sum > 0) {
               const factor = totalCompleted / sum;
@@ -1395,12 +1388,13 @@
             }
           }
           
+          // Show current active queues in the current hour
           if (hoursElapsed > 0) {
-            queueHourly[hoursElapsed - 1] = totalQueue;
+            activeHourly[hoursElapsed - 1] = activeNow;
           }
           
           hourlyActivityChart.data.datasets[0].data = completedHourly;
-          hourlyActivityChart.data.datasets[1].data = queueHourly;
+          hourlyActivityChart.data.datasets[1].data = activeHourly;
           hourlyActivityChart.update('none');
         }
         
