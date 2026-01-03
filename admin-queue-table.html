@@ -525,7 +525,8 @@
         const response = await fetch(`${API_BASE_URL}/admin/queue/${adminSession.department}`);
         if (response.ok) {
           const data = await response.json();
-          allQueues = data.sort((a, b) => new Date(b.date) - new Date(a.date));
+          // Sort by earliest first (first-come-first-serve)
+          allQueues = data.sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
           filterQueues();
           updateStats();
         } else {
@@ -551,7 +552,12 @@
 
       // Filter by status
       if (currentFilter !== 'all') {
-        filtered = filtered.filter(q => q.status === currentFilter);
+        if (currentFilter === 'waiting') {
+          // Show both waiting and called queues in the waiting filter
+          filtered = filtered.filter(q => q.status === 'waiting' || q.status === 'called');
+        } else {
+          filtered = filtered.filter(q => q.status === currentFilter);
+        }
       }
 
       // Filter by search

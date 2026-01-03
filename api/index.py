@@ -332,11 +332,12 @@ def get_admin_queue(department):
         person_filter = person_filters.get(department, '%')
         
         # Get ALL queues for this department (including completed)
+        # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
             SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
             FROM queue 
             WHERE person LIKE %s
-            ORDER BY id DESC
+            ORDER BY created_at ASC, id ASC
         """, (person_filter,))
         
         rows = cur.fetchall()
