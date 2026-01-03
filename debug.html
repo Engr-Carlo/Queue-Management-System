@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug API</title>
+  <script src="config.js"></script>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #00ff00;
+    }
+    .test {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      background: #222;
+    }
+    .success { border-color: #00ff00; }
+    .error { border-color: #ff0000; color: #ff0000; }
+    button {
+      padding: 10px 20px;
+      background: #00ff00;
+      color: #000;
+      border: none;
+      cursor: pointer;
+      margin: 5px;
+    }
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+  <h1>API Debug Page</h1>
+  
+  <button onclick="testDB()">Test Database Connection</button>
+  <button onclick="testQueue()">Test Queue Endpoint</button>
+  <button onclick="testActivity()">Test Activity Endpoint</button>
+  <button onclick="testRawQuery()">Test Raw Query</button>
+  
+  <div id="results"></div>
+
+  <script>
+    const API_BASE_URL = window.API_BASE_URL || '/api';
+    const results = document.getElementById('results');
+
+    async function testDB() {
+      addResult('Testing database connection...');
+      try {
+        const response = await fetch(`${API_BASE_URL}/debug/db`);
+        const data = await response.json();
+        addResult(`DB Test: ${response.status}`, response.ok, data);
+      } catch (error) {
+        addResult('DB Test FAILED', false, error.message);
+      }
+    }
+
+    async function testQueue() {
+      addResult('Testing queue endpoint...');
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/queue/dean`);
+        const text = await response.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+        addResult(`Queue Test: ${response.status}`, response.ok, data);
+      } catch (error) {
+        addResult('Queue Test FAILED', false, error.message);
+      }
+    }
+
+    async function testActivity() {
+      addResult('Testing activity endpoint...');
+      try {
+        const response = await fetch(`${API_BASE_URL}/admin/activity/dean`);
+        const text = await response.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = text;
+        }
+        addResult(`Activity Test: ${response.status}`, response.ok, data);
+      } catch (error) {
+        addResult('Activity Test FAILED', false, error.message);
+      }
+    }
+
+    async function testRawQuery() {
+      addResult('Testing raw query...');
+      try {
+        const response = await fetch(`${API_BASE_URL}/debug/query`);
+        const data = await response.json();
+        addResult(`Raw Query Test: ${response.status}`, response.ok, data);
+      } catch (error) {
+        addResult('Raw Query Test FAILED', false, error.message);
+      }
+    }
+
+    function addResult(title, success, data) {
+      const div = document.createElement('div');
+      div.className = `test ${success ? 'success' : 'error'}`;
+      div.innerHTML = `
+        <h3>${title}</h3>
+        <pre>${JSON.stringify(data, null, 2)}</pre>
+      `;
+      results.appendChild(div);
+    }
+  </script>
+</body>
+</html>

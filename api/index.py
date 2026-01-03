@@ -362,7 +362,61 @@ def get_admin_queue(department):
         print(f"Error in get_queue: {str(e)}")
         import traceback
         traceback.print_exc()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+# DEBUG ENDPOINTS
+@app.route('/debug/db')
+def debug_db():
+    """Test database connection"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"success": False, "error": "Connection failed"}), 500
+        
+        cur = conn.cursor()
+        cur.execute("SELECT version()")
+        version = cur.fetchone()
+        conn.close()
+        
+        return jsonify({"success": True, "postgres_version": version[0]})
+    except Exception as e:
+        import traceback
+        return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()}), 500
+
+@app.route('/debug/query')
+def debug_query():
+    """Test raw query on queue table"""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"success": False, "error": "Connection failed"}), 500
+        
+        cur = conn.cursor()
+        
+        # Get table columns
+        cur.execute("""
+            SELECT column_name, data_type 
+            FROM information_schema.columns 
+            WHERE table_name = 'queue'
+            ORDER BY ordinal_position
+        """)
+        columns = cur.fetchall()
+        
+        # Get sample data
+        cur.execute("SELECT * FROM queue LIMIT 3")
+        rows = cur.fetchall()
+        
+        conn.close()
+        
+        return jsonify({
+            "success": True,
+            "columns": [{"name": c[0], "type": c[1]} for c in columns],
+            "sample_data": [str(row) for row in rows],
+            "row_count": len(rows)
+        })
+    except Exception as e:
+        import traceback
+        return jsonify({"success": False, "error": str(e), "traceback": traceback.format_exc()}), 500
 
 @app.route('/admin/stats/<department>')
 def get_admin_stats(department):
