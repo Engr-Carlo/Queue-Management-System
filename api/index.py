@@ -331,11 +331,11 @@ def get_admin_queue(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get ALL queues for this department from today (including completed)
+        # Get ALL queues for this department (including completed)
         cur.execute("""
             SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
             FROM queue 
-            WHERE person LIKE %s AND date = CURRENT_DATE
+            WHERE person LIKE %s
             ORDER BY id DESC
         """, (person_filter,))
         
