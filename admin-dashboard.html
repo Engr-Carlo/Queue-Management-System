@@ -525,26 +525,35 @@
       </div>
 
       <!-- Analytics Grid -->
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px;">
         <!-- LEFT COLUMN - Hourly Queue Activity Line Chart -->
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
-          <div style="padding: 30px;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
-              <i class="fas fa-chart-line" style="margin-right: 10px; color: #3b82f6;"></i>Hourly Queue Activity
-            </h3>
-            <div style="height: 380px; position: relative;">
+        <div class="queue-card" style="background: linear-gradient(to bottom, #ffffff, #f8fafc); border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08); border-radius: 20px; overflow: hidden;">
+          <div style="padding: 24px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                  <i class="fas fa-chart-line" style="color: white; font-size: 0.85rem;"></i>
+                </div>
+                Hourly Queue Activity
+              </h3>
+              <span style="background: #f1f5f9; color: #64748b; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">Live Data</span>
+            </div>
+            <div style="height: 260px; position: relative;">
               <canvas id="hourlyActivityChart"></canvas>
             </div>
           </div>
         </div>
 
         <!-- RIGHT COLUMN - Department Distribution Donut -->
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
-          <div style="padding: 30px;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
-              <i class="fas fa-chart-pie" style="margin-right: 10px; color: #3b82f6;"></i>Department Distribution
-            </h3>
-            <div style="height: 380px; position: relative; display: flex; align-items: center; justify-content: center;">
+        <div class="queue-card" style="background: linear-gradient(to bottom, #ffffff, #f8fafc); border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08); border-radius: 20px; overflow: hidden;">
+          <div style="padding: 24px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+              <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                <i class="fas fa-chart-pie" style="color: white; font-size: 0.85rem;"></i>
+              </div>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Department Split</h3>
+            </div>
+            <div style="height: 260px; position: relative; display: flex; align-items: center; justify-content: center;">
               <canvas id="departmentDonutChart"></canvas>
             </div>
           </div>
@@ -552,26 +561,32 @@
       </div>
 
       <!-- Second Row - Bar Charts -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
         <!-- Queue Status Breakdown -->
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
-          <div style="padding: 30px;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
-              <i class="fas fa-list-check" style="margin-right: 10px; color: #3b82f6;"></i>Queue Status Breakdown
-            </h3>
-            <div style="height: 300px; position: relative;">
+        <div class="queue-card" style="background: linear-gradient(to bottom, #ffffff, #f8fafc); border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08); border-radius: 20px; overflow: hidden;">
+          <div style="padding: 24px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+              <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                <i class="fas fa-list-check" style="color: white; font-size: 0.85rem;"></i>
+              </div>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Status Breakdown</h3>
+            </div>
+            <div style="height: 220px; position: relative;">
               <canvas id="statusBarChart"></canvas>
             </div>
           </div>
         </div>
 
         <!-- Department Volume Comparison -->
-        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-radius: 16px;">
-          <div style="padding: 30px;">
-            <h3 style="margin: 0 0 25px 0; font-size: 1.1rem; font-weight: 700; color: #1e293b;">
-              <i class="fas fa-chart-column" style="margin-right: 10px; color: #3b82f6;"></i>Department Volume
-            </h3>
-            <div style="height: 300px; position: relative;">
+        <div class="queue-card" style="background: linear-gradient(to bottom, #ffffff, #f8fafc); border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.08); border-radius: 20px; overflow: hidden;">
+          <div style="padding: 24px;">
+            <div style="display: flex; align-items: center; margin-bottom: 20px;">
+              <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
+                <i class="fas fa-chart-column" style="color: white; font-size: 0.85rem;"></i>
+              </div>
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1e293b;">Department Volume</h3>
+            </div>
+            <div style="height: 220px; position: relative;">
               <canvas id="departmentBarChart"></canvas>
             </div>
           </div>
@@ -980,7 +995,18 @@
       // 1. Hourly Queue Activity Line Chart
       const hourlyCtx = document.getElementById('hourlyActivityChart');
       if (hourlyCtx) {
-        hourlyActivityChart = new Chart(hourlyCtx.getContext('2d'), {
+        const ctx = hourlyCtx.getContext('2d');
+        
+        // Create gradients
+        const gradientGreen = ctx.createLinearGradient(0, 0, 0, 260);
+        gradientGreen.addColorStop(0, 'rgba(16, 185, 129, 0.25)');
+        gradientGreen.addColorStop(1, 'rgba(16, 185, 129, 0.01)');
+        
+        const gradientBlue = ctx.createLinearGradient(0, 0, 0, 260);
+        gradientBlue.addColorStop(0, 'rgba(59, 130, 246, 0.25)');
+        gradientBlue.addColorStop(1, 'rgba(59, 130, 246, 0.01)');
+        
+        hourlyActivityChart = new Chart(ctx, {
           type: 'line',
           data: {
             labels: ['8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM'],
@@ -988,28 +1014,30 @@
               label: 'Completed',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              backgroundColor: gradientGreen,
               borderWidth: 3,
               fill: true,
               tension: 0.4,
-              pointRadius: 4,
-              pointHoverRadius: 7,
+              pointRadius: 5,
+              pointHoverRadius: 8,
               pointBackgroundColor: '#10b981',
               pointBorderColor: '#fff',
-              pointBorderWidth: 2
+              pointBorderWidth: 3,
+              pointHoverBorderWidth: 3
             }, {
               label: 'In Queue',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
               borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              backgroundColor: gradientBlue,
               borderWidth: 3,
               fill: true,
               tension: 0.4,
-              pointRadius: 4,
-              pointHoverRadius: 7,
+              pointRadius: 5,
+              pointHoverRadius: 8,
               pointBackgroundColor: '#3b82f6',
               pointBorderColor: '#fff',
-              pointBorderWidth: 2
+              pointBorderWidth: 3,
+              pointHoverBorderWidth: 3
             }]
           },
           options: {
@@ -1069,16 +1097,22 @@
             labels: ['Dean\'s Office', 'IE Dept', 'CPE Dept', 'ECE Dept'],
             datasets: [{
               data: [0, 0, 0, 0],
-              backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+              backgroundColor: [
+                '#3b82f6',  // Blue
+                '#10b981',  // Green
+                '#f59e0b',  // Orange
+                '#ef4444'   // Red
+              ],
               borderColor: '#ffffff',
-              borderWidth: 3,
-              hoverOffset: 10
+              borderWidth: 4,
+              hoverOffset: 15,
+              hoverBorderWidth: 5
             }]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
-            cutout: '65%',
+            cutout: '70%',
             animation: {
               animateRotate: true,
               animateScale: true,
@@ -1131,16 +1165,29 @@
       // 3. Queue Status Breakdown Bar Chart
       const statusCtx = document.getElementById('statusBarChart');
       if (statusCtx) {
-        statusBarChart = new Chart(statusCtx.getContext('2d'), {
+        const ctx = statusCtx.getContext('2d');
+        
+        const createGradient = (color1, color2) => {
+          const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+          gradient.addColorStop(0, color1);
+          gradient.addColorStop(1, color2);
+          return gradient;
+        };
+        
+        statusBarChart = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: ['Waiting', 'Called', 'Completed'],
             datasets: [{
               label: 'Queue Count',
               data: [0, 0, 0],
-              backgroundColor: ['#3b82f6', '#f59e0b', '#10b981'],
-              borderRadius: 8,
-              barThickness: 60
+              backgroundColor: [
+                createGradient('#60a5fa', '#3b82f6'),
+                createGradient('#fbbf24', '#f59e0b'),
+                createGradient('#34d399', '#10b981')
+              ],
+              borderRadius: 10,
+              barThickness: 55
             }]
           },
           options: {
@@ -1182,16 +1229,21 @@
       // 4. Department Volume Bar Chart
       const deptBarCtx = document.getElementById('departmentBarChart');
       if (deptBarCtx) {
-        departmentBarChart = new Chart(deptBarCtx.getContext('2d'), {
+        const ctx = deptBarCtx.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+        gradient.addColorStop(0, '#8b5cf6');
+        gradient.addColorStop(1, '#6366f1');
+        
+        departmentBarChart = new Chart(ctx, {
           type: 'bar',
           data: {
             labels: ['Dean', 'IE', 'CPE', 'ECE'],
             datasets: [{
               label: 'Total Queues',
               data: [0, 0, 0, 0],
-              backgroundColor: '#3b82f6',
-              borderRadius: 8,
-              barThickness: 50
+              backgroundColor: gradient,
+              borderRadius: 10,
+              barThickness: 48
             }]
           },
           options: {
