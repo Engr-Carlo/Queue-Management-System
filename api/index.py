@@ -360,7 +360,6 @@ def get_admin_queue(department):
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
-        return jsonify({"error": str(e)}), 500
 
 @app.route('/admin/stats/<department>')
 def get_admin_stats(department):
