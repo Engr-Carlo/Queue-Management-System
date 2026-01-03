@@ -1007,10 +1007,10 @@
         hourlyActivityChart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM'],
+            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
             datasets: [{
               label: 'Completed',
-              data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              data: [0, 0, 0, 0, 0, 0, 0],
               borderColor: '#10b981',
               backgroundColor: gradientGreen,
               borderWidth: 3,
@@ -1024,7 +1024,7 @@
               pointHoverBorderWidth: 3
             }, {
               label: 'Total Queues',
-              data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+              data: [0, 0, 0, 0, 0, 0, 0],
               borderColor: '#3b82f6',
               backgroundColor: gradientBlue,
               borderWidth: 3,
@@ -1345,66 +1345,46 @@
           statusBarChart.update('none');
         }
         
-        // Update Hourly Activity Chart - Use REAL timestamps from current department only
+        // Update Weekly Activity Chart - Use REAL timestamps from current department only
         if (hourlyActivityChart) {
-          const hourlyCompleted = Array(10).fill(0);
-          const hourlyTotal = Array(10).fill(0);
+          const weeklyCompleted = Array(7).fill(0);
+          const weeklyTotal = Array(7).fill(0);
           
-          console.log('Total queues for hourly chart:', allQueues.length);
+          console.log('Total queues for weekly chart:', allQueues.length);
           
           // Process actual queue timestamps from current department
           allQueues.forEach((q, index) => {
-            // For Total Queues: use creation time
-            if (q.time) {
-              const timeMatch = q.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-              if (timeMatch) {
-                let hour = parseInt(timeMatch[1]);
-                const minutes = parseInt(timeMatch[2]);
-                const period = timeMatch[3].toUpperCase();
-                
-                // Convert to 24-hour format
-                if (period === 'PM' && hour !== 12) {
-                  hour += 12;
-                } else if (period === 'AM' && hour === 12) {
-                  hour = 0;
-                }
-                
-                // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
-                if (hour >= 8 && hour <= 17) {
-                  const hourIndex = hour - 8;
-                  // Count ALL queues created in this hour (shows peak hours)
-                  hourlyTotal[hourIndex]++;
-                }
+            // For Total Queues: use creation date
+            if (q.date) {
+              try {
+                const queueDate = new Date(q.date);
+                const dayOfWeek = queueDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+                // Convert to our index (0 = Monday, 6 = Sunday)
+                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                weeklyTotal[dayIndex]++;
+              } catch (e) {
+                console.log('Error parsing date:', q.date);
               }
             }
             
-            // For Completed: use completion time (completed_time for local time)
-            if (q.status === 'completed' && q.completed_time) {
-              const completedTimeMatch = q.completed_time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-              if (completedTimeMatch) {
-                let completedHour = parseInt(completedTimeMatch[1]);
-                const period = completedTimeMatch[3].toUpperCase();
-                
-                // Convert to 24-hour format
-                if (period === 'PM' && completedHour !== 12) {
-                  completedHour += 12;
-                } else if (period === 'AM' && completedHour === 12) {
-                  completedHour = 0;
-                }
-                
-                if (completedHour >= 8 && completedHour <= 17) {
-                  const hourIndex = completedHour - 8;
-                  hourlyCompleted[hourIndex]++;
-                }
+            // For Completed: also use creation date (since we don't have completed_date)
+            if (q.status === 'completed' && q.date) {
+              try {
+                const queueDate = new Date(q.date);
+                const dayOfWeek = queueDate.getDay();
+                const dayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+                weeklyCompleted[dayIndex]++;
+              } catch (e) {
+                console.log('Error parsing completion date:', q.date);
               }
             }
           });
           
-          console.log('Hourly completed:', hourlyCompleted);
-          console.log('Hourly total:', hourlyTotal);
+          console.log('Weekly completed:', weeklyCompleted);
+          console.log('Weekly total:', weeklyTotal);
           
-          hourlyActivityChart.data.datasets[0].data = hourlyCompleted;
-          hourlyActivityChart.data.datasets[1].data = hourlyTotal;
+          hourlyActivityChart.data.datasets[0].data = weeklyCompleted;
+          hourlyActivityChart.data.datasets[1].data = weeklyTotal;
           hourlyActivityChart.update('none');
         }
         
