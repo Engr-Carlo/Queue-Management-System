@@ -310,7 +310,6 @@ def get_admin_queue(department):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_by VARCHAR(255) DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_time VARCHAR(50) DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
@@ -318,6 +317,9 @@ def get_admin_queue(department):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_at TIMESTAMP DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_by VARCHAR(255) DEFAULT NULL")
             conn.commit()
+        except Exception as migration_error:
+            print(f"Migration error (may be normal): {migration_error}")
+            conn.rollback()
         except Exception:
             pass
         
@@ -335,10 +337,10 @@ def get_admin_queue(department):
         # Get ALL queues for this department (including completed)
         # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
-            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at 
+            SELECT id, number, person, date, time, status 
             FROM queue 
             WHERE person LIKE %s
-            ORDER BY created_at ASC, id ASC
+            ORDER BY id ASC
         """, (person_filter,))
         
         rows = cur.fetchall()
@@ -352,12 +354,7 @@ def get_admin_queue(department):
                 "person": row[2],
                 "date": row[3],
                 "time": row[4],
-                "status": row[5],
-                "created_at": row[6].isoformat() if row[6] else None,
-                "is_present": row[7] if len(row) > 7 else False,
-                "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None,
-                "is_muted": row[9] if len(row) > 9 else False,
-                "completed_at": row[10].isoformat() if len(row) > 10 and row[10] else None
+                "status": row[5]
             })
         
         return jsonify(queues)
