@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Queue Management - Admin</title>
+  <link rel="icon" type="image/svg+xml" href="images/favicon-32x32.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
+  <style>
+    body {
+      background: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a1a;
+    }
+
+    .navbar {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      padding: 15px 0;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .navbar-brand {
+      color: white !important;
+      font-weight: 800;
+      font-size: 1.3rem;
+    }
+
+    .nav-tabs {
+      border-bottom: 2px solid #e5e7eb;
+      margin-bottom: 30px;
+    }
+
+    .nav-tabs .nav-link {
+      color: #64748b;
+      font-weight: 600;
+      padding: 12px 24px;
+      border: none;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+    }
+
+    .nav-tabs .nav-link:hover {
+      color: #3b82f6;
+      border-bottom-color: #bfdbfe;
+    }
+
+    .nav-tabs .nav-link.active {
+      color: #3b82f6;
+      background: none;
+      border-bottom-color: #3b82f6;
+    }
+
+    .admin-info {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 0.9rem;
+    }
+
+    .btn-logout {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      padding: 8px 16px;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-logout:hover {
+      background: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+
+    .page-header {
+      background: white;
+      padding: 24px 32px;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      margin-bottom: 24px;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #1e293b;
+      margin: 0;
+    }
+
+    .page-subtitle {
+      color: #64748b;
+      margin: 8px 0 0 0;
+      font-size: 0.95rem;
+    }
+
+    .queue-table-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+    }
+
+    .queue-table {
+      width: 100%;
+      margin: 0;
+    }
+
+    .queue-table thead {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+    }
+
+    .queue-table thead th {
+      padding: 16px;
+      font-weight: 700;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: none;
+      white-space: nowrap;
+    }
+
+    .queue-table tbody tr {
+      border-bottom: 1px solid #f1f5f9;
+      transition: all 0.2s;
+    }
+
+    .queue-table tbody tr:hover {
+      background: #f8fafc;
+    }
+
+    .queue-table tbody td {
+      padding: 16px;
+      vertical-align: middle;
+      font-size: 0.9rem;
+    }
+
+    .queue-number {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #3b82f6;
+    }
+
+    .badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .badge-waiting {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-called {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-serving {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-completed {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-cancelled {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .action-btn {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin: 0 4px;
+    }
+
+    .btn-call {
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: white;
+    }
+
+    .btn-call:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-complete {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+    }
+
+    .btn-complete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-delete {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+    }
+
+    .btn-delete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-secondary-action {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .btn-secondary-action:hover {
+      background: #e2e8f0;
+    }
+
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      border-left: 4px solid #3b82f6;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #1e293b;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 24px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 400px;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #94a3b8;
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+    }
+
+    .filter-btn {
+      padding: 8px 16px;
+      border: 2px solid #e5e7eb;
+      background: white;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+
+    .filter-btn.active {
+      background: #3b82f6;
+      color: white;
+      border-color: #3b82f6;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #94a3b8;
+    }
+
+    .empty-state i {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .time-badge {
+      font-size: 0.8rem;
+      color: #64748b;
+    }
+
+    .refresh-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #dbeafe;
+      color: #1e40af;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .spinning {
+      animation: spin 1s linear infinite;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navigation Bar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container-fluid" style="max-width: 1400px;">
+      <a class="navbar-brand" href="admin-dashboard.html">
+        <img src="images/logo.svg" alt="Logo" style="height: 32px; filter: brightness(0) invert(1); margin-right: 12px;">
+        Queue Management System
+      </a>
+      <div class="d-flex align-items-center gap-3">
+        <span class="admin-info">
+          <i class="fas fa-user-shield"></i> <span id="adminName">Admin</span>
+        </span>
+        <a href="admin-login.html" class="btn-logout">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container-fluid" style="max-width: 1400px; padding: 30px 24px;">
+    
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs">
+      <li class="nav-item">
+        <a class="nav-link active" href="admin-queue-table.html">
+          <i class="fas fa-list"></i> Queue Management
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="admin-dashboard.html">
+          <i class="fas fa-chart-line"></i> Dashboard & Analytics
+        </a>
+      </li>
+    </ul>
+
+    <!-- Stats Summary -->
+    <div class="stats-summary">
+      <div class="stat-card">
+        <div class="stat-label">Total in Queue</div>
+        <div class="stat-value" id="statTotal">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #f59e0b;">
+        <div class="stat-label">Waiting</div>
+        <div class="stat-value" style="color: #f59e0b;" id="statWaiting">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #3b82f6;">
+        <div class="stat-label">Being Served</div>
+        <div class="stat-value" style="color: #3b82f6;" id="statServing">0</div>
+      </div>
+      <div class="stat-card" style="border-left-color: #10b981;">
+        <div class="stat-label">Completed Today</div>
+        <div class="stat-value" style="color: #10b981;" id="statCompleted">0</div>
+      </div>
+    </div>
+
+    <!-- Queue Table -->
+    <div class="queue-table-container">
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <i class="fas fa-search"></i>
+          <input type="text" id="searchInput" placeholder="Search by queue number, person, or department...">
+        </div>
+        <div class="filter-buttons">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="waiting">Waiting</button>
+          <button class="filter-btn" data-filter="called">Called</button>
+          <button class="filter-btn" data-filter="serving">Serving</button>
+          <button class="filter-btn" data-filter="completed">Completed</button>
+        </div>
+        <button class="btn btn-primary" onclick="refreshQueue()" style="margin-left: 16px;">
+          <i class="fas fa-rotate" id="refreshIcon"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Table -->
+      <table class="queue-table">
+        <thead>
+          <tr>
+            <th>Queue #</th>
+            <th>Person/Office</th>
+            <th>Department</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Wait Time</th>
+            <th style="text-align: center;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="queueTableBody">
+          <!-- Rows will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let adminSession = null;
+    let allQueues = [];
+    let currentFilter = 'all';
+    let refreshInterval = null;
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      // Check admin session
+      const session = localStorage.getItem('adminSession');
+      if (session) {
+        adminSession = JSON.parse(session);
+        document.getElementById('adminName').textContent = adminSession.department || 'Admin';
+      } else {
+        window.location.href = 'admin-login.html';
+        return;
+      }
+
+      // Load initial data
+      refreshQueue();
+
+      // Auto-refresh every 3 seconds
+      refreshInterval = setInterval(refreshQueue, 3000);
+
+      // Search functionality
+      document.getElementById('searchInput').addEventListener('input', filterQueues);
+
+      // Filter buttons
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          currentFilter = this.dataset.filter;
+          filterQueues();
+        });
+      });
+    });
+
+    function refreshQueue() {
+      const icon = document.getElementById('refreshIcon');
+      icon.classList.add('spinning');
+
+      fetch(`${API_BASE_URL}/queue`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(response => response.json())
+      .then(data => {
+        allQueues = data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        filterQueues();
+        updateStats();
+        icon.classList.remove('spinning');
+      })
+      .catch(error => {
+        console.error('Error fetching queue:', error);
+        icon.classList.remove('spinning');
+      });
+    }
+
+    function filterQueues() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      
+      let filtered = allQueues;
+
+      // Filter by status
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(q => q.status === currentFilter);
+      }
+
+      // Filter by search
+      if (searchTerm) {
+        filtered = filtered.filter(q => 
+          q.queue_number.toLowerCase().includes(searchTerm) ||
+          q.person_type.toLowerCase().includes(searchTerm) ||
+          (q.person_name && q.person_name.toLowerCase().includes(searchTerm))
+        );
+      }
+
+      renderTable(filtered);
+    }
+
+    function renderTable(queues) {
+      const tbody = document.getElementById('queueTableBody');
+      
+      if (queues.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="empty-state">
+              <i class="fas fa-inbox"></i>
+              <h4>No queues found</h4>
+              <p>Try adjusting your search or filter criteria</p>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = queues.map(queue => `
+        <tr>
+          <td><span class="queue-number">${queue.queue_number}</span></td>
+          <td><strong>${formatPersonType(queue.person_type)}</strong></td>
+          <td>${queue.person_name || '-'}</td>
+          <td><span class="badge badge-${queue.status}">${queue.status.toUpperCase()}</span></td>
+          <td>
+            <div class="time-badge">
+              <i class="fas fa-clock"></i> ${formatTime(queue.created_at)}
+            </div>
+          </td>
+          <td>${calculateWaitTime(queue.created_at)}</td>
+          <td style="text-align: center; white-space: nowrap;">
+            ${getActionButtons(queue)}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function getActionButtons(queue) {
+      const buttons = [];
+      
+      if (queue.status === 'waiting') {
+        buttons.push(`<button class="action-btn btn-call" onclick="callQueue('${queue.queue_number}')"><i class="fas fa-phone"></i> Call</button>`);
+      }
+      
+      if (queue.status === 'called' || queue.status === 'serving') {
+        buttons.push(`<button class="action-btn btn-complete" onclick="completeQueue('${queue.queue_number}')"><i class="fas fa-check"></i> Complete</button>`);
+      }
+      
+      if (queue.status !== 'completed') {
+        buttons.push(`<button class="action-btn btn-delete" onclick="deleteQueue('${queue.queue_number}')"><i class="fas fa-trash"></i> Delete</button>`);
+      }
+
+      return buttons.join(' ');
+    }
+
+    function updateStats() {
+      const total = allQueues.filter(q => q.status !== 'completed' && q.status !== 'cancelled').length;
+      const waiting = allQueues.filter(q => q.status === 'waiting').length;
+      const serving = allQueues.filter(q => q.status === 'serving' || q.status === 'called').length;
+      const completed = allQueues.filter(q => q.status === 'completed').length;
+
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statWaiting').textContent = waiting;
+      document.getElementById('statServing').textContent = serving;
+      document.getElementById('statCompleted').textContent = completed;
+    }
+
+    function callQueue(queueNumber) {
+      if (!confirm(`Call queue ${queueNumber}?`)) return;
+
+      fetch(`${API_BASE_URL}/queue/${queueNumber}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'called',
+          called_at: new Date().toISOString()
+        })
+      })
+      .then(() => refreshQueue())
+      .catch(error => console.error('Error:', error));
+    }
+
+    function completeQueue(queueNumber) {
+      if (!confirm(`Mark queue ${queueNumber} as completed?`)) return;
+
+      fetch(`${API_BASE_URL}/queue/${queueNumber}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+      })
+      .then(() => refreshQueue())
+      .catch(error => console.error('Error:', error));
+    }
+
+    function deleteQueue(queueNumber) {
+      if (!confirm(`Delete queue ${queueNumber}? This cannot be undone.`)) return;
+
+      fetch(`${API_BASE_URL}/queue/${queueNumber}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(() => refreshQueue())
+      .catch(error => console.error('Error:', error));
+    }
+
+    function formatPersonType(type) {
+      const types = {
+        'dean': 'Dean - College of Engineering',
+        'ie-chair': 'Industrial Engineering Chair',
+        'cpe-chair': 'Computer Engineering Chair',
+        'ece-chair': 'Electronics Engineering Chair',
+        'others': 'Other Staff/Faculty'
+      };
+      return types[type] || type;
+    }
+
+    function formatTime(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    }
+
+    function calculateWaitTime(createdAt) {
+      const now = new Date();
+      const created = new Date(createdAt);
+      const diff = Math.floor((now - created) / 1000 / 60);
+      
+      if (diff < 1) return 'Just now';
+      if (diff === 1) return '1 min';
+      if (diff < 60) return `${diff} mins`;
+      
+      const hours = Math.floor(diff / 60);
+      const mins = diff % 60;
+      return `${hours}h ${mins}m`;
+    }
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', function() {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    });
+  </script>
+</body>
+</html>
