@@ -310,6 +310,7 @@ def get_admin_queue(department):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_by VARCHAR(255) DEFAULT NULL")
+            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_time VARCHAR(50) DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
@@ -334,7 +335,7 @@ def get_admin_queue(department):
         # Get ALL queues for this department (including completed)
         # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
-            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at 
+            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted, completed_at, completed_time 
             FROM queue 
             WHERE person LIKE %s
             ORDER BY created_at ASC, id ASC
@@ -356,7 +357,8 @@ def get_admin_queue(department):
                 "is_present": row[7] if len(row) > 7 else False,
                 "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None,
                 "is_muted": row[9] if len(row) > 9 else False,
-                "completed_at": row[10].isoformat() if len(row) > 10 and row[10] else None
+                "completed_at": row[10].isoformat() if len(row) > 10 and row[10] else None,
+                "completed_time": row[11] if len(row) > 11 else None
             })
         
         return jsonify(queues)
@@ -506,12 +508,21 @@ def complete_queue(queue_id):
         data = request.json
         cur = conn.cursor()
         
+        # Get current local time
+        from datetime import datetime
+        import pytz
+        
+        # Use Philippine timezone
+        ph_tz = pytz.timezone('Asia/Manila')
+        local_time = datetime.now(ph_tz)
+        completed_time = local_time.strftime('%I:%M %p')
+        
         # Mark queue as completed (allow from any status)
         cur.execute("""
             UPDATE queue 
-            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
+            SET completed = TRUE, completed_at = NOW(), completed_by = %s, completed_time = %s, status = 'completed', called = TRUE
             WHERE id = %s
-        """, (data.get('completedBy'), queue_id))
+        """, (data.get('completedBy'), completed_time, queue_id))
         
         if cur.rowcount == 0:
             conn.close()

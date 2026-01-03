@@ -1378,14 +1378,24 @@
               }
             }
             
-            // For Completed: use completion time (completed_at)
-            if (q.status === 'completed' && q.completed_at) {
-              const completedTime = new Date(q.completed_at);
-              const completedHour = completedTime.getHours();
-              
-              if (completedHour >= 8 && completedHour <= 17) {
-                const hourIndex = completedHour - 8;
-                hourlyCompleted[hourIndex]++;
+            // For Completed: use completion time (completed_time for local time)
+            if (q.status === 'completed' && q.completed_time) {
+              const completedTimeMatch = q.completed_time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+              if (completedTimeMatch) {
+                let completedHour = parseInt(completedTimeMatch[1]);
+                const period = completedTimeMatch[3].toUpperCase();
+                
+                // Convert to 24-hour format
+                if (period === 'PM' && completedHour !== 12) {
+                  completedHour += 12;
+                } else if (period === 'AM' && completedHour === 12) {
+                  completedHour = 0;
+                }
+                
+                if (completedHour >= 8 && completedHour <= 17) {
+                  const hourIndex = completedHour - 8;
+                  hourlyCompleted[hourIndex]++;
+                }
               }
             }
           });
