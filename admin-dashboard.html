@@ -1351,37 +1351,35 @@
           const hourlyActive = Array(10).fill(0);
           
           console.log('Total queues for hourly chart:', allQueues.length);
-          if (allQueues.length > 0) {
-            console.log('Sample queue object:', allQueues[0]);
-            console.log('All field names:', Object.keys(allQueues[0]));
-          }
           
           // Process actual queue timestamps from current department
           allQueues.forEach((q, index) => {
-            // Try multiple possible field names
-            const timestamp = q.created_at || q.date || q.time;
-            
-            if (index === 0) {
-              console.log('First queue timestamp:', timestamp);
-              console.log('First queue date:', q.date);
-              console.log('First queue time:', q.time);
-              console.log('First queue created_at:', q.created_at);
-            }
-            
-            if (timestamp) {
-              const queueTime = new Date(timestamp);
-              const hour = queueTime.getHours();
-              
-              console.log(`Queue ${index}: timestamp=${timestamp}, parsed hour=${hour}`);
-              
-              // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
-              if (hour >= 8 && hour <= 17) {
-                const hourIndex = hour - 8;
+            // Parse the local time field (e.g., "1:43 PM") instead of UTC created_at
+            if (q.time) {
+              const timeMatch = q.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+              if (timeMatch) {
+                let hour = parseInt(timeMatch[1]);
+                const minutes = parseInt(timeMatch[2]);
+                const period = timeMatch[3].toUpperCase();
                 
-                if (q.status === 'completed') {
-                  hourlyCompleted[hourIndex]++;
-                } else if (q.status === 'waiting' || q.status === 'called') {
-                  hourlyActive[hourIndex]++;
+                // Convert to 24-hour format
+                if (period === 'PM' && hour !== 12) {
+                  hour += 12;
+                } else if (period === 'AM' && hour === 12) {
+                  hour = 0;
+                }
+                
+                console.log(`Queue ${index}: time=${q.time}, parsed hour=${hour}`);
+                
+                // Map to chart hour index (8AM = index 0, 9AM = index 1, etc.)
+                if (hour >= 8 && hour <= 17) {
+                  const hourIndex = hour - 8;
+                  
+                  if (q.status === 'completed') {
+                    hourlyCompleted[hourIndex]++;
+                  } else if (q.status === 'waiting' || q.status === 'called') {
+                    hourlyActive[hourIndex]++;
+                  }
                 }
               }
             }
