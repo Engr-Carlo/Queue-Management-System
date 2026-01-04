@@ -86,6 +86,44 @@ def get_db_connection():
         print(f"Database connection error: {e}")
         return None
 
+def auto_archive_old_queues(conn):
+    """Move queues older than today to archive table"""
+    try:
+        cur = conn.cursor()
+        today = datetime.now().strftime('%B %d, %Y')  # e.g., "January 4, 2026"
+        
+        # Get all queues not from today
+        cur.execute("""
+            SELECT id, number, person, date, time, status, accessed, accessed_at,
+                   completed, completed_at, completed_by, created_at, called, called_at,
+                   called_by, is_present, present_at, is_muted, muted_at, muted_by
+            FROM queue
+            WHERE date != %s
+        """, (today,))
+        
+        old_queues = cur.fetchall()
+        
+        if old_queues:
+            # Insert into archive table
+            for queue in old_queues:
+                cur.execute("""
+                    INSERT INTO archive (id, number, person, date, time, status, accessed, accessed_at,
+                                       completed, completed_at, completed_by, created_at, called, called_at,
+                                       called_by, is_present, present_at, is_muted, muted_at, muted_by, archived_at)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
+                    ON CONFLICT (id) DO NOTHING
+                """, queue)
+            
+            # Delete from queue table
+            cur.execute("DELETE FROM queue WHERE date != %s", (today,))
+            conn.commit()
+            
+            return len(old_queues)
+        return 0
+    except Exception as e:
+        print(f"Auto-archive error: {e}")
+        return 0
+
 @app.route('/')
 def home():
     return jsonify({
@@ -172,7 +210,7 @@ def create_queue():
         data = request.json
         cur = conn.cursor()
         
-        # Create table if not exists
+        # Create tables if not exists
         cur.execute("""
             CREATE TABLE IF NOT EXISTS queue (
                 id VARCHAR(255) PRIMARY KEY,
@@ -195,6 +233,33 @@ def create_queue():
                 is_muted BOOLEAN DEFAULT FALSE,
                 muted_at TIMESTAMP DEFAULT NULL,
                 muted_by VARCHAR(255) DEFAULT NULL
+            )
+        """)
+        
+        # Create archive table with same structure
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS archive (
+                id VARCHAR(255) PRIMARY KEY,
+                number VARCHAR(50),
+                person VARCHAR(255),
+                date VARCHAR(100),
+                time VARCHAR(50),
+                status VARCHAR(50),
+                accessed BOOLEAN DEFAULT FALSE,
+                accessed_at TIMESTAMP DEFAULT NULL,
+                completed BOOLEAN DEFAULT FALSE,
+                completed_at TIMESTAMP DEFAULT NULL,
+                completed_by VARCHAR(255) DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT NOW(),
+                called BOOLEAN DEFAULT FALSE,
+                called_at TIMESTAMP DEFAULT NULL,
+                called_by VARCHAR(255) DEFAULT NULL,
+                is_present BOOLEAN DEFAULT FALSE,
+                present_at TIMESTAMP DEFAULT NULL,
+                is_muted BOOLEAN DEFAULT FALSE,
+                muted_at TIMESTAMP DEFAULT NULL,
+                muted_by VARCHAR(255) DEFAULT NULL,
+                archived_at TIMESTAMP DEFAULT NOW()
             )
         """)
         
@@ -305,6 +370,9 @@ def get_admin_queue(department):
     try:
         cur = conn.cursor()
         
+        # Auto-archive old queues before returning today's queues
+        archived_count = auto_archive_old_queues(conn)
+        
         # Add missing columns if they don't exist
         try:
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE")
@@ -334,14 +402,17 @@ def get_admin_queue(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get ALL queues for this department (including completed)
+        # Get today's date in the same format used in the queue
+        today = datetime.now().strftime('%B %d, %Y')  # e.g., "January 4, 2026"
+        
+        # Get ONLY today's queues for this department
         # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
             SELECT id, number, person, date, time, status 
             FROM queue 
-            WHERE person LIKE %s
+            WHERE person LIKE %s AND date = %s
             ORDER BY id ASC
-        """, (person_filter,))
+        """, (person_filter, today))
         
         rows = cur.fetchall()
         conn.close()
@@ -360,6 +431,60 @@ def get_admin_queue(department):
         return jsonify(queues)
     except Exception as e:
         print(f"Error in get_queue: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
+
+@app.route('/admin/queue-history/<department>')
+def get_admin_queue_history(department):
+    """Get ALL queues for charts (includes archive for full history)"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Map department to person filter
+        person_filters = {
+            'dean': '%Dean%',
+            'ie-chair': '%IE%',
+            'cpe-chair': '%CPE%',
+            'ece-chair': '%ECE%',
+            'others': '%Other%'
+        }
+        
+        person_filter = person_filters.get(department, '%')
+        
+        # Get ALL queues from both queue and archive tables for full history
+        cur.execute("""
+            SELECT id, number, person, date, time, status 
+            FROM queue 
+            WHERE person LIKE %s
+            UNION ALL
+            SELECT id, number, person, date, time, status 
+            FROM archive
+            WHERE person LIKE %s
+            ORDER BY id ASC
+        """, (person_filter, person_filter))
+        
+        rows = cur.fetchall()
+        conn.close()
+        
+        queues = []
+        for row in rows:
+            queues.append({
+                "id": row[0],
+                "number": row[1],
+                "person": row[2],
+                "date": row[3],
+                "time": row[4],
+                "status": row[5]
+            })
+        
+        return jsonify(queues)
+    except Exception as e:
+        print(f"Error in get_queue_history: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e), "traceback": traceback.format_exc()}), 500
@@ -425,7 +550,7 @@ def debug_query():
 
 @app.route('/admin/stats/<department>')
 def get_admin_stats(department):
-    """Get statistics for a specific department"""
+    """Get statistics for a specific department (includes archive for historical data)"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -445,25 +570,35 @@ def get_admin_stats(department):
         person_filter = person_filters.get(department, '%')
         today = datetime.now().strftime('%Y-%m-%d')
         
-        # Total queues today
+        # Total queues today (from both queue and archive tables)
         cur.execute("""
-            SELECT COUNT(*) FROM queue 
-            WHERE person LIKE %s AND DATE(created_at) = %s
-        """, (person_filter, today))
+            SELECT COUNT(*) FROM (
+                SELECT id FROM queue 
+                WHERE person LIKE %s AND DATE(created_at) = %s
+                UNION ALL
+                SELECT id FROM archive
+                WHERE person LIKE %s AND DATE(created_at) = %s
+            ) AS combined
+        """, (person_filter, today, person_filter, today))
         total_today = cur.fetchone()[0] or 0
         
-        # Current queue count
+        # Current queue count (only from queue table, not archive)
         cur.execute("""
             SELECT COUNT(*) FROM queue 
             WHERE person LIKE %s AND (completed IS NULL OR completed = FALSE)
         """, (person_filter,))
         current_queue = cur.fetchone()[0] or 0
         
-        # Completed today
+        # Completed today (from both queue and archive tables)
         cur.execute("""
-            SELECT COUNT(*) FROM queue 
-            WHERE person LIKE %s AND completed = TRUE AND DATE(completed_at) = %s
-        """, (person_filter, today))
+            SELECT COUNT(*) FROM (
+                SELECT id FROM queue 
+                WHERE person LIKE %s AND completed = TRUE AND DATE(completed_at) = %s
+                UNION ALL
+                SELECT id FROM archive
+                WHERE person LIKE %s AND completed = TRUE AND DATE(completed_at) = %s
+            ) AS combined
+        """, (person_filter, today, person_filter, today))
         completed_today = cur.fetchone()[0] or 0
         
         # Average wait time (simplified calculation)
@@ -482,7 +617,7 @@ def get_admin_stats(department):
 
 @app.route('/admin/call-queue/<queue_id>', methods=['POST'])
 def call_queue(queue_id):
-    """Call a queue (mark as called, not completed yet)"""
+    """Call a queue (mark as called, not completed yet) - checks both queue and archive"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -496,20 +631,33 @@ def call_queue(queue_id):
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called BOOLEAN DEFAULT FALSE")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called_at TIMESTAMP DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called_by VARCHAR(255) DEFAULT NULL")
+            cur.execute("ALTER TABLE archive ADD COLUMN IF NOT EXISTS called BOOLEAN DEFAULT FALSE")
+            cur.execute("ALTER TABLE archive ADD COLUMN IF NOT EXISTS called_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE archive ADD COLUMN IF NOT EXISTS called_by VARCHAR(255) DEFAULT NULL")
             conn.commit()
         except Exception:
             pass
         
-        # Mark queue as called (not completed yet)
+        # Try to update in queue table first
         cur.execute("""
             UPDATE queue 
             SET called = TRUE, called_at = NOW(), called_by = %s, status = 'called'
             WHERE id = %s AND completed = FALSE
         """, (data.get('calledBy'), queue_id))
         
-        if cur.rowcount == 0:
-            conn.close()
-            return jsonify({"error": "Queue not found or already completed"}), 404
+        updated_in_queue = cur.rowcount > 0
+        
+        # If not found in queue, try archive table
+        if not updated_in_queue:
+            cur.execute("""
+                UPDATE archive 
+                SET called = TRUE, called_at = NOW(), called_by = %s, status = 'called'
+                WHERE id = %s AND completed = FALSE
+            """, (data.get('calledBy'), queue_id))
+            
+            if cur.rowcount == 0:
+                conn.close()
+                return jsonify({"error": "Queue not found or already completed"}), 404
         
         conn.commit()
         conn.close()
@@ -520,7 +668,7 @@ def call_queue(queue_id):
 
 @app.route('/admin/return-queue/<queue_id>', methods=['POST'])
 def return_queue(queue_id):
-    """Return a called queue back to waiting status"""
+    """Return a called queue back to waiting status - checks both queue and archive"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -533,20 +681,32 @@ def return_queue(queue_id):
         try:
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_by VARCHAR(255) DEFAULT NULL")
             cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_at TIMESTAMP DEFAULT NULL")
+            cur.execute("ALTER TABLE archive ADD COLUMN IF NOT EXISTS returned_by VARCHAR(255) DEFAULT NULL")
+            cur.execute("ALTER TABLE archive ADD COLUMN IF NOT EXISTS returned_at TIMESTAMP DEFAULT NULL")
             conn.commit()
         except Exception:
             pass
         
-        # Return queue back to waiting (reset called status)
+        # Try to update in queue table first
         cur.execute("""
             UPDATE queue 
             SET called = FALSE, status = 'waiting', returned_by = %s, returned_at = NOW()
             WHERE id = %s AND called = TRUE AND completed = FALSE
         """, (data.get('returnedBy'), queue_id))
         
-        if cur.rowcount == 0:
-            conn.close()
-            return jsonify({"error": "Queue not found, not called, or already completed"}), 404
+        updated_in_queue = cur.rowcount > 0
+        
+        # If not found in queue, try archive table
+        if not updated_in_queue:
+            cur.execute("""
+                UPDATE archive 
+                SET called = FALSE, status = 'waiting', returned_by = %s, returned_at = NOW()
+                WHERE id = %s AND called = TRUE AND completed = FALSE
+            """, (data.get('returnedBy'), queue_id))
+            
+            if cur.rowcount == 0:
+                conn.close()
+                return jsonify({"error": "Queue not found, not called, or already completed"}), 404
         
         conn.commit()
         conn.close()
@@ -557,7 +717,7 @@ def return_queue(queue_id):
 
 @app.route('/admin/complete-queue/<queue_id>', methods=['POST'])
 def complete_queue(queue_id):
-    """Complete a queue (mark as completed after being called)"""
+    """Complete a queue (mark as completed after being called) - checks both queue and archive"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -566,16 +726,26 @@ def complete_queue(queue_id):
         data = request.json
         cur = conn.cursor()
         
-        # Mark queue as completed (allow from any status)
+        # Try to update in queue table first
         cur.execute("""
             UPDATE queue 
             SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
             WHERE id = %s
         """, (data.get('completedBy'), queue_id))
         
-        if cur.rowcount == 0:
-            conn.close()
-            return jsonify({"error": "Queue not found"}), 404
+        updated_in_queue = cur.rowcount > 0
+        
+        # If not found in queue, try archive table
+        if not updated_in_queue:
+            cur.execute("""
+                UPDATE archive 
+                SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
+                WHERE id = %s
+            """, (data.get('completedBy'), queue_id))
+            
+            if cur.rowcount == 0:
+                conn.close()
+                return jsonify({"error": "Queue not found in queue or archive"}), 404
         
         conn.commit()
         conn.close()
@@ -586,7 +756,7 @@ def complete_queue(queue_id):
 
 @app.route('/admin/activity/<department>')
 def get_recent_activity(department):
-    """Get recent completed queues for a department"""
+    """Get recent completed queues for a department (includes archive for history)"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
@@ -605,14 +775,19 @@ def get_recent_activity(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get recent completed queues
+        # Get recent completed queues from BOTH queue and archive tables
+        # This ensures charts show full history from day 1
         cur.execute("""
-            SELECT number, person, completed_at 
+            SELECT number, person, completed_at, 'queue' as source
             FROM queue 
             WHERE person LIKE %s AND completed = TRUE 
+            UNION ALL
+            SELECT number, person, completed_at, 'archive' as source
+            FROM archive
+            WHERE person LIKE %s AND completed = TRUE
             ORDER BY completed_at DESC 
             LIMIT 10
-        """, (person_filter,))
+        """, (person_filter, person_filter))
         
         rows = cur.fetchall()
         conn.close()

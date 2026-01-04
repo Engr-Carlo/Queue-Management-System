@@ -1377,23 +1377,36 @@
         let totalCompleted = 0;
         let totalWaiting = 0;
         let totalCalled = 0;
-        let allQueues = [];
+        let todayQueues = [];
+        let allQueuesHistory = [];
         
-        // Fetch ONLY current department's data (matching queue table)
+        // Fetch TODAY's queues for stats (from queue table only)
         try {
           const response = await fetch(`${API_BASE_URL}/admin/queue/${currentDept}`);
           if (response.ok) {
-            allQueues = await response.json();
+            todayQueues = await response.json();
             
             // Count queues by status (same logic as queue table)
-            totalToday = allQueues.length;
-            totalCompleted = allQueues.filter(q => q.status === 'completed').length;
-            totalWaiting = allQueues.filter(q => q.status === 'waiting').length;
-            totalCalled = allQueues.filter(q => q.status === 'called').length;
+            totalToday = todayQueues.length;
+            totalCompleted = todayQueues.filter(q => q.status === 'completed').length;
+            totalWaiting = todayQueues.filter(q => q.status === 'waiting').length;
+            totalCalled = todayQueues.filter(q => q.status === 'called').length;
             activeNow = totalWaiting + totalCalled; // Active = waiting + called
           }
         } catch (error) {
           console.log('Error fetching queue data:', error);
+        }
+        
+        // Fetch ALL historical data for charts (from queue + archive)
+        try {
+          const historyResponse = await fetch(`${API_BASE_URL}/admin/queue-history/${currentDept}`);
+          if (historyResponse.ok) {
+            allQueuesHistory = await historyResponse.json();
+          }
+        } catch (error) {
+          console.log('Error fetching queue history:', error);
+          // Fallback to today's data if history fetch fails
+          allQueuesHistory = todayQueues;
         }
         
         // Update stat cards
@@ -1408,7 +1421,7 @@
         // Update Department Donut Chart - show breakdown by status for current department
         if (departmentDonutChart) {
           departmentDonutChart.data.labels = ['Waiting', 'Called', 'Completed', 'Archived'];
-          const archived = allQueues.filter(q => q.status === 'archived').length;
+          const archived = todayQueues.filter(q => q.status === 'archived').length;
           departmentDonutChart.data.datasets[0].data = [totalWaiting, totalCalled, totalCompleted, archived];
           departmentDonutChart.update('none');
         }
@@ -1416,7 +1429,7 @@
         // Update Department Bar Chart - show counts by status
         if (departmentBarChart) {
           departmentBarChart.data.labels = ['Waiting', 'Called', 'Completed', 'Archived'];
-          const archived = allQueues.filter(q => q.status === 'archived').length;
+          const archived = todayQueues.filter(q => q.status === 'archived').length;
           departmentBarChart.data.datasets[0].data = [totalWaiting, totalCalled, totalCompleted, archived];
           departmentBarChart.update('none');
         }
@@ -1432,14 +1445,14 @@
           const dailyCompleted = Array(7).fill(0);
           const dailyTotal = Array(7).fill(0);
           
-          console.log('Total queues for daily chart:', allQueues.length);
+          console.log('Total queues for daily chart:', allQueuesHistory.length);
           
           // Get date range for last 7 days
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           
           // Process actual queue timestamps from current department
-          allQueues.forEach((q) => {
+          allQueuesHistory.forEach((q) => {
             if (q.date) {
               try {
                 const queueDate = new Date(q.date);
@@ -1478,8 +1491,8 @@
           const today = new Date();
           const todayStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
           
-          // Count queues created in each hour TODAY
-          allQueues.forEach((q) => {
+          // Count queues created in each hour TODAY (use todayQueues since it's already filtered)
+          todayQueues.forEach((q) => {
             if (q.date === todayStr && q.time) {
               const timeMatch = q.time.match(/(\d+):(\d+)\s*(AM|PM)/i);
               if (timeMatch) {
