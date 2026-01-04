@@ -184,6 +184,7 @@
         <label for="department" class="form-label">Department</label>
         <select class="form-select" id="department" required>
           <option value="">Select Department</option>
+          <option value="super-admin">Super Admin - System Administrator</option>
           <option value="dean">Dean - College of Engineering</option>
           <option value="ie-chair">IE Department Chair</option>
           <option value="cpe-chair">CPE Department Chair</option>
@@ -212,6 +213,7 @@
   <script>
     // Simple authentication (in production, use proper authentication)
     const adminCredentials = {
+      'super-admin': 'admin2026',
       'dean': 'dean2025',
       'ie-chair': 'ie2025',
       'cpe-chair': 'cpe2025',
@@ -220,6 +222,7 @@
     };
 
     const departmentNames = {
+      'super-admin': 'Super Admin - System Administrator',
       'dean': 'Dean - College of Engineering',
       'ie-chair': 'IE Department Chair',
       'cpe-chair': 'CPE Department Chair',
@@ -250,8 +253,12 @@
             loginTime: new Date().toISOString()
           }));
 
-          // Redirect to admin dashboard
-          window.location.href = 'admin-dashboard.html';
+          // Redirect to appropriate dashboard
+          if (department === 'super-admin') {
+            window.location.href = 'super-admin-dashboard.html';
+          } else {
+            window.location.href = 'admin-dashboard.html';
+          }
         } else {
           errorMessage.textContent = 'Invalid department or password. Please try again.';
           errorMessage.style.display = 'block';
@@ -272,8 +279,12 @@
         const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
         
         if (hoursDiff < 24) {
-          // Still logged in, redirect to dashboard
-          window.location.href = 'admin-dashboard.html';
+          // Still logged in, redirect to appropriate dashboard
+          if (session.department === 'super-admin') {
+            window.location.href = 'super-admin-dashboard.html';
+          } else {
+            window.location.href = 'admin-dashboard.html';
+          }
         } else {
           // Session expired
           localStorage.removeItem('adminSession');
