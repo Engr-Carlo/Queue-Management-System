@@ -635,6 +635,8 @@
     let queueId = null;
     let autoRefreshInterval = null;
     let lastCalledStatus = false; // Track previous called status
+    let notificationPermissionGranted = false;
+    let lastNotificationTime = 0;
     
     // Background notification variables (Non-PWA)
     let backgroundNotificationsEnabled = false;
@@ -648,6 +650,107 @@
     let audioContext = null;
     let audioBuffer = null;
     let forceInteractionTimer = null;
+
+    // Request notification permission on page load
+    async function requestNotificationPermission() {
+      if (!('Notification' in window)) {
+        console.log('This browser does not support notifications');
+        return false;
+      }
+
+      if (Notification.permission === 'granted') {
+        notificationPermissionGranted = true;
+        console.log('✅ Notification permission already granted');
+        return true;
+      }
+
+      if (Notification.permission !== 'denied') {
+        try {
+          const permission = await Notification.requestPermission();
+          if (permission === 'granted') {
+            notificationPermissionGranted = true;
+            console.log('✅ Notification permission granted');
+            showNotificationBanner('🔔 Notifications enabled! You\'ll be alerted when called even if you leave this tab.', 'success');
+            return true;
+          } else {
+            showNotificationBanner('⚠️ Notifications blocked. Enable them in your browser settings to get alerts!', 'warning');
+          }
+        } catch (error) {
+          console.error('Error requesting notification permission:', error);
+        }
+      }
+      return false;
+    }
+
+    // Show browser push notification
+    function showPushNotification(title, body, icon = '/images/logo.svg') {
+      // Prevent duplicate notifications (max 1 per 10 seconds)
+      const now = Date.now();
+      if (now - lastNotificationTime < 10000) {
+        console.log('Skipping notification - too soon after last one');
+        return;
+      }
+      lastNotificationTime = now;
+
+      if (!notificationPermissionGranted || Notification.permission !== 'granted') {
+        console.log('Cannot show notification - permission not granted');
+        return;
+      }
+
+      try {
+        const notification = new Notification(title, {
+          body: body,
+          icon: icon,
+          badge: icon,
+          vibrate: [200, 100, 200, 100, 200, 100, 200],
+          requireInteraction: true,
+          tag: 'queue-call',
+          renotify: true,
+          silent: false,
+        });
+
+        notification.onclick = function(event) {
+          event.preventDefault();
+          window.focus();
+          notification.close();
+        };
+
+        // Auto-close after 30 seconds
+        setTimeout(() => notification.close(), 30000);
+
+        console.log('🔔 Push notification sent successfully');
+      } catch (error) {
+        console.error('Error showing notification:', error);
+      }
+    }
+
+    // Show notification banner at top of page
+    function showNotificationBanner(message, type = 'info') {
+      const banner = document.createElement('div');
+      banner.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : '#3b82f6'};
+        color: white;
+        padding: 15px 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        font-weight: 600;
+        max-width: 90%;
+        text-align: center;
+      `;
+      banner.textContent = message;
+      document.body.appendChild(banner);
+
+      setTimeout(() => {
+        banner.style.opacity = '0';
+        banner.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => banner.remove(), 300);
+      }, 5000);
+    }
 
     // Initialize background notifications (Non-PWA version)
     async function initializeBackgroundNotifications() {
@@ -2240,10 +2343,18 @@
           estimatedTimeSection.querySelector('h3').textContent = 'You are being called!';
           estimatedTimeSection.querySelector('.time').textContent = 'You may now proceed to the Office!';
           
-          // Only play sound if status changed from not called to called
+          // Only play sound and send notification if status changed from not called to called
           if (!wasCalledBefore && isCalledNow) {
             console.log('[AUDIO] TRIGGERING ALARM SOUND - Status changed from uncalled to called!');
             playAlarmSound();
+            
+            // Send push notification
+            const queueNumber = document.getElementById('queueNumber').textContent;
+            showPushNotification(
+              '🚨 You Are Being Called!',
+              `Queue Number ${queueNumber} - Please proceed to the office immediately!`,
+              '/images/logo.svg'
+            );
           } else {
             console.log('[AUDIO] Already called before, not playing alarm again');
           }
@@ -2297,6 +2408,11 @@
           loadQueueData();
           console.log('🔄 Starting auto refresh...');
           startAutoRefresh();
+          
+          // Request notification permission after queue loads successfully
+          setTimeout(() => {
+            requestNotificationPermission();
+          }, 2000); // Request permission 2 seconds after queue loads
         }, 500); // Small delay for smooth transition
       }, 3000); // Show portal loading for 3 seconds
     });
