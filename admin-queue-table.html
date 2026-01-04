@@ -652,16 +652,23 @@
     }
 
     function updateStats() {
-      // Total in Queue = ALL queues recorded today (never decreases)
-      const total = allQueues.length;
+      // Get today's date
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
       
-      // Waiting = Only queues with "waiting" status
-      const waiting = allQueues.filter(q => q.status === 'waiting').length;
+      // Filter only today's queues (exclude archived/old queues)
+      const todayQueues = allQueues.filter(q => q.date === todayStr);
       
-      // Completed = Queues that are completed
-      const completed = allQueues.filter(q => q.status === 'completed').length;
+      // Total Today = Only queues created today
+      const total = todayQueues.length;
       
-      // Archived = Queues that are archived
+      // Waiting = Only queues with "waiting" status from today
+      const waiting = todayQueues.filter(q => q.status === 'waiting').length;
+      
+      // Completed = Queues that are completed today
+      const completed = todayQueues.filter(q => q.status === 'completed').length;
+      
+      // Archived = All queues from previous days
       const archived = allQueues.filter(q => q.status === 'archived').length;
 
       document.getElementById('statTotal').textContent = total;
