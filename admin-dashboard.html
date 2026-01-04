@@ -1397,12 +1397,12 @@
               }
             });
             
-            // Count queues by status
-            totalCompleted = allQueues.filter(q => q.status === 'completed').length;
-            totalWaiting = allQueues.filter(q => q.status === 'waiting').length;
-            totalCalled = allQueues.filter(q => q.status === 'called').length;
+            // Count queues by status (only count non-archived for today's stats)
+            totalCompleted = allQueues.filter(q => q.status === 'completed' && q.date === todayStr).length;
+            totalWaiting = allQueues.filter(q => q.status === 'waiting' && q.date === todayStr).length;
+            totalCalled = allQueues.filter(q => q.status === 'called' && q.date === todayStr).length;
             totalArchived = allQueues.filter(q => q.status === 'archived').length;
-            totalToday = totalWaiting + totalCalled + totalCompleted; // Today's count (excluding archived)
+            totalToday = totalWaiting + totalCalled + totalCompleted; // Only today's count
             activeNow = totalWaiting + totalCalled;
           }
         } catch (error) {
