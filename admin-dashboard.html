@@ -1642,8 +1642,9 @@
 
     // Show dean controls if user is dean
     function checkDeanAccess() {
-      if (adminSession && adminSession.department === 'dean') {
-        document.getElementById('deanControls').style.display = 'block';
+      const deanControls = document.getElementById('deanControls');
+      if (adminSession && adminSession.department === 'dean' && deanControls) {
+        deanControls.style.display = 'block';
       }
     }
 
