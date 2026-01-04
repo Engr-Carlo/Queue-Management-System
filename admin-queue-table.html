@@ -534,6 +534,18 @@
         const response = await fetch(`${API_BASE_URL}/admin/queue/${adminSession.department}`);
         if (response.ok) {
           const data = await response.json();
+          
+          // Get today's date
+          const today = new Date();
+          const todayStr = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+          
+          // Mark queues as archived if date != today
+          data.forEach(q => {
+            if (q.date !== todayStr) {
+              q.status = 'archived';
+            }
+          });
+          
           // Sort by earliest first (first-come-first-serve)
           allQueues = data.sort((a, b) => new Date(a.created_at || a.date) - new Date(b.created_at || b.date));
           filterQueues();
