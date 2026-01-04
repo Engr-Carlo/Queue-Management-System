@@ -334,17 +334,14 @@ def get_admin_queue(department):
         
         person_filter = person_filters.get(department, '%')
         
-        # Get today's date in the same format used in the queue
-        today = datetime.now().strftime('%B %d, %Y')  # e.g., "January 4, 2026"
-        
-        # Get ONLY today's queues for this department
+        # Get ALL queues for this department (no date filtering)
         # Sort by created_at ASC for first-come-first-serve order
         cur.execute("""
             SELECT id, number, person, date, time, status 
             FROM queue 
-            WHERE person LIKE %s AND date = %s
+            WHERE person LIKE %s
             ORDER BY id ASC
-        """, (person_filter, today))
+        """, (person_filter,))
         
         rows = cur.fetchall()
         conn.close()
