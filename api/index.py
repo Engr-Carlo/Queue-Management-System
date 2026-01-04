@@ -1180,6 +1180,69 @@ def delete_department_queues(department):
         return jsonify({"success": False, "error": str(e)}), 500
 
 # Authentication Endpoints
+@app.route('/auth/init', methods=['GET'])
+def init_auth_tables():
+    """Initialize authentication tables - can be called manually"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Create users table
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                department VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                icon VARCHAR(50),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        
+        # Insert default users if table is empty
+        cur.execute("SELECT COUNT(*) FROM users")
+        user_count = cur.fetchone()[0]
+        
+        if user_count == 0:
+            default_users = [
+                ('super-admin', 'admin2026', 'Super Admin - System Administrator', 'fa-crown'),
+                ('dean', 'dean2025', 'Dean - College of Engineering', 'fa-user-tie'),
+                ('ie-chair', 'ie2025', 'IE Department Chair', 'fa-industry'),
+                ('cpe-chair', 'cpe2025', 'CPE Department Chair', 'fa-microchip'),
+                ('ece-chair', 'ece2025', 'ECE Department Chair', 'fa-bolt'),
+                ('others', 'staff2025', 'Other Staff/Faculty', 'fa-users')
+            ]
+            
+            for dept, pwd, name, icon in default_users:
+                cur.execute(
+                    "INSERT INTO users (department, password, name, icon) VALUES (%s, %s, %s, %s)",
+                    (dept, pwd, name, icon)
+                )
+            
+            conn.commit()
+            conn.close()
+            
+            return jsonify({
+                "success": True,
+                "message": "Users table initialized with default users",
+                "users_created": len(default_users)
+            })
+        else:
+            conn.close()
+            return jsonify({
+                "success": True,
+                "message": "Users table already exists",
+                "user_count": user_count
+            })
+        
+    except Exception as e:
+        print(f"Error initializing auth tables: {e}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/auth/login', methods=['POST'])
 def login():
     """Authenticate user against database"""
@@ -1196,6 +1259,42 @@ def login():
             return jsonify({"success": False, "error": "Department and password required"}), 400
         
         cur = conn.cursor()
+        
+        # Ensure users table exists
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                department VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                icon VARCHAR(50),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        
+        # Insert default users if table is empty
+        cur.execute("SELECT COUNT(*) FROM users")
+        user_count = cur.fetchone()[0]
+        
+        if user_count == 0:
+            default_users = [
+                ('super-admin', 'admin2026', 'Super Admin - System Administrator', 'fa-crown'),
+                ('dean', 'dean2025', 'Dean - College of Engineering', 'fa-user-tie'),
+                ('ie-chair', 'ie2025', 'IE Department Chair', 'fa-industry'),
+                ('cpe-chair', 'cpe2025', 'CPE Department Chair', 'fa-microchip'),
+                ('ece-chair', 'ece2025', 'ECE Department Chair', 'fa-bolt'),
+                ('others', 'staff2025', 'Other Staff/Faculty', 'fa-users')
+            ]
+            
+            for dept, pwd, name, icon in default_users:
+                cur.execute(
+                    "INSERT INTO users (department, password, name, icon) VALUES (%s, %s, %s, %s)",
+                    (dept, pwd, name, icon)
+                )
+            
+            print("Default users created successfully")
+            conn.commit()
         
         # Fetch user from database
         cur.execute(
