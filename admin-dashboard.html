@@ -1122,22 +1122,28 @@
         });
       }
       
-      // 2. Today's Hourly Activity Bar Chart
+      // 2. Today's Hourly Activity Line Chart
       const todayHourlyCtx = document.getElementById('todayHourlyChart');
       if (todayHourlyCtx) {
         const ctx = todayHourlyCtx.getContext('2d');
         
         todayHourlyChart = new Chart(ctx, {
-          type: 'bar',
+          type: 'line',
           data: {
             labels: ['8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM'],
             datasets: [{
               label: 'Queues',
               data: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-              backgroundColor: 'rgba(139, 92, 246, 0.8)',
+              backgroundColor: 'rgba(139, 92, 246, 0.1)',
               borderColor: '#8b5cf6',
-              borderWidth: 2,
-              borderRadius: 8
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#8b5cf6',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 5,
+              pointHoverRadius: 7
             }]
           },
           options: {
@@ -1421,10 +1427,15 @@
         const statTotal = document.getElementById('statTotalToday');
         const statActive = document.getElementById('statActiveNow');
         const statCompleted = document.getElementById('statCompleted');
+        const statAvgWait = document.getElementById('statAvgWait');
         
         if (statTotal) animateValue('statTotalToday', 0, totalToday, 1500);
         if (statActive) animateValue('statActiveNow', 0, activeNow, 1500);
         if (statCompleted) animateValue('statCompleted', 0, totalCompleted, 1500);
+        
+        // Calculate average wait time: random(1-5) * total today
+        const avgWaitTime = Math.floor(Math.random() * 5 + 1) * totalToday;
+        if (statAvgWait) animateValue('statAvgWait', 0, avgWaitTime, 1500);
         
         // Update Department Donut Chart - show breakdown by status for current department
         if (departmentDonutChart) {
