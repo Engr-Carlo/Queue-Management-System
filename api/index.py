@@ -198,6 +198,43 @@ def create_queue():
             )
         """)
         
+        # Create users table for authentication
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                department VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                icon VARCHAR(50),
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        
+        # Insert default users if table is empty
+        cur.execute("SELECT COUNT(*) FROM users")
+        user_count = cur.fetchone()[0]
+        
+        if user_count == 0:
+            default_users = [
+                ('super-admin', 'admin2026', 'Super Admin - System Administrator', 'fa-crown'),
+                ('dean', 'dean2025', 'Dean - College of Engineering', 'fa-user-tie'),
+                ('ie-chair', 'ie2025', 'IE Department Chair', 'fa-industry'),
+                ('cpe-chair', 'cpe2025', 'CPE Department Chair', 'fa-microchip'),
+                ('ece-chair', 'ece2025', 'ECE Department Chair', 'fa-bolt'),
+                ('others', 'staff2025', 'Other Staff/Faculty', 'fa-users')
+            ]
+            
+            for dept, pwd, name, icon in default_users:
+                cur.execute(
+                    "INSERT INTO users (department, password, name, icon) VALUES (%s, %s, %s, %s)",
+                    (dept, pwd, name, icon)
+                )
+            
+            print("Default users created successfully")
+        
+        conn.commit()
+        
         # Insert data
         cur.execute(
             "INSERT INTO queue (id, number, person, date, time, status) VALUES (%s, %s, %s, %s, %s, %s)",
@@ -1140,6 +1177,130 @@ def delete_department_queues(department):
         
     except Exception as e:
         print(f"Error deleting department queues: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+# Authentication Endpoints
+@app.route('/auth/login', methods=['POST'])
+def login():
+    """Authenticate user against database"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        data = request.json
+        department = data.get('department')
+        password = data.get('password')
+        
+        if not department or not password:
+            return jsonify({"success": False, "error": "Department and password required"}), 400
+        
+        cur = conn.cursor()
+        
+        # Fetch user from database
+        cur.execute(
+            "SELECT department, password, name, icon FROM users WHERE department = %s",
+            (department,)
+        )
+        user = cur.fetchone()
+        conn.close()
+        
+        if not user:
+            return jsonify({"success": False, "error": "Invalid department or password"}), 401
+        
+        db_dept, db_password, db_name, db_icon = user
+        
+        # Check password (plain text comparison for now)
+        if db_password == password:
+            return jsonify({
+                "success": True,
+                "user": {
+                    "department": db_dept,
+                    "name": db_name,
+                    "icon": db_icon
+                }
+            })
+        else:
+            return jsonify({"success": False, "error": "Invalid department or password"}), 401
+            
+    except Exception as e:
+        print(f"Login error: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/auth/users', methods=['GET'])
+def get_users():
+    """Get all users (excluding passwords) - SUPER ADMIN ONLY"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        cur = conn.cursor()
+        
+        # Fetch all users except super-admin
+        cur.execute(
+            "SELECT department, name, icon FROM users WHERE department != 'super-admin' ORDER BY department"
+        )
+        users = cur.fetchall()
+        conn.close()
+        
+        user_list = []
+        for user in users:
+            user_list.append({
+                "id": user[0],
+                "name": user[1],
+                "icon": user[2]
+            })
+        
+        return jsonify({"success": True, "users": user_list})
+        
+    except Exception as e:
+        print(f"Error fetching users: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/auth/change-password', methods=['POST'])
+def change_password():
+    """Change user password - SUPER ADMIN ONLY"""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    try:
+        data = request.json
+        department = data.get('department')
+        new_password = data.get('new_password')
+        
+        if not department or not new_password:
+            return jsonify({"success": False, "error": "Department and new password required"}), 400
+        
+        # Prevent changing super-admin password
+        if department == 'super-admin':
+            return jsonify({"success": False, "error": "Cannot change super admin password"}), 403
+        
+        cur = conn.cursor()
+        
+        # Update password
+        cur.execute(
+            "UPDATE users SET password = %s, updated_at = NOW() WHERE department = %s",
+            (new_password, department)
+        )
+        
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"success": False, "error": "User not found"}), 404
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"ADMIN ACTION: Password changed for {department}")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Password updated successfully for {department}"
+        })
+        
+    except Exception as e:
+        print(f"Error changing password: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/emergency-audio', methods=['POST'])

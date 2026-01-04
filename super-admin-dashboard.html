@@ -550,15 +550,6 @@
     let dailyChart, departmentChart, statusChart;
     let currentEditAccount = null;
 
-    // User accounts for management (excluding super-admin)
-    const userAccounts = [
-      { id: 'dean', name: 'Dean - College of Engineering', icon: 'fa-user-tie', password: 'dean2025' },
-      { id: 'ie-chair', name: 'IE Department Chair', icon: 'fa-industry', password: 'ie2025' },
-      { id: 'cpe-chair', name: 'CPE Department Chair', icon: 'fa-microchip', password: 'cpe2025' },
-      { id: 'ece-chair', name: 'ECE Department Chair', icon: 'fa-bolt', password: 'ece2025' },
-      { id: 'others', name: 'Other Staff/Faculty', icon: 'fa-users', password: 'staff2025' }
-    ];
-
     // Check authentication
     function checkAuth() {
       const adminSession = localStorage.getItem('adminSession');
@@ -985,19 +976,39 @@
     }
 
     // User Management Functions
-    function renderUsersList() {
+    async function renderUsersList() {
       const usersList = document.getElementById('usersList');
-      usersList.innerHTML = '';
+      usersList.innerHTML = '<p style="text-align: center; color: #64748b;">Loading users...</p>';
 
-      userAccounts.forEach(user => {
-        const userCard = document.createElement('div');
-        userCard.className = 'user-card';
-        userCard.innerHTML = `
-          <div class="user-info">
-            <h5><i class="fas ${user.icon}"></i> ${user.name}</h5>
-            <p>Account ID: ${user.id} | Password: ${'•'.repeat(user.password.length)}</p>
-          </div>
-          <button class="btn-change-password" onclick="openPasswordModal('${user.id}', '${user.name}')">
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/users`);
+        const result = await response.json();
+
+        if (result.success && result.users) {
+          usersList.innerHTML = '';
+          
+          result.users.forEach(user => {
+            const userCard = document.createElement('div');
+            userCard.className = 'user-card';
+            userCard.innerHTML = `
+              <div class="user-info">
+                <h5><i class="fas ${user.icon}"></i> ${user.name}</h5>
+                <p>Account ID: ${user.id} | Password: ••••••••</p>
+              </div>
+              <button class="btn-change-password" onclick="openPasswordModal('${user.id}', '${user.name}')">
+                <i class="fas fa-key"></i> Change Password
+              </button>
+            `;
+            usersList.appendChild(userCard);
+          });
+        } else {
+          usersList.innerHTML = '<p style="text-align: center; color: #ef4444;">Failed to load users</p>';
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+        usersList.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading users</p>';
+      }
+    }
             <i class="fas fa-key"></i> Change Password
           </button>
         `;
@@ -1019,7 +1030,7 @@
     }
 
     // Password form submission
-    document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    document.getElementById('passwordForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const newPassword = document.getElementById('newPassword').value;
@@ -1035,23 +1046,46 @@
         return;
       }
 
-      // Update password in memory (in real app, this would call backend)
-      const userIndex = userAccounts.findIndex(u => u.id === currentEditAccount);
-      if (userIndex !== -1) {
-        userAccounts[userIndex].password = newPassword;
-        
-        // Show success message
-        const successMsg = document.getElementById('successMessage');
-        successMsg.style.display = 'block';
-        setTimeout(() => {
-          successMsg.style.display = 'none';
-        }, 3000);
+      // Disable button during update
+      const saveBtn = document.querySelector('.btn-save-password');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Updating...';
 
-        closeModal();
-        renderUsersList();
+      try {
+        // Update password via API
+        const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            department: currentEditAccount,
+            new_password: newPassword
+          })
+        });
 
-        // In production, you would update localStorage/backend here
-        console.log(`Password updated for ${currentEditAccount}: ${newPassword}`);
+        const result = await response.json();
+
+        if (result.success) {
+          // Show success message
+          const successMsg = document.getElementById('successMessage');
+          successMsg.textContent = '✓ ' + result.message;
+          successMsg.style.display = 'block';
+          setTimeout(() => {
+            successMsg.style.display = 'none';
+          }, 3000);
+
+          closeModal();
+          renderUsersList();
+        } else {
+          alert('Error: ' + (result.error || 'Failed to update password'));
+        }
+      } catch (error) {
+        console.error('Error updating password:', error);
+        alert('Connection error. Please check your internet connection.');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Password';
       }
     });
 

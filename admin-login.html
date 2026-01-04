@@ -211,26 +211,7 @@
   </div>
 
   <script>
-    // Simple authentication (in production, use proper authentication)
-    const adminCredentials = {
-      'super-admin': 'admin2026',
-      'dean': 'dean2025',
-      'ie-chair': 'ie2025',
-      'cpe-chair': 'cpe2025',
-      'ece-chair': 'ece2025',
-      'others': 'staff2025'
-    };
-
-    const departmentNames = {
-      'super-admin': 'Super Admin - System Administrator',
-      'dean': 'Dean - College of Engineering',
-      'ie-chair': 'IE Department Chair',
-      'cpe-chair': 'CPE Department Chair',
-      'ece-chair': 'ECE Department Chair',
-      'others': 'Other Staff/Faculty'
-    };
-
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
       const department = document.getElementById('department').value;
@@ -243,29 +224,49 @@
       loginBtn.disabled = true;
       loginBtn.textContent = 'Logging in...';
 
-      // Simulate authentication delay
-      setTimeout(() => {
-        if (adminCredentials[department] && adminCredentials[department] === password) {
+      try {
+        // Authenticate against database
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            department: department,
+            password: password
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.user) {
           // Store admin session
           localStorage.setItem('adminSession', JSON.stringify({
-            department: department,
-            name: departmentNames[department],
+            department: result.user.department,
+            name: result.user.name,
+            icon: result.user.icon,
             loginTime: new Date().toISOString()
           }));
 
           // Redirect to appropriate dashboard
-          if (department === 'super-admin') {
+          if (result.user.department === 'super-admin') {
             window.location.href = 'super-admin-dashboard.html';
           } else {
             window.location.href = 'admin-dashboard.html';
           }
         } else {
-          errorMessage.textContent = 'Invalid department or password. Please try again.';
+          errorMessage.textContent = result.error || 'Invalid department or password. Please try again.';
           errorMessage.style.display = 'block';
           loginBtn.disabled = false;
           loginBtn.textContent = 'Login to Dashboard';
         }
-      }, 1000);
+      } catch (error) {
+        console.error('Login error:', error);
+        errorMessage.textContent = 'Connection error. Please check your internet connection.';
+        errorMessage.style.display = 'block';
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login to Dashboard';
+      }
     });
 
     // Check if already logged in
