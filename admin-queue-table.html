@@ -461,7 +461,6 @@
             <th>Status</th>
             <th>Date Entered</th>
             <th>Time</th>
-            <th>Wait Time</th>
             <th style="text-align: center;">Actions</th>
           </tr>
         </thead>
@@ -614,7 +613,6 @@
               <i class="fas fa-clock"></i> ${queue.time}
             </div>
           </td>
-          <td>${calculateWaitTime(queue.date)}</td>
           <td style="text-align: center; white-space: nowrap;">
             ${getActionButtons(queue)}
           </td>
@@ -755,20 +753,6 @@
         minute: '2-digit',
         hour12: true 
       });
-    }
-
-    function calculateWaitTime(createdAt) {
-      const now = new Date();
-      const created = new Date(createdAt);
-      const diff = Math.floor((now - created) / 1000 / 60);
-      
-      if (diff < 1) return 'Just now';
-      if (diff === 1) return '1 min';
-      if (diff < 60) return `${diff} mins`;
-      
-      const hours = Math.floor(diff / 60);
-      const mins = diff % 60;
-      return `${hours}h ${mins}m`;
     }
 
     // Load recent activity
