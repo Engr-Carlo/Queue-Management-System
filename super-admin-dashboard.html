@@ -669,8 +669,8 @@
       animateValue('statActiveNow', 0, activeNow, 1500);
       animateValue('statCompleted', 0, totalCompleted, 1500);
 
-      // Calculate average wait time
-      const avgWaitTime = Math.floor(Math.random() * 5 + 1) * totalToday;
+      // Calculate average wait time: random 2-5 minutes
+      const avgWaitTime = Math.floor(Math.random() * 4) + 2;
       animateValue('statAvgWait', 0, avgWaitTime, 1500);
     }
 
