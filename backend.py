@@ -1,1297 +1,1378 @@
+"""
+Local development server — mirrors the multi-tenant API from api/index.py.
+Run with: python backend.py
+"""
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import psycopg2
 import os
+import hashlib
+import hmac
+import secrets
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = Flask(__name__, static_folder='.', static_url_path='')
+CORS(app)
+
+
+# --- helpers ---
 
 def parse_date(date_str):
-    """Parse a date string into a datetime.date without external dependencies."""
     if not date_str:
         return None
-
-    # Try ISO format first (handles 'YYYY-MM-DD' and 'YYYY-MM-DDTHH:MM:SS' variants)
     try:
-        # datetime.fromisoformat accepts 'YYYY-MM-DD' and 'YYYY-MM-DDTHH:MM:SS'
         return datetime.fromisoformat(date_str).date()
     except Exception:
         pass
-
-    # Common date formats to try
-    formats = [
-        '%Y-%m-%d',
-        '%Y-%m-%d %H:%M:%S',
-        '%Y/%m/%d',
-        '%m/%d/%Y',
-        '%d/%m/%Y',
-        '%b %d, %Y',
-        '%d %b %Y'
-    ]
-    for fmt in formats:
+    for fmt in ('%Y-%m-%d', '%Y-%m-%d %H:%M:%S', '%m/%d/%Y', '%d/%m/%Y', '%b %d, %Y'):
         try:
             return datetime.strptime(date_str, fmt).date()
         except Exception:
             continue
-
-    # Try to extract YYYY-MM-DD from more complex strings
-    try:
-        import re
-        m = re.search(r'(\d{4}-\d{2}-\d{2})', date_str)
-        if m:
+    import re
+    m = re.search(r'(\d{4}-\d{2}-\d{2})', date_str or '')
+    if m:
+        try:
             return datetime.strptime(m.group(1), '%Y-%m-%d').date()
-    except Exception:
-        pass
-
-    # Could not parse
+        except Exception:
+            pass
     return None
 
-app = Flask(__name__)
-CORS(app)
 
-# Database connection
+def hash_password(password):
+    salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100_000)
+    return f"{salt}${dk.hex()}"
+
+
+def verify_password(password, stored_hash):
+    if '$' not in stored_hash:
+        return hmac.compare_digest(password, stored_hash)
+    salt, hash_hex = stored_hash.split('$', 1)
+    dk = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100_000)
+    return hmac.compare_digest(dk.hex(), hash_hex)
+
+
 def get_db_connection():
     try:
-        conn = psycopg2.connect(
-            database=os.environ.get('PGDATABASE'),
-            user=os.environ.get('PGUSER'), 
-            password=os.environ.get('PGPASSWORD'),
-            host=os.environ.get('PGHOST'),
-            port=os.environ.get('PGPORT', 5432)
-        )
+        database_url = os.environ.get('DATABASE_URL')
+        if database_url:
+            conn = psycopg2.connect(database_url, sslmode='require')
+        else:
+            conn = psycopg2.connect(
+                database=os.environ.get('PGDATABASE'),
+                user=os.environ.get('PGUSER'),
+                password=os.environ.get('PGPASSWORD'),
+                host=os.environ.get('PGHOST'),
+                port=os.environ.get('PGPORT', 5432),
+                sslmode='require'
+            )
         return conn
     except Exception as e:
         print(f"Database connection error: {e}")
         return None
 
-@app.route('/')
-def home():
-    return jsonify({
-        "message": "Queue Management System API is running!",
-        "status": "active",
-        "endpoints": {
-            "POST /queue": "Create new queue entry",
-            "GET /queue/<id>": "Get queue entry by ID (marks as accessed)",
-            "GET /queue/<id>/accessed": "Check if queue has been accessed",
-            "GET /test-db": "Test database connection"
-        }
-    })
 
-@app.route('/test-db')
+LEGACY_PERSON_FILTERS = {
+    'dean': '%Dean%', 'ie-chair': '%IE%', 'cpe-chair': '%CPE%',
+    'ece-chair': '%ECE%', 'others': '%Other%'
+}
+LEGACY_DEPT_MAPPING = {
+    'dean': 'A', 'ie-chair': 'B', 'cpe-chair': 'C', 'ece-chair': 'D', 'others': 'E'
+}
+
+admin_statuses = {}
+
+
+# --- schema ---
+
+def init_schema(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS institutions (
+            id SERIAL PRIMARY KEY,
+            name VARCHAR(255) NOT NULL,
+            slug VARCHAR(100) UNIQUE NOT NULL,
+            type VARCHAR(50) NOT NULL DEFAULT 'other',
+            logo_url TEXT,
+            description TEXT,
+            is_active BOOLEAN DEFAULT TRUE,
+            settings JSONB DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS services (
+            id SERIAL PRIMARY KEY,
+            institution_id INTEGER NOT NULL REFERENCES institutions(id) ON DELETE CASCADE,
+            name VARCHAR(255) NOT NULL,
+            prefix CHAR(1) NOT NULL,
+            description TEXT,
+            icon VARCHAR(50) DEFAULT 'fa-concierge-bell',
+            is_active BOOLEAN DEFAULT TRUE,
+            display_order INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(institution_id, prefix)
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            institution_id INTEGER REFERENCES institutions(id) ON DELETE CASCADE,
+            username VARCHAR(100) NOT NULL,
+            password VARCHAR(512) NOT NULL,
+            name VARCHAR(255) NOT NULL,
+            role VARCHAR(30) NOT NULL DEFAULT 'service-admin',
+            service_id INTEGER REFERENCES services(id) ON DELETE SET NULL,
+            icon VARCHAR(50) DEFAULT 'fa-user',
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW()
+        )
+    """)
+    cur.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_users_inst_username'
+            ) THEN
+                ALTER TABLE users ADD CONSTRAINT uq_users_inst_username UNIQUE (institution_id, username);
+            END IF;
+        END $$;
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS queue (
+            id VARCHAR(255) PRIMARY KEY,
+            institution_id INTEGER REFERENCES institutions(id) ON DELETE CASCADE,
+            service_id INTEGER REFERENCES services(id) ON DELETE CASCADE,
+            number VARCHAR(50),
+            person VARCHAR(255),
+            date VARCHAR(100),
+            time VARCHAR(50),
+            status VARCHAR(50) DEFAULT 'waiting',
+            accessed BOOLEAN DEFAULT FALSE,
+            accessed_at TIMESTAMP DEFAULT NULL,
+            completed BOOLEAN DEFAULT FALSE,
+            completed_at TIMESTAMP DEFAULT NULL,
+            completed_by VARCHAR(255) DEFAULT NULL,
+            created_at TIMESTAMP DEFAULT NOW(),
+            called BOOLEAN DEFAULT FALSE,
+            called_at TIMESTAMP DEFAULT NULL,
+            called_by VARCHAR(255) DEFAULT NULL,
+            is_present BOOLEAN DEFAULT FALSE,
+            present_at TIMESTAMP DEFAULT NULL,
+            is_muted BOOLEAN DEFAULT FALSE,
+            muted_at TIMESTAMP DEFAULT NULL,
+            muted_by VARCHAR(255) DEFAULT NULL,
+            returned_by VARCHAR(255) DEFAULT NULL,
+            returned_at TIMESTAMP DEFAULT NULL
+        )
+    """)
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_institution ON queue(institution_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_service ON queue(service_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_status ON queue(institution_id, status)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_date ON queue(institution_id, created_at)")
+    conn.commit()
+
+
+def seed_default_data(conn):
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM institutions")
+    if cur.fetchone()[0] > 0:
+        return
+    cur.execute("""
+        INSERT INTO institutions (name, slug, type, description, is_active)
+        VALUES (%s, %s, %s, %s, TRUE) RETURNING id
+    """, ('PNC College of Engineering', 'pnc-engineering', 'university',
+          'Palawan National College - College of Engineering Queue Management'))
+    inst_id = cur.fetchone()[0]
+
+    services = [
+        (inst_id, "Dean's Office", 'A', 'Dean - College of Engineering', 'fa-user-tie', 1),
+        (inst_id, 'IE Department', 'B', 'Industrial Engineering Department Chair', 'fa-industry', 2),
+        (inst_id, 'CPE Department', 'C', 'Computer Engineering Department Chair', 'fa-microchip', 3),
+        (inst_id, 'ECE Department', 'D', 'Electronics Engineering Department Chair', 'fa-bolt', 4),
+        (inst_id, 'Other Staff', 'E', 'Other Staff/Faculty', 'fa-users', 5),
+    ]
+    svc_ids = {}
+    for s in services:
+        cur.execute("""
+            INSERT INTO services (institution_id, name, prefix, description, icon, display_order)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+        """, s)
+        svc_ids[s[2]] = cur.fetchone()[0]
+
+    cur.execute("""
+        INSERT INTO users (institution_id, username, password, name, role, icon)
+        VALUES (NULL, %s, %s, %s, 'super-admin', %s)
+    """, ('super-admin', hash_password('admin2026'), 'Super Admin - System Administrator', 'fa-crown'))
+
+    cur.execute("""
+        INSERT INTO users (institution_id, username, password, name, role, icon)
+        VALUES (%s, %s, %s, %s, 'institution-admin', %s)
+    """, (inst_id, 'dean', hash_password('dean2025'), 'Dean - College of Engineering', 'fa-user-tie'))
+
+    for uname, pw, display, icon, prefix in [
+        ('ie-chair', 'ie2025', 'IE Department Chair', 'fa-industry', 'B'),
+        ('cpe-chair', 'cpe2025', 'CPE Department Chair', 'fa-microchip', 'C'),
+        ('ece-chair', 'ece2025', 'ECE Department Chair', 'fa-bolt', 'D'),
+        ('others', 'staff2025', 'Other Staff/Faculty', 'fa-users', 'E'),
+    ]:
+        cur.execute("""
+            INSERT INTO users (institution_id, username, password, name, role, icon, service_id)
+            VALUES (%s, %s, %s, %s, 'service-admin', %s, %s)
+        """, (inst_id, uname, hash_password(pw), display, icon, svc_ids[prefix]))
+    conn.commit()
+    print("Default institution and users seeded.")
+
+
+def ensure_schema(conn):
+    init_schema(conn)
+    seed_default_data(conn)
+
+
+# ---- Routes ----
+
+@app.route('/')
+def serve_index():
+    return app.send_static_file('index.html')
+
+
+@app.route('/api/')
+def api_root():
+    return jsonify({"message": "Queue Management System API is running!", "status": "active", "version": "2.0 - Multi-Tenant"})
+
+
+@app.route('/api/test-db')
 def test_db():
     conn = get_db_connection()
     if not conn:
-        return jsonify({"db_connected": False, "error": "Database connection failed"}), 500
-    
+        return jsonify({"db_connected": False, "error": "Connection failed"}), 500
     try:
         cur = conn.cursor()
         cur.execute('SELECT 1')
-        result = cur.fetchone()
+        r = cur.fetchone()
         conn.close()
-        return jsonify({"db_connected": True, "result": result[0]})
+        return jsonify({"db_connected": True, "result": r[0]})
     except Exception as e:
         return jsonify({"db_connected": False, "error": str(e)}), 500
 
-@app.route('/queue/next-number/<department>', methods=['GET'])
-def get_next_queue_number(department):
-    """Generate the next sequential queue number for a department"""
+
+@app.route('/api/init-schema', methods=['POST'])
+def init_schema_endpoint():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        ensure_schema(conn)
+        conn.close()
+        return jsonify({"success": True, "message": "Schema initialized"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- INSTITUTIONS ----
+
+@app.route('/api/institutions', methods=['GET'])
+def list_institutions():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        ensure_schema(conn)
+        show_all = request.args.get('all', 'false') == 'true'
+        if show_all:
+            cur.execute("SELECT id, name, slug, type, logo_url, description, is_active, created_at FROM institutions ORDER BY name")
+        else:
+            cur.execute("SELECT id, name, slug, type, logo_url, description, is_active, created_at FROM institutions WHERE is_active = TRUE ORDER BY name")
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify([{
+            "id": r[0], "name": r[1], "slug": r[2], "type": r[3],
+            "logo_url": r[4], "description": r[5], "is_active": r[6],
+            "created_at": r[7].isoformat() if r[7] else None
+        } for r in rows])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/institutions', methods=['POST'])
+def create_institution():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+        slug = data.get('slug', '').strip().lower()
+        inst_type = data.get('type', 'other')
+        logo_url = data.get('logo_url', '')
+        description = data.get('description', '')
+        if not name or not slug:
+            return jsonify({"success": False, "error": "Name and slug are required"}), 400
+        import re
+        if not re.match(r'^[a-z0-9\-]+$', slug):
+            return jsonify({"success": False, "error": "Slug must contain only lowercase letters, numbers, and hyphens"}), 400
+        cur = conn.cursor()
+        ensure_schema(conn)
+        cur.execute("""
+            INSERT INTO institutions (name, slug, type, logo_url, description)
+            VALUES (%s, %s, %s, %s, %s) RETURNING id
+        """, (name, slug, inst_type, logo_url, description))
+        inst_id = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "id": inst_id, "message": f"Institution '{name}' created"})
+    except psycopg2.errors.UniqueViolation:
+        return jsonify({"success": False, "error": "An institution with this slug already exists"}), 409
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/institutions/<int:inst_id>', methods=['GET'])
+def get_institution(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, name, slug, type, logo_url, description, is_active, settings, created_at FROM institutions WHERE id = %s", (inst_id,))
+        r = cur.fetchone()
+        conn.close()
+        if not r:
+            return jsonify({"error": "Institution not found"}), 404
+        return jsonify({
+            "id": r[0], "name": r[1], "slug": r[2], "type": r[3],
+            "logo_url": r[4], "description": r[5], "is_active": r[6],
+            "settings": r[7], "created_at": r[8].isoformat() if r[8] else None
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/institutions/<int:inst_id>', methods=['PUT'])
+def update_institution(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        cur = conn.cursor()
+        allowed = ['name', 'type', 'logo_url', 'description', 'is_active']
+        fields, values = [], []
+        for k in allowed:
+            if k in data:
+                fields.append(f"{k} = %s")
+                values.append(data[k])
+        if not fields:
+            return jsonify({"success": False, "error": "No fields to update"}), 400
+        values.append(inst_id)
+        cur.execute(f"UPDATE institutions SET {', '.join(fields)} WHERE id = %s", values)
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Institution not found"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Institution updated"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/institutions/<int:inst_id>', methods=['DELETE'])
+def delete_institution(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE institutions SET is_active = FALSE WHERE id = %s", (inst_id,))
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Institution not found"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Institution deactivated"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- SERVICES ----
+
+@app.route('/api/institutions/<int:inst_id>/services', methods=['GET'])
+def list_services(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        ensure_schema(conn)
+        cur.execute("""
+            SELECT id, name, prefix, description, icon, is_active, display_order
+            FROM services WHERE institution_id = %s AND is_active = TRUE
+            ORDER BY display_order, prefix
+        """, (inst_id,))
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify([{
+            "id": r[0], "name": r[1], "prefix": r[2].strip(), "description": r[3],
+            "icon": r[4], "is_active": r[5], "display_order": r[6]
+        } for r in rows])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/institutions/<int:inst_id>/services', methods=['POST'])
+def create_service(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        name = data.get('name', '').strip()
+        prefix = data.get('prefix', '').strip().upper()
+        description = data.get('description', '')
+        icon = data.get('icon', 'fa-concierge-bell')
+        display_order = data.get('display_order', 0)
+        if not name or not prefix or len(prefix) != 1 or not prefix.isalpha():
+            return jsonify({"success": False, "error": "Name and a single-letter prefix (A-Z) are required"}), 400
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO services (institution_id, name, prefix, description, icon, display_order)
+            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+        """, (inst_id, name, prefix, description, icon, display_order))
+        sid = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "id": sid, "message": f"Service '{name}' created"})
+    except psycopg2.errors.UniqueViolation:
+        return jsonify({"success": False, "error": f"Prefix '{prefix}' already used in this institution"}), 409
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/services/<int:service_id>', methods=['PUT'])
+def update_service(service_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        cur = conn.cursor()
+        allowed = ['name', 'description', 'icon', 'is_active', 'display_order']
+        fields, values = [], []
+        for k in allowed:
+            if k in data:
+                fields.append(f"{k} = %s")
+                values.append(data[k])
+        if not fields:
+            return jsonify({"success": False, "error": "No fields to update"}), 400
+        values.append(service_id)
+        cur.execute(f"UPDATE services SET {', '.join(fields)} WHERE id = %s", values)
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Service not found"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Service updated"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/services/<int:service_id>', methods=['DELETE'])
+def delete_service(service_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("UPDATE services SET is_active = FALSE WHERE id = %s", (service_id,))
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Service not found"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Service deactivated"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- ADMINS ----
+
+@app.route('/api/institutions/<int:inst_id>/admins', methods=['GET'])
+def list_admins(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT u.id, u.username, u.name, u.role, u.icon, u.service_id, s.name
+            FROM users u LEFT JOIN services s ON u.service_id = s.id
+            WHERE u.institution_id = %s ORDER BY u.role, u.username
+        """, (inst_id,))
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify({"success": True, "admins": [{
+            "id": r[0], "username": r[1], "name": r[2], "role": r[3],
+            "icon": r[4], "service_id": r[5], "service_name": r[6]
+        } for r in rows]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/institutions/<int:inst_id>/admins', methods=['POST'])
+def create_admin(inst_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        name = data.get('name', '').strip()
+        role = data.get('role', 'service-admin')
+        icon = data.get('icon', 'fa-user')
+        service_id = data.get('service_id')
+        if not username or not password or not name:
+            return jsonify({"success": False, "error": "Username, password, and name are required"}), 400
+        if role not in ('institution-admin', 'service-admin'):
+            return jsonify({"success": False, "error": "Role must be 'institution-admin' or 'service-admin'"}), 400
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO users (institution_id, username, password, name, role, icon, service_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+        """, (inst_id, username, hash_password(password), name, role, icon, service_id))
+        uid = cur.fetchone()[0]
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "id": uid, "message": f"Admin '{username}' created"})
+    except psycopg2.errors.UniqueViolation:
+        return jsonify({"success": False, "error": f"Username '{username}' already exists in this institution"}), 409
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/admins/<int:user_id>', methods=['DELETE'])
+def delete_admin(user_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT role FROM users WHERE id = %s", (user_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
+            return jsonify({"error": "User not found"}), 404
+        if row[0] == 'super-admin':
+            conn.close()
+            return jsonify({"success": False, "error": "Cannot delete super-admin"}), 403
+        cur.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Admin deleted"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- AUTH ----
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        institution_id = data.get('institution_id')
+        username = data.get('username') or data.get('department', '')
+        password = data.get('password', '')
+        if not username or not password:
+            return jsonify({"success": False, "error": "Username and password required"}), 400
+        cur = conn.cursor()
+        ensure_schema(conn)
+        if institution_id:
+            cur.execute("""
+                SELECT u.id, u.username, u.password, u.name, u.role, u.icon,
+                       u.institution_id, u.service_id, i.name, i.slug
+                FROM users u LEFT JOIN institutions i ON u.institution_id = i.id
+                WHERE u.institution_id = %s AND u.username = %s
+            """, (institution_id, username))
+        else:
+            cur.execute("""
+                SELECT u.id, u.username, u.password, u.name, u.role, u.icon,
+                       u.institution_id, u.service_id, i.name, i.slug
+                FROM users u LEFT JOIN institutions i ON u.institution_id = i.id
+                WHERE u.username = %s
+            """, (username,))
+        user = cur.fetchone()
+        conn.close()
+        if not user:
+            return jsonify({"success": False, "error": "Invalid credentials"}), 401
+        if not verify_password(password, user[2]):
+            return jsonify({"success": False, "error": "Invalid credentials"}), 401
+        return jsonify({
+            "success": True,
+            "user": {
+                "id": user[0], "username": user[1], "department": user[1],
+                "name": user[3], "role": user[4], "icon": user[5],
+                "institution_id": user[6], "service_id": user[7],
+                "institution_name": user[8], "institution_slug": user[9],
+            }
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/auth/init', methods=['GET'])
+def init_auth():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        ensure_schema(conn)
+        conn.close()
+        return jsonify({"success": True, "message": "Auth tables initialized"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/auth/users', methods=['GET'])
+def get_users():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        institution_id = request.args.get('institution_id')
+        if institution_id:
+            cur.execute("""
+                SELECT u.username, u.name, u.icon, u.role, i.name
+                FROM users u LEFT JOIN institutions i ON u.institution_id = i.id
+                WHERE u.institution_id = %s AND u.role != 'super-admin' ORDER BY u.username
+            """, (institution_id,))
+        else:
+            cur.execute("""
+                SELECT u.username, u.name, u.icon, u.role, i.name
+                FROM users u LEFT JOIN institutions i ON u.institution_id = i.id
+                WHERE u.role != 'super-admin' ORDER BY i.name, u.username
+            """)
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify({"success": True, "users": [{
+            "id": r[0], "name": r[1], "icon": r[2], "role": r[3], "institution": r[4]
+        } for r in rows]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/auth/change-password', methods=['POST'])
+def change_password():
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        username = data.get('department') or data.get('username', '')
+        new_password = data.get('new_password', '')
+        institution_id = data.get('institution_id')
+        if not username or not new_password:
+            return jsonify({"success": False, "error": "Username and new password required"}), 400
+        cur = conn.cursor()
+        hashed = hash_password(new_password)
+        if institution_id:
+            cur.execute("UPDATE users SET password = %s, updated_at = NOW() WHERE username = %s AND institution_id = %s",
+                        (hashed, username, institution_id))
+        else:
+            cur.execute("UPDATE users SET password = %s, updated_at = NOW() WHERE username = %s",
+                        (hashed, username))
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"success": False, "error": "User not found"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": f"Password updated for {username}"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- QUEUE ----
+
+def _resolve_department(department, cur, institution_id=None):
+    try:
+        sid = int(department)
+        return ('service_id', sid)
+    except (ValueError, TypeError):
+        pass
+    pf = LEGACY_PERSON_FILTERS.get(department, '%')
+    return ('person_like', pf)
+
+
+def _queue_where(filter_type, filter_value, institution_id=None):
+    clauses, params = [], []
+    if filter_type == 'service_id':
+        clauses.append("service_id = %s")
+        params.append(filter_value)
+    else:
+        clauses.append("person LIKE %s")
+        params.append(filter_value)
+    if institution_id:
+        clauses.append("institution_id = %s")
+        params.append(institution_id)
+    return " AND ".join(clauses), params
+
+
+@app.route('/api/queue/next-number/<prefix>', methods=['GET'])
+def get_next_queue_number(prefix):
     conn = get_db_connection()
     if not conn:
         return jsonify({"success": False, "error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Get current date for daily reset
+        institution_id = request.args.get('institution_id')
         today = datetime.now().strftime('%Y-%m-%d')
-        
-        # Get the highest number for this department today
-        cur.execute("""
-            SELECT MAX(CAST(SUBSTRING(number FROM 2) AS INTEGER)) as max_num
-            FROM queue 
-            WHERE number LIKE %s 
-            AND DATE(created_at) = %s
-        """, (f"{department}%", today))
-        
-        result = cur.fetchone()
-        max_num = result[0] if result[0] is not None else 0
-        
-        # Generate next number (max 999)
+        if institution_id:
+            cur.execute("""
+                SELECT MAX(CAST(SUBSTRING(number FROM 2) AS INTEGER))
+                FROM queue WHERE number LIKE %s AND DATE(created_at) = %s AND institution_id = %s
+            """, (f"{prefix}%", today, institution_id))
+        else:
+            cur.execute("""
+                SELECT MAX(CAST(SUBSTRING(number FROM 2) AS INTEGER))
+                FROM queue WHERE number LIKE %s AND DATE(created_at) = %s
+            """, (f"{prefix}%", today))
+        max_num = (cur.fetchone()[0] or 0)
         next_num = max_num + 1
         if next_num > 999:
             conn.close()
-            return jsonify({
-                "success": False, 
-                "error": f"Maximum queue numbers reached for department {department} today (999)"
-            }), 400
-        
-        # Format as A001, B001, etc.
-        queue_number = f"{department}{str(next_num).zfill(3)}"
-        
+            return jsonify({"success": False, "error": f"Max queue numbers reached for {prefix} today"}), 400
+        queue_number = f"{prefix}{str(next_num).zfill(3)}"
         conn.close()
-        return jsonify({
-            "success": True,
-            "queue_number": queue_number,
-            "sequence": next_num,
-            "department": department
-        })
-        
+        return jsonify({"success": True, "queue_number": queue_number, "sequence": next_num, "department": prefix})
     except Exception as e:
-        print(f"Error generating queue number: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/queue', methods=['POST'])
+
+@app.route('/api/queue', methods=['POST'])
 def create_queue():
     conn = get_db_connection()
     if not conn:
         return jsonify({"success": False, "error": "Database connection failed"}), 500
-    
     try:
         data = request.json
         cur = conn.cursor()
-        
-        # Create table if not exists
+        ensure_schema(conn)
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS queue (
-                id VARCHAR(255) PRIMARY KEY,
-                number VARCHAR(50),
-                person VARCHAR(255),
-                date VARCHAR(100),
-                time VARCHAR(50),
-                status VARCHAR(50),
-                accessed BOOLEAN DEFAULT FALSE,
-                accessed_at TIMESTAMP DEFAULT NULL,
-                completed BOOLEAN DEFAULT FALSE,
-                completed_at TIMESTAMP DEFAULT NULL,
-                completed_by VARCHAR(255) DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT NOW(),
-                called BOOLEAN DEFAULT FALSE,
-                called_at TIMESTAMP DEFAULT NULL,
-                called_by VARCHAR(255) DEFAULT NULL,
-                is_present BOOLEAN DEFAULT FALSE,
-                present_at TIMESTAMP DEFAULT NULL
-            )
-        """)
-        
-        # Insert data
-        cur.execute(
-            "INSERT INTO queue (id, number, person, date, time, status) VALUES (%s, %s, %s, %s, %s, %s)",
-            (data['id'], data['number'], data['person'], data['date'], data['time'], data.get('status', 'waiting'))
-        )
+            INSERT INTO queue (id, institution_id, service_id, number, person, date, time, status)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            data['id'], data.get('institution_id'), data.get('service_id'),
+            data['number'], data['person'], data['date'], data['time'],
+            data.get('status', 'waiting')
+        ))
         conn.commit()
         conn.close()
-        
         return jsonify({"success": True, "message": "Queue entry created"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/queue/<queue_id>')
+
+@app.route('/api/queue/<queue_id>')
 def get_queue(queue_id):
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # First, try to add the new columns if they don't exist (for backward compatibility)
-        try:
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS accessed BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS accessed_at TIMESTAMP DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
-            conn.commit()
-        except Exception as alter_error:
-            # Columns might already exist, continue
-            pass
-        
-        # Mark as accessed when someone visits the queue status page
-        try:
-            cur.execute(
-                "UPDATE queue SET accessed = TRUE, accessed_at = NOW() WHERE id = %s",
-                (queue_id,)
-            )
-            conn.commit()
-        except Exception as update_error:
-            # If update fails, just continue with the select
-            print(f"Warning: Could not update accessed status: {update_error}")
-        
-        cur.execute("SELECT * FROM queue WHERE id = %s", (queue_id,))
-        row = cur.fetchone()
+        cur.execute("UPDATE queue SET accessed = TRUE, accessed_at = NOW() WHERE id = %s", (queue_id,))
+        conn.commit()
+        cur.execute("""
+            SELECT q.id, q.number, q.person, q.date, q.time, q.status,
+                   q.institution_id, q.service_id, i.name, s.name
+            FROM queue q
+            LEFT JOIN institutions i ON q.institution_id = i.id
+            LEFT JOIN services s ON q.service_id = s.id
+            WHERE q.id = %s
+        """, (queue_id,))
+        r = cur.fetchone()
         conn.close()
-        
-        if row:
+        if r:
             return jsonify({
-                "id": row[0],
-                "number": row[1],
-                "person": row[2],
-                "date": row[3],
-                "time": row[4],
-                "status": row[5]
+                "id": r[0], "number": r[1], "person": r[2],
+                "date": r[3], "time": r[4], "status": r[5],
+                "institution_id": r[6], "service_id": r[7],
+                "institution_name": r[8], "service_name": r[9]
             })
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/queue/<queue_id>/accessed')
+
+@app.route('/api/queue/<queue_id>/accessed')
 def check_queue_accessed(queue_id):
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Try to select with new columns, fallback if they don't exist
-        try:
-            cur.execute("SELECT accessed, accessed_at FROM queue WHERE id = %s", (queue_id,))
-            row = cur.fetchone()
-            conn.close()
-            
-            if row:
-                return jsonify({
-                    "accessed": row[0] if row[0] is not None else False,
-                    "accessed_at": row[1].isoformat() if row[1] else None
-                })
-        except Exception as select_error:
-            # Columns might not exist, return default values
-            cur.execute("SELECT id FROM queue WHERE id = %s", (queue_id,))
-            row = cur.fetchone()
-            conn.close()
-            
-            if row:
-                return jsonify({
-                    "accessed": False,
-                    "accessed_at": None
-                })
-        
+        cur.execute("SELECT accessed, accessed_at FROM queue WHERE id = %s", (queue_id,))
+        r = cur.fetchone()
+        conn.close()
+        if r:
+            return jsonify({"accessed": r[0] if r[0] is not None else False, "accessed_at": r[1].isoformat() if r[1] else None})
         return jsonify({"error": "Not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# Admin endpoints
-@app.route('/admin/queue/<department>')
-def get_admin_queue(department):
-    """Get current queue for a specific department"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Add missing columns if they don't exist
-        try:
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS completed_by VARCHAR(255) DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW()")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_at TIMESTAMP DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_by VARCHAR(255) DEFAULT NULL")
-            conn.commit()
-        except Exception:
-            pass
-        
-        # Map department to person filter
-        person_filters = {
-            'dean': '%Dean%',
-            'ie-chair': '%IE%',
-            'cpe-chair': '%CPE%',
-            'ece-chair': '%ECE%',
-            'others': '%Other%'
-        }
-        
-        person_filter = person_filters.get(department, '%')
-        
-        # Get ALL queues for this department from today (including completed)
-        cur.execute("""
-            SELECT id, number, person, date, time, status, created_at, is_present, present_at, is_muted 
-            FROM queue 
-            WHERE person LIKE %s 
-            AND date = CURRENT_DATE
-            ORDER BY id DESC
-        """, (person_filter,))
-        
-        rows = cur.fetchall()
-        conn.close()
-        
-        queues = []
-        for row in rows:
-            queues.append({
-                "id": row[0],
-                "number": row[1],
-                "person": row[2],
-                "date": row[3],
-                "time": row[4],
-                "status": row[5],
-                "created_at": row[6].isoformat() if row[6] else None,
-                "is_present": row[7] if len(row) > 7 else False,
-                "present_at": row[8].isoformat() if len(row) > 8 and row[8] else None,
-                "is_muted": row[9] if len(row) > 9 else False
-            })
-        
-        return jsonify(queues)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-@app.route('/admin/stats/<department>')
-def get_admin_stats(department):
-    """Get statistics for a specific department"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Map department to person filter
-        person_filters = {
-            'dean': '%Dean%',
-            'ie-chair': '%IE%',
-            'cpe-chair': '%CPE%',
-            'ece-chair': '%ECE%',
-            'others': '%Other%'
-        }
-        
-        person_filter = person_filters.get(department, '%')
-        today = datetime.now().strftime('%Y-%m-%d')
-        
-        # Total queues today
-        cur.execute("""
-            SELECT COUNT(*) FROM queue 
-            WHERE person LIKE %s AND DATE(created_at) = %s
-        """, (person_filter, today))
-        total_today = cur.fetchone()[0] or 0
-        
-        # Current queue count
-        cur.execute("""
-            SELECT COUNT(*) FROM queue 
-            WHERE person LIKE %s AND (completed IS NULL OR completed = FALSE)
-        """, (person_filter,))
-        current_queue = cur.fetchone()[0] or 0
-        
-        # Completed today
-        cur.execute("""
-            SELECT COUNT(*) FROM queue 
-            WHERE person LIKE %s AND completed = TRUE AND DATE(completed_at) = %s
-        """, (person_filter, today))
-        completed_today = cur.fetchone()[0] or 0
-        
-        # Average wait time (simplified calculation)
-        avg_wait_time = max(current_queue * 5, 5)  # 5 minutes per queue
-        
-        conn.close()
-        
-        return jsonify({
-            "totalToday": total_today,
-            "currentQueue": current_queue,
-            "completedToday": completed_today,
-            "avgWaitTime": avg_wait_time
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/admin/call-queue/<queue_id>', methods=['POST'])
-def call_queue(queue_id):
-    """Call a queue (mark as called, not completed yet)"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        data = request.json
-        cur = conn.cursor()
-        
-        # Add missing columns if they don't exist
-        try:
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called_at TIMESTAMP DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS called_by VARCHAR(255) DEFAULT NULL")
-            conn.commit()
-        except Exception:
-            pass
-        
-        # Mark queue as called (not completed yet)
-        cur.execute("""
-            UPDATE queue 
-            SET called = TRUE, called_at = NOW(), called_by = %s, status = 'called'
-            WHERE id = %s AND completed = FALSE
-        """, (data.get('calledBy'), queue_id))
-        
-        if cur.rowcount == 0:
-            conn.close()
-            return jsonify({"error": "Queue not found or already completed"}), 404
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({"success": True, "message": "Queue called successfully", "status": "called"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/admin/return-queue/<queue_id>', methods=['POST'])
-def return_queue(queue_id):
-    """Return a called queue back to waiting status"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        data = request.json
-        cur = conn.cursor()
-        
-        # Add missing columns if they don't exist
-        try:
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_by VARCHAR(255) DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_at TIMESTAMP DEFAULT NULL")
-            conn.commit()
-        except Exception:
-            pass
-        
-        # Return queue back to waiting (reset called status)
-        cur.execute("""
-            UPDATE queue 
-            SET called = FALSE, status = 'waiting', returned_by = %s, returned_at = NOW()
-            WHERE id = %s AND called = TRUE AND completed = FALSE
-        """, (data.get('returnedBy'), queue_id))
-        
-        if cur.rowcount == 0:
-            conn.close()
-            return jsonify({"error": "Queue not found, not called, or already completed"}), 404
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({"success": True, "message": "Queue returned to waiting successfully", "status": "waiting"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/admin/complete-queue/<queue_id>', methods=['POST'])
-def complete_queue(queue_id):
-    """Complete a queue (mark as completed after being called)"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        data = request.json
-        cur = conn.cursor()
-        
-        # Mark queue as completed (allow completing from any status)
-        cur.execute("""
-            UPDATE queue 
-            SET completed = TRUE, completed_at = NOW(), completed_by = %s, status = 'completed', called = TRUE
-            WHERE id = %s
-        """, (data.get('completedBy'), queue_id))
-        
-        if cur.rowcount == 0:
-            conn.close()
-            return jsonify({"error": "Queue not found"}), 404
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({"success": True, "message": "Queue completed successfully"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/admin/activity/<department>')
-def get_recent_activity(department):
-    """Get recent completed queues for a department"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Map department to person filter
-        person_filters = {
-            'dean': '%Dean%',
-            'ie-chair': '%IE%',
-            'cpe-chair': '%CPE%',
-            'ece-chair': '%ECE%',
-            'others': '%Other%'
-        }
-        
-        person_filter = person_filters.get(department, '%')
-        
-        # Get recent completed queues
-        cur.execute("""
-            SELECT number, person, completed_at 
-            FROM queue 
-            WHERE person LIKE %s AND completed = TRUE 
-            ORDER BY completed_at DESC 
-            LIMIT 10
-        """, (person_filter,))
-        
-        rows = cur.fetchall()
-        conn.close()
-        
-        activities = []
-        for row in rows:
-            activities.append({
-                "number": row[0],
-                "person": row[1],
-                "completedAt": row[2].strftime('%Y-%m-%d %H:%M') if row[2] else None
-            })
-        
-        return jsonify(activities)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/queue/<queue_id>/status')
+@app.route('/api/queue/<queue_id>/status')
 def get_queue_status(queue_id):
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Get the current queue details
-        cur.execute("SELECT number, person, created_at, called, is_present FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
-        current_queue = cur.fetchone()
-        
-        if not current_queue:
+        cur.execute("""
+            SELECT number, person, created_at, called, is_present, institution_id, service_id
+            FROM queue WHERE id = %s AND completed = FALSE
+        """, (queue_id,))
+        row = cur.fetchone()
+        if not row:
+            conn.close()
             return jsonify({"error": "Queue not found or already completed"}), 404
-            
-        queue_number = current_queue[0]
-        person = current_queue[1]
-        created_at = current_queue[2]
-        is_called = current_queue[3] if len(current_queue) > 3 else False
-        is_present = current_queue[4] if len(current_queue) > 4 else False
-        
-        # If created_at is None, use current time as fallback
-        if not created_at:
-            created_at = datetime.now()
-        
-        # Extract department prefix from queue number (A, B, C, D, E)
-        department_prefix = queue_number[0].upper() if queue_number and len(queue_number) > 0 else 'A'
-        
-        # Debug: Print queue information
-        print(f"Debug - Queue: {queue_number}, Department: {department_prefix}, Created: {created_at}")
-        
-        # Debug: Show all active queues in this department
-        cur.execute("""
-            SELECT number, created_at, id FROM queue 
-            WHERE number LIKE %s 
-            AND completed = FALSE 
-            ORDER BY created_at ASC
-        """, (department_prefix + '%',))
-        
-        all_queues = cur.fetchall()
-        print(f"Debug - All active queues in {department_prefix}: {all_queues}")
-        print(f"Debug - Current queue ID: {queue_id}, created_at: {created_at}")
-        
-        # Get admin status for this department
-        admin_status = get_admin_status(department_prefix)
-
-        # Determine status based on actual conditions and admin status
+        queue_number = row[0]
+        is_called = row[3] if row[3] is not None else False
+        is_present = row[4] if row[4] is not None else False
+        prefix = queue_number[0].upper() if queue_number else 'A'
+        admin_status = admin_statuses.get(prefix, 'available')
         if admin_status == 'away':
-            status = {
-                "text": "Admin Away",
-                "class": "status-away",
-                "priority": "low"
-            }
+            status = {"text": "Admin Away", "class": "status-away", "priority": "low"}
         elif is_called:
-            status = {
-                "text": "You are now being called!",
-                "class": "status-called",
-                "priority": "high"
-            }
+            status = {"text": "You are now being called!", "class": "status-called", "priority": "high"}
         else:
-            status = {
-                "text": "Waiting",
-                "class": "status-waiting",
-                "priority": "low"
-            }
-
+            status = {"text": "Waiting", "class": "status-waiting", "priority": "low"}
         conn.close()
-
         return jsonify({
-            "status": status,
-            "department_prefix": department_prefix,
-            "admin_status": admin_status,
-            "is_called": is_called,
-            "is_present": is_present,
-            "queue_number": queue_number
+            "status": status, "department_prefix": prefix,
+            "admin_status": admin_status, "is_called": is_called,
+            "is_present": is_present, "queue_number": queue_number
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('/queue/im-here/<queue_id>', methods=['POST'])
+
+@app.route('/api/queue/im-here/<queue_id>', methods=['POST'])
 def queue_im_here(queue_id):
-    """Mark queue as 'I'm here' - user is present and ready"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"success": False, "error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Add missing columns if they don't exist
-        try:
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_present BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS present_at TIMESTAMP DEFAULT NULL")
-            conn.commit()
-        except Exception:
-            pass  # Columns might already exist
-        
-        # Check if queue exists and is not completed
-        cur.execute("SELECT number, person FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
-        queue_data = cur.fetchone()
-        
-        if not queue_data:
-            return jsonify({"success": False, "error": "Queue not found or already completed"}), 404
-        
-        # Mark as present
-        cur.execute("""
-            UPDATE queue 
-            SET is_present = TRUE, present_at = NOW() 
-            WHERE id = %s
-        """, (queue_id,))
-        
-        if cur.rowcount == 0:
-            return jsonify({"success": False, "error": "Failed to update queue"}), 400
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            "success": True, 
-            "message": "Successfully marked as present",
-            "queue_number": queue_data[0]
-        })
-        
-    except Exception as e:
-        print(f"Error in im-here endpoint: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
-@app.route('/queue/cancel-im-here/<queue_id>', methods=['POST'])
-def cancel_queue_im_here(queue_id):
-    """Cancel 'I'm here' status"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"success": False, "error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Check if queue exists and is not completed
         cur.execute("SELECT number FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
-        queue_data = cur.fetchone()
-        
-        if not queue_data:
+        q = cur.fetchone()
+        if not q:
+            conn.close()
             return jsonify({"success": False, "error": "Queue not found or already completed"}), 404
-        
-        # Remove present status
-        cur.execute("""
-            UPDATE queue 
-            SET is_present = FALSE, present_at = NULL 
-            WHERE id = %s
-        """, (queue_id,))
-        
-        if cur.rowcount == 0:
-            return jsonify({"success": False, "error": "Failed to update queue"}), 400
-        
+        cur.execute("UPDATE queue SET is_present = TRUE, present_at = NOW() WHERE id = %s", (queue_id,))
         conn.commit()
         conn.close()
-        
-        return jsonify({
-            "success": True, 
-            "message": "Successfully cancelled present status",
-            "queue_number": queue_data[0]
-        })
-        
+        return jsonify({"success": True, "message": "Marked as present", "queue_number": q[0]})
     except Exception as e:
-        print(f"Error in cancel-im-here endpoint: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/admin/mute-queue/<queue_id>', methods=['POST'])
-def mute_queue(queue_id):
-    """Mute audio alerts for a specific queue"""
+
+@app.route('/api/queue/cancel-im-here/<queue_id>', methods=['POST'])
+def cancel_queue_im_here(queue_id):
     conn = get_db_connection()
     if not conn:
         return jsonify({"success": False, "error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Add missing columns if they don't exist
-        try:
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS is_muted BOOLEAN DEFAULT FALSE")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_at TIMESTAMP DEFAULT NULL")
-            cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS muted_by VARCHAR(255) DEFAULT NULL")
-            conn.commit()
-        except Exception:
-            pass  # Columns might already exist
-        
-        # Check if queue exists and is called
-        cur.execute("SELECT number FROM queue WHERE id = %s AND called = TRUE AND completed = FALSE", (queue_id,))
-        queue_data = cur.fetchone()
-        
-        if not queue_data:
-            return jsonify({"success": False, "error": "Queue not found, not called, or already completed"}), 404
-        
-        # Mark as muted
-        data = request.json
-        cur.execute("""
-            UPDATE queue 
-            SET is_muted = TRUE, muted_at = NOW(), muted_by = %s 
-            WHERE id = %s
-        """, (data.get('mutedBy'), queue_id))
-        
-        if cur.rowcount == 0:
-            return jsonify({"success": False, "error": "Failed to mute queue"}), 400
-        
+        cur.execute("SELECT number FROM queue WHERE id = %s AND completed = FALSE", (queue_id,))
+        q = cur.fetchone()
+        if not q:
+            conn.close()
+            return jsonify({"success": False, "error": "Queue not found or already completed"}), 404
+        cur.execute("UPDATE queue SET is_present = FALSE, present_at = NULL WHERE id = %s", (queue_id,))
         conn.commit()
         conn.close()
-        
-        return jsonify({
-            "success": True, 
-            "message": "Queue audio alerts muted",
-            "queue_number": queue_data[0]
-        })
-        
+        return jsonify({"success": True, "message": "Cancelled present status", "queue_number": q[0]})
     except Exception as e:
-        print(f"Error in mute-queue endpoint: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/admin/unmute-queue/<queue_id>', methods=['POST'])
-def unmute_queue(queue_id):
-    """Unmute audio alerts for a specific queue"""
-    conn = get_db_connection()
-    if not conn:
-        return jsonify({"success": False, "error": "Database connection failed"}), 500
-    
-    try:
-        cur = conn.cursor()
-        
-        # Check if queue exists and is called
-        cur.execute("SELECT number FROM queue WHERE id = %s AND called = TRUE AND completed = FALSE", (queue_id,))
-        queue_data = cur.fetchone()
-        
-        if not queue_data:
-            return jsonify({"success": False, "error": "Queue not found, not called, or already completed"}), 404
-        
-        # Remove muted status
-        data = request.json
-        cur.execute("""
-            UPDATE queue 
-            SET is_muted = FALSE, muted_at = NULL, muted_by = NULL 
-            WHERE id = %s
-        """, (queue_id,))
-        
-        if cur.rowcount == 0:
-            return jsonify({"success": False, "error": "Failed to unmute queue"}), 400
-        
-        conn.commit()
-        conn.close()
-        
-        return jsonify({
-            "success": True, 
-            "message": "Queue audio alerts unmuted",
-            "queue_number": queue_data[0]
-        })
-        
-    except Exception as e:
-        print(f"Error in unmute-queue endpoint: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/queue/<queue_id>/mute-status')
+@app.route('/api/queue/<queue_id>/mute-status')
 def get_queue_mute_status(queue_id):
-    """Check if a specific queue is muted"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Get mute status for this queue
         cur.execute("SELECT is_muted, muted_at, muted_by FROM queue WHERE id = %s", (queue_id,))
-        mute_data = cur.fetchone()
+        r = cur.fetchone()
         conn.close()
-        
-        if not mute_data:
+        if not r:
             return jsonify({"error": "Queue not found"}), 404
-        
-        is_muted = mute_data[0] if mute_data[0] is not None else False
-        muted_at = mute_data[1]
-        muted_by = mute_data[2]
-        
-        return jsonify({
-            "is_muted": is_muted,
-            "muted_at": muted_at.isoformat() if muted_at else None,
-            "muted_by": muted_by
-        })
-        
+        return jsonify({"is_muted": r[0] if r[0] is not None else False, "muted_at": r[1].isoformat() if r[1] else None, "muted_by": r[2]})
     except Exception as e:
-        print(f"Error checking queue mute status: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/queue/<queue_id>/is-previous-day')
-def check_if_previous_day_queue(queue_id):
-    """Check if a queue is from a previous day"""
+
+@app.route('/api/queue/<queue_id>/is-previous-day')
+def check_previous_day(queue_id):
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-    
     try:
         cur = conn.cursor()
-        
-        # Get queue creation date
         cur.execute("SELECT created_at, date FROM queue WHERE id = %s", (queue_id,))
-        queue_data = cur.fetchone()
+        row = cur.fetchone()
         conn.close()
-        
-        if not queue_data:
+        if not row:
             return jsonify({"error": "Queue not found"}), 404
-        
-        created_at = queue_data[0]
-        queue_date_str = queue_data[1]
-        
-        # Get today's date
         today = datetime.now().date()
-        
-        # Check if created_at is from a previous day
-        if created_at:
-            queue_date = created_at.date()
-            is_previous_day = queue_date < today
+        if row[0]:
+            queue_date = row[0].date()
+            is_prev = queue_date < today
         else:
-            # Fallback to parsing the date string using the local parse_date helper
-            parsed_date = parse_date(queue_date_str)
-            if parsed_date:
-                queue_date = parsed_date
-                is_previous_day = parsed_date < today
-            else:
-                # If parsing fails, assume it's not from previous day
-                is_previous_day = False
-        
-        return jsonify({
-            "is_previous_day": is_previous_day,
-            "queue_date": queue_date.isoformat() if 'queue_date' in locals() else queue_date_str,
-            "today": today.isoformat()
-        })
-        
+            parsed = parse_date(row[1])
+            queue_date = parsed if parsed else today
+            is_prev = queue_date < today if parsed else False
+        return jsonify({"is_previous_day": is_prev, "queue_date": queue_date.isoformat(), "today": today.isoformat()})
     except Exception as e:
-        print(f"Error checking previous day queue: {e}")
         return jsonify({"error": str(e)}), 500
 
-# Admin status management
-admin_statuses = {}  # In-memory storage for admin statuses
 
-def get_admin_status(department):
-    """Get admin status for a department"""
-    status = admin_statuses.get(department, 'available')
-    return status
+# ---- ADMIN QUEUE MANAGEMENT ----
 
-@app.route('/admin/status', methods=['POST'])
+@app.route('/api/admin/queue/<department>')
+def get_admin_queue(department):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        institution_id = request.args.get('institution_id')
+        ft, fv = _resolve_department(department, cur, institution_id)
+        where, params = _queue_where(ft, fv, institution_id)
+        cur.execute(f"""
+            SELECT id, number, person, date, time, status, created_at,
+                   is_present, present_at, is_muted
+            FROM queue WHERE {where} ORDER BY id ASC
+        """, params)
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify([{
+            "id": r[0], "number": r[1], "person": r[2], "date": r[3],
+            "time": r[4], "status": r[5],
+            "created_at": r[6].isoformat() if r[6] else None,
+            "is_present": r[7] if r[7] is not None else False,
+            "present_at": r[8].isoformat() if r[8] else None,
+            "is_muted": r[9] if r[9] is not None else False
+        } for r in rows])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/queue-history/<department>')
+def get_admin_queue_history(department):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        institution_id = request.args.get('institution_id')
+        ft, fv = _resolve_department(department, cur, institution_id)
+        where, params = _queue_where(ft, fv, institution_id)
+        cur.execute(f"SELECT id, number, person, date, time, status FROM queue WHERE {where} ORDER BY id ASC", params)
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify([{"id": r[0], "number": r[1], "person": r[2], "date": r[3], "time": r[4], "status": r[5]} for r in rows])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/stats/<department>')
+def get_admin_stats(department):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        institution_id = request.args.get('institution_id')
+        today = datetime.now().strftime('%Y-%m-%d')
+        ft, fv = _resolve_department(department, cur, institution_id)
+        where, params = _queue_where(ft, fv, institution_id)
+        cur.execute(f"SELECT COUNT(*) FROM queue WHERE {where} AND DATE(created_at) = %s", params + [today])
+        total_today = cur.fetchone()[0] or 0
+        cur.execute(f"SELECT COUNT(*) FROM queue WHERE {where} AND (completed IS NULL OR completed = FALSE)", params)
+        current_queue = cur.fetchone()[0] or 0
+        cur.execute(f"SELECT COUNT(*) FROM queue WHERE {where} AND completed = TRUE AND DATE(completed_at) = %s", params + [today])
+        completed_today = cur.fetchone()[0] or 0
+        avg_wait = max(current_queue * 5, 5)
+        conn.close()
+        return jsonify({"totalToday": total_today, "currentQueue": current_queue, "completedToday": completed_today, "avgWaitTime": avg_wait})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/call-queue/<queue_id>', methods=['POST'])
+def call_queue(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE queue SET called = TRUE, called_at = NOW(), called_by = %s, status = 'called'
+            WHERE id = %s AND completed = FALSE
+        """, (data.get('calledBy'), queue_id))
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found or already completed"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Queue called", "status": "called"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/return-queue/<queue_id>', methods=['POST'])
+def return_queue(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE queue SET called = FALSE, status = 'waiting', returned_by = %s, returned_at = NOW()
+            WHERE id = %s AND called = TRUE AND completed = FALSE
+        """, (data.get('returnedBy'), queue_id))
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found, not called, or already completed"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Queue returned to waiting", "status": "waiting"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/complete-queue/<queue_id>', methods=['POST'])
+def complete_queue(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        data = request.json
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE queue SET completed = TRUE, completed_at = NOW(), completed_by = %s,
+            status = 'completed', called = TRUE WHERE id = %s
+        """, (data.get('completedBy'), queue_id))
+        if cur.rowcount == 0:
+            conn.close()
+            return jsonify({"error": "Queue not found"}), 404
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Queue completed"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/activity/<department>')
+def get_recent_activity(department):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        institution_id = request.args.get('institution_id')
+        ft, fv = _resolve_department(department, cur, institution_id)
+        where, params = _queue_where(ft, fv, institution_id)
+        cur.execute(f"""
+            SELECT number, person, completed_at FROM queue
+            WHERE {where} AND completed = TRUE ORDER BY completed_at DESC LIMIT 10
+        """, params)
+        rows = cur.fetchall()
+        conn.close()
+        return jsonify([{"number": r[0], "person": r[1], "completedAt": r[2].strftime('%Y-%m-%d %H:%M') if r[2] else None} for r in rows])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/admin/mute-queue/<queue_id>', methods=['POST'])
+def mute_queue(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT number FROM queue WHERE id = %s AND called = TRUE AND completed = FALSE", (queue_id,))
+        if not cur.fetchone():
+            conn.close()
+            return jsonify({"success": False, "error": "Queue not found, not called, or already completed"}), 404
+        data = request.json
+        cur.execute("UPDATE queue SET is_muted = TRUE, muted_at = NOW(), muted_by = %s WHERE id = %s", (data.get('mutedBy'), queue_id))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Queue muted"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route('/api/admin/unmute-queue/<queue_id>', methods=['POST'])
+def unmute_queue(queue_id):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"success": False, "error": "Database connection failed"}), 500
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT number FROM queue WHERE id = %s AND called = TRUE AND completed = FALSE", (queue_id,))
+        if not cur.fetchone():
+            conn.close()
+            return jsonify({"success": False, "error": "Queue not found, not called, or already completed"}), 404
+        cur.execute("UPDATE queue SET is_muted = FALSE, muted_at = NULL, muted_by = NULL WHERE id = %s", (queue_id,))
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": "Queue unmuted"})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- ADMIN STATUS ----
+
+@app.route('/api/admin/status', methods=['POST'])
 def set_admin_status():
-    """Set admin status for a department"""
     try:
         data = request.get_json()
-        department = data.get('department')
-        status = data.get('status')  # 'available', 'busy', 'away'
-        
-        if not department or status not in ['available', 'busy', 'away']:
-            return jsonify({"success": False, "error": "Invalid department or status"}), 400
-            
-        # Map department to department prefix
-        department_mapping = {
-            'dean': 'A',
-            'ie-chair': 'B',
-            'cpe-chair': 'C',
-            'ece-chair': 'D',
-            'others': 'E'
-        }
-        
-        department_prefix = department_mapping.get(department)
-        if not department_prefix:
+        department = data.get('department', '')
+        status = data.get('status')
+        service_id = data.get('service_id')
+        if status not in ('available', 'busy', 'away'):
+            return jsonify({"success": False, "error": "Invalid status"}), 400
+        if service_id:
+            conn = get_db_connection()
+            if conn:
+                cur = conn.cursor()
+                cur.execute("SELECT prefix FROM services WHERE id = %s", (service_id,))
+                row = cur.fetchone()
+                conn.close()
+                if row:
+                    admin_statuses[row[0].strip()] = status
+                    return jsonify({"success": True, "department": row[0].strip(), "status": status})
+        prefix = LEGACY_DEPT_MAPPING.get(department)
+        if not prefix:
             return jsonify({"success": False, "error": "Invalid department"}), 400
-            
-        admin_statuses[department_prefix] = status
-        
-        return jsonify({
-            "success": True,
-            "department": department_prefix,
-            "status": status
-        })
-        
+        admin_statuses[prefix] = status
+        return jsonify({"success": True, "department": prefix, "status": status})
     except Exception as e:
-        print(f"Error setting admin status: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/admin/status/<department>', methods=['GET'])
+
+@app.route('/api/admin/status/<department>', methods=['GET'])
 def get_admin_status_endpoint(department):
-    """Get admin status for a department"""
     try:
         status = admin_statuses.get(department.upper(), 'available')
-        return jsonify({
-            "success": True,
-            "department": department.upper(),
-            "status": status
-        })
+        return jsonify({"success": True, "department": department.upper(), "status": status})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/admin/delete-all-queues', methods=['POST'])
+
+# ---- DELETE QUEUES ----
+
+@app.route('/api/admin/delete-all-queues', methods=['DELETE', 'POST'])
 def delete_all_queues():
-    """Delete all queues from the database - DEAN ONLY"""
     conn = get_db_connection()
     if not conn:
         return jsonify({"error": "Database connection failed"}), 500
-    
     try:
-        data = request.get_json()
-        department = data.get('department')
-        confirmation = data.get('confirmation')
-        
-        # Only dean can delete all queues
-        if department != 'dean':
-            return jsonify({"success": False, "error": "Unauthorized - Only Dean can delete all queues"}), 403
-            
-        # Require confirmation string
-        if confirmation != 'DELETE_ALL_QUEUES_PERMANENTLY':
-            return jsonify({"success": False, "error": "Invalid confirmation"}), 400
-        
         cur = conn.cursor()
-        
-        # Get count before deletion
-        cur.execute("SELECT COUNT(*) FROM queue")
-        total_count = cur.fetchone()[0] or 0
-        
-        # Delete all queues
-        cur.execute("DELETE FROM queue")
-        deleted_count = cur.rowcount
-        
+        institution_id = None
+        if request.json:
+            institution_id = request.json.get('institution_id')
+        if institution_id:
+            cur.execute("SELECT COUNT(*) FROM queue WHERE institution_id = %s", (institution_id,))
+            total = cur.fetchone()[0] or 0
+            cur.execute("DELETE FROM queue WHERE institution_id = %s", (institution_id,))
+        else:
+            cur.execute("SELECT COUNT(*) FROM queue")
+            total = cur.fetchone()[0] or 0
+            cur.execute("DELETE FROM queue")
+        deleted = cur.rowcount
         conn.commit()
         conn.close()
-        
-        print(f"ADMIN ACTION: Dean deleted all queues. Total deleted: {deleted_count}")
-        
-        return jsonify({
-            "success": True,
-            "message": f"Successfully deleted all {deleted_count} queues from the database",
-            "deleted_count": deleted_count,
-            "total_count": total_count
-        })
-        
+        return jsonify({"success": True, "message": f"Deleted {deleted} queues", "deleted": deleted, "deleted_count": deleted, "total_count": total})
     except Exception as e:
-        print(f"Error deleting all queues: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/emergency-audio', methods=['POST'])
-def emergency_audio():
-    """Emergency audio alert endpoint - triggers external sound player"""
-    try:
-        import subprocess
-        import sys
-        
-        data = request.json
-        queue_number = data.get('queue_number', 'Unknown')
-        
-        print(f"[ALERT] EMERGENCY AUDIO TRIGGERED FOR QUEUE {queue_number}!")
-        
-        # Try to run the Python emergency audio script
-        try:
-            # Run the emergency audio script in background
-            subprocess.Popen([
-                sys.executable,
-                'emergency_audio.py',
-                str(queue_number)
-            ], cwd=os.path.dirname(os.path.abspath(__file__)))
-            
-            print(f"[OK] Emergency audio script launched for queue {queue_number}")
-            return jsonify({
-                "success": True,
-                "message": f"Emergency audio triggered for queue {queue_number}"
-            })
-            
-        except FileNotFoundError:
-            print("[ERROR] emergency_audio.py not found")
-            return jsonify({
-                "success": False,
-                "error": "Emergency audio script not found"
-            }), 404
-            
-        except Exception as script_error:
-            print(f"[ERROR] Emergency audio script error: {script_error}")
-            return jsonify({
-                "success": False,
-                "error": f"Script execution error: {str(script_error)}"
-            }), 500
-            
-    except Exception as e:
-        print(f"[ERROR] Emergency audio endpoint error: {e}")
-        return jsonify({
-            "success": False,
-            "error": str(e)
-        }), 500
 
-@app.route('/analytics/hourly-queue-data')
-def get_hourly_queue_data():
-    """Get hourly queue data for today's chart - CLEAN VERSION"""
+@app.route('/api/admin/delete-department/<department>', methods=['DELETE'])
+def delete_department_queues(department):
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
     try:
-        # Get current time
+        cur = conn.cursor()
+        ft, fv = _resolve_department(department, cur)
+        if ft == 'service_id':
+            cur.execute("DELETE FROM queue WHERE service_id = %s", (fv,))
+        else:
+            cur.execute("DELETE FROM queue WHERE person LIKE %s", (fv,))
+        deleted = cur.rowcount
+        conn.commit()
+        conn.close()
+        return jsonify({"success": True, "message": f"Deleted {deleted} queues", "deleted": deleted, "department": department})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- ANALYTICS ----
+
+@app.route('/api/analytics/hourly-queue-data')
+def get_hourly_queue_data():
+    try:
         now = datetime.now()
         current_hour = now.hour
-        
-        # Show from 12:00 AM to current hour + 2 hours (or at least until 8 AM)
         max_hour = max(current_hour + 2, 8)
-        
-        print(f"DEBUG: Current hour: {current_hour}, showing until hour: {max_hour}")
-        
-        # Generate time labels in 12-hour format
+        institution_id = request.args.get('institution_id')
         labels = []
-        for hour in range(0, max_hour + 1):
-            time_obj = datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0)
-            labels.append(time_obj.strftime('%I:%M %p'))
-        
-        print(f"DEBUG: Generated {len(labels)} labels: {labels}")
-        
-        # Initialize data arrays with zeros for each hour
-        dean_data = [0] * (max_hour + 1)
-        ie_data = [0] * (max_hour + 1)
-        cpe_data = [0] * (max_hour + 1)
-        
-        # Try to connect to database and get real data
+        for h in range(0, max_hour + 1):
+            t = now.replace(hour=h, minute=0, second=0, microsecond=0)
+            labels.append(t.strftime('%I:%M %p'))
         conn = get_db_connection()
+        datasets = []
+        colors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
         if conn:
             try:
                 cur = conn.cursor()
                 today = now.strftime('%Y-%m-%d')
-                
-                print(f"DEBUG: Fetching data for {today}")
-                
-                # Get real data from database for each hour (only up to current hour)
-                for hour in range(0, min(current_hour + 1, max_hour + 1)):
-                    # Count Dean's office queues for this hour
-                    cur.execute("""
-                        SELECT COUNT(*) FROM queue 
-                        WHERE (person LIKE %s OR person LIKE %s)
-                        AND DATE(created_at) = %s 
-                        AND EXTRACT(HOUR FROM created_at) = %s
-                    """, ('%Dean%', '%dean%', today, hour))
-                    dean_count = cur.fetchone()[0] or 0
-                    dean_data[hour] = dean_count
-                    
-                    # Count IE department queues for this hour
-                    cur.execute("""
-                        SELECT COUNT(*) FROM queue 
-                        WHERE (person LIKE %s OR person LIKE %s)
-                        AND DATE(created_at) = %s 
-                        AND EXTRACT(HOUR FROM created_at) = %s
-                    """, ('%IE%', '%ie%', today, hour))
-                    ie_count = cur.fetchone()[0] or 0
-                    ie_data[hour] = ie_count
-                    
-                    # Count CPE department queues for this hour
-                    cur.execute("""
-                        SELECT COUNT(*) FROM queue 
-                        WHERE (person LIKE %s OR person LIKE %s)
-                        AND DATE(created_at) = %s 
-                        AND EXTRACT(HOUR FROM created_at) = %s
-                    """, ('%CPE%', '%cpe%', today, hour))
-                    cpe_count = cur.fetchone()[0] or 0
-                    cpe_data[hour] = cpe_count
-                    
-                    print(f"DEBUG: Hour {hour:02d}:00 - Dean: {dean_count}, IE: {ie_count}, CPE: {cpe_count}")
-                
+                if institution_id:
+                    cur.execute("SELECT id, name, prefix FROM services WHERE institution_id = %s AND is_active = TRUE ORDER BY display_order", (institution_id,))
+                else:
+                    cur.execute("SELECT id, name, prefix FROM services WHERE is_active = TRUE ORDER BY institution_id, display_order LIMIT 10")
+                svcs = cur.fetchall()
+                for idx, (sid, sname, spfx) in enumerate(svcs):
+                    data_arr = [0] * (max_hour + 1)
+                    for h in range(0, min(current_hour + 1, max_hour + 1)):
+                        if institution_id:
+                            cur.execute("""
+                                SELECT COUNT(*) FROM queue
+                                WHERE service_id = %s AND institution_id = %s
+                                AND DATE(created_at) = %s AND EXTRACT(HOUR FROM created_at) = %s
+                            """, (sid, institution_id, today, h))
+                        else:
+                            cur.execute("""
+                                SELECT COUNT(*) FROM queue
+                                WHERE service_id = %s AND DATE(created_at) = %s
+                                AND EXTRACT(HOUR FROM created_at) = %s
+                            """, (sid, today, h))
+                        data_arr[h] = cur.fetchone()[0] or 0
+                    datasets.append({
+                        'label': sname, 'data': data_arr,
+                        'borderColor': colors[idx % len(colors)],
+                        'backgroundColor': 'transparent',
+                        'fill': False, 'tension': 0.1, 'borderWidth': 2,
+                        'pointRadius': 0, 'pointHoverRadius': 0
+                    })
                 conn.close()
-                print("DEBUG: Using REAL database data")
-                
-            except Exception as db_error:
-                print(f"Database error: {db_error}")
-                # Use realistic fallback data if database error
-                if current_hour >= 6:
-                    dean_data[6] = 1
-                    ie_data[6] = 2
-                if current_hour >= 7:
-                    dean_data[7] = 2
-                    ie_data[7] = 3
-                    cpe_data[7] = 1
-                if current_hour >= 8:
-                    dean_data[8] = 1
-                    ie_data[8] = 2
-                    
-        else:
-            print("DEBUG: No database connection, using fallback data")
-            # Add some realistic data based on current time
-            if current_hour >= 6:
-                dean_data[6] = 1
-                ie_data[6] = 2
-            if current_hour >= 7:
-                dean_data[7] = 2
-                ie_data[7] = 3
-                cpe_data[7] = 1
-            if current_hour >= 8:
-                dean_data[8] = 1
-                ie_data[8] = 2
-        
-        # Create datasets
-        datasets = [
-            {
-                'label': "Dean's Office",
-                'data': dean_data,
-                'borderColor': '#ef4444',
-                'backgroundColor': 'transparent',
-                'fill': False,
-                'tension': 0.1,
-                'borderWidth': 2,
-                'pointRadius': 0,
-                'pointHoverRadius': 0
-            },
-            {
-                'label': 'IE Department',
-                'data': ie_data,
-                'borderColor': '#3b82f6',
-                'backgroundColor': 'transparent',
-                'fill': False,
-                'tension': 0.1,
-                'borderWidth': 2,
-                'pointRadius': 0,
-                'pointHoverRadius': 0
-            },
-            {
-                'label': 'CPE Department',
-                'data': cpe_data,
-                'borderColor': '#10b981',
-                'backgroundColor': 'transparent',
-                'fill': False,
-                'tension': 0.1,
-                'borderWidth': 2,
-                'pointRadius': 0,
-                'pointHoverRadius': 0
-            }
-        ]
-        
-        response_data = {
-            'labels': labels,
-            'datasets': datasets
-        }
-        
-        print(f"DEBUG: Returning data with {len(labels)} labels and {len(datasets)} datasets")
-        return jsonify(response_data)
-        
+            except Exception as e:
+                print(f"Analytics error: {e}")
+                if conn:
+                    conn.close()
+        return jsonify({'labels': labels, 'datasets': datasets})
     except Exception as e:
-        print(f"ERROR in hourly-queue-data: {e}")
-        # Emergency fallback
-        return jsonify({
-            'labels': ['12:00 AM', '01:00 AM', '02:00 AM', '03:00 AM', '04:00 AM', '05:00 AM', '06:00 AM', '07:00 AM'],
-            'datasets': [
-                {
-                    'label': "Dean's Office",
-                    'data': [0, 0, 0, 0, 0, 0, 0, 0],
-                    'borderColor': '#ef4444',
-                    'backgroundColor': 'transparent',
-                    'fill': False,
-                    'tension': 0.1,
-                    'borderWidth': 2,
-                    'pointRadius': 0,
-                    'pointHoverRadius': 0
-                }
-            ]
-        })
+        return jsonify({'labels': [], 'datasets': []})
 
-@app.route('/analytics/hourly-department-data')
+
+@app.route('/api/analytics/hourly-department-data')
 def get_hourly_department_data():
-    """Get real hourly queue data for each department from the database"""
     try:
         conn = get_db_connection()
         if not conn:
-            return jsonify({
-                'error': 'Database connection failed'
-            }), 500
-        
+            return jsonify({'error': 'Database connection failed'}), 500
         cur = conn.cursor()
-        
-        # Get today's date
         today = datetime.now().strftime('%Y-%m-%d')
-        
-        # Initialize result structure
-        result = {
-            'dean': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'ie': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'cpe': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'ece': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'others': {'hourlyData': [0] * 24, 'totalToday': 0}
-        }
-        
-        # Department mapping
-        department_map = {
-            'A': 'dean',
-            'B': 'ie', 
-            'C': 'cpe',
-            'D': 'ece',
-            'E': 'others'
-        }
-        
-        # Query to get hourly queue data for today
-        cur.execute("""
-            SELECT 
-                SUBSTRING(number FROM 1 FOR 1) as dept_prefix,
-                EXTRACT(HOUR FROM created_at) as hour,
-                COUNT(*) as queue_count
-            FROM queue 
-            WHERE DATE(created_at) = %s
-            GROUP BY SUBSTRING(number FROM 1 FOR 1), EXTRACT(HOUR FROM created_at)
-            ORDER BY dept_prefix, hour
-        """, (today,))
-        
-        hourly_data = cur.fetchall()
-        
-        # Process hourly data
-        for row in hourly_data:
-            dept_prefix = row[0]
-            hour = int(row[1]) if row[1] is not None else 0
-            count = row[2]
-            
-            dept_key = department_map.get(dept_prefix)
-            if dept_key and 0 <= hour < 24:
-                result[dept_key]['hourlyData'][hour] = count
-        
-        # Get total counts for each department today
-        cur.execute("""
-            SELECT 
-                SUBSTRING(number FROM 1 FOR 1) as dept_prefix,
-                COUNT(*) as total_count
-            FROM queue 
-            WHERE DATE(created_at) = %s
-            GROUP BY SUBSTRING(number FROM 1 FOR 1)
-        """, (today,))
-        
-        total_data = cur.fetchall()
-        
-        # Process total data
-        for row in total_data:
-            dept_prefix = row[0]
-            total_count = row[1]
-            
-            dept_key = department_map.get(dept_prefix)
-            if dept_key:
-                result[dept_key]['totalToday'] = total_count
-        
+        institution_id = request.args.get('institution_id')
+        if institution_id:
+            cur.execute("SELECT id, name, prefix FROM services WHERE institution_id = %s AND is_active = TRUE ORDER BY display_order", (institution_id,))
+        else:
+            cur.execute("SELECT id, name, prefix FROM services WHERE is_active = TRUE ORDER BY institution_id, display_order LIMIT 10")
+        svcs = cur.fetchall()
+        result = {}
+        for sid, sname, spfx in svcs:
+            key = spfx.strip().lower()
+            hourly = [0] * 24
+            total = 0
+            cur.execute("""
+                SELECT EXTRACT(HOUR FROM created_at), COUNT(*)
+                FROM queue WHERE service_id = %s AND DATE(created_at) = %s
+                GROUP BY EXTRACT(HOUR FROM created_at)
+            """, (sid, today))
+            for row in cur.fetchall():
+                h = int(row[0]) if row[0] is not None else 0
+                if 0 <= h < 24:
+                    hourly[h] = row[1]
+                    total += row[1]
+            result[key] = {'hourlyData': hourly, 'totalToday': total, 'name': sname}
+        legacy_map = {'a': 'dean', 'b': 'ie', 'c': 'cpe', 'd': 'ece', 'e': 'others'}
+        compat = {}
+        for k, v in result.items():
+            legacy = legacy_map.get(k, k)
+            compat[legacy] = v
+            if k != legacy:
+                compat[k] = v
         conn.close()
-        
-        print(f"DEBUG: Hourly department data: {result}")
-        return jsonify(result)
-        
+        return jsonify(compat)
     except Exception as e:
-        print(f"ERROR in hourly-department-data: {e}")
-        # Return empty data structure on error
-        return jsonify({
-            'dean': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'ie': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'cpe': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'ece': {'hourlyData': [0] * 24, 'totalToday': 0},
-            'others': {'hourlyData': [0] * 24, 'totalToday': 0}
-        })
+        return jsonify({}), 500
+
+
+# ---- EMERGENCY AUDIO ----
+
+@app.route('/api/emergency-audio', methods=['POST'])
+def emergency_audio():
+    try:
+        import subprocess, sys
+        data = request.json
+        queue_number = data.get('queue_number', 'Unknown')
+        try:
+            subprocess.Popen([sys.executable, 'emergency_audio.py', str(queue_number)],
+                             cwd=os.path.dirname(os.path.abspath(__file__)))
+            return jsonify({"success": True, "message": f"Emergency audio triggered for {queue_number}"})
+        except FileNotFoundError:
+            return jsonify({"success": False, "error": "Emergency audio script not found"}), 404
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ---- DEBUG ----
+
+@app.route('/api/debug/test')
+def debug_test():
+    return jsonify({"success": True, "message": "API is working"}), 200
+
+
+@app.route('/api/debug/db')
+def debug_db():
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return jsonify({"success": False, "error": "Connection failed"}), 500
+        cur = conn.cursor()
+        cur.execute("SELECT version()")
+        v = cur.fetchone()
+        conn.close()
+        return jsonify({"success": True, "postgres_version": v[0]})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
-    print("[START] Starting Queue Management System API...")
-    print(f"[INFO] Server running on port: {port}")
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=3000, debug=True)

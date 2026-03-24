@@ -673,7 +673,7 @@
         adminSession = JSON.parse(storedSession);
         
         // Validate session
-        if (!adminSession.department || !adminSession.name) {
+        if (!adminSession.role || !adminSession.name) {
           throw new Error('Invalid session data');
         }
         
@@ -733,7 +733,9 @@
 
     async function loadStatistics() {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/stats/${adminSession.department}`);
+        const deptKey = adminSession.service_id || adminSession.department;
+        const instParam = adminSession.institution_id ? `?institution_id=${adminSession.institution_id}` : '';
+        const response = await fetch(`${API_BASE_URL}/admin/stats/${deptKey}${instParam}`);
         if (response.ok) {
           const stats = await response.json();
           animateValue('totalToday', 0, stats.totalToday || 0, 1500);
@@ -749,7 +751,9 @@
     // Load current queue
     async function loadCurrentQueue() {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/queue/${adminSession.department}`);
+        const deptKey = adminSession.service_id || adminSession.department;
+        const instParam = adminSession.institution_id ? `?institution_id=${adminSession.institution_id}` : '';
+        const response = await fetch(`${API_BASE_URL}/admin/queue/${deptKey}${instParam}`);
         if (response.ok) {
           const queues = await response.json();
           displayQueue(queues);
@@ -844,7 +848,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            calledBy: adminSession.department,
+            calledBy: adminSession.username || adminSession.department,
             calledAt: new Date().toISOString()
           })
         });
@@ -877,9 +881,9 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            returnedBy: adminSession.department,
+            returnedBy: adminSession.username || adminSession.department,
             returnedAt: new Date().toISOString(),
-            called: false // Set called status back to false
+            called: false
           })
         });
 
@@ -911,7 +915,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            completedBy: adminSession.department,
+            completedBy: adminSession.username || adminSession.department,
             completedAt: new Date().toISOString()
           })
         });
@@ -952,7 +956,7 @@
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              unmutedBy: adminSession.department,
+              unmutedBy: adminSession.username || adminSession.department,
               unmutedAt: new Date().toISOString()
             })
           });
@@ -975,7 +979,7 @@
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              mutedBy: adminSession.department,
+              mutedBy: adminSession.username || adminSession.department,
               mutedAt: new Date().toISOString()
             })
           });
@@ -1371,8 +1375,9 @@
     // Update visualization charts with real data
     async function updateVisualizationCharts() {
       try {
-        // Get current admin's department (same as queue table)
-        const currentDept = adminSession.department;
+        // Get current admin's department key (service_id or legacy name)
+        const currentDept = adminSession.service_id || adminSession.department;
+        const instParam = adminSession.institution_id ? `?institution_id=${adminSession.institution_id}` : '';
         
         let totalToday = 0;
         let activeNow = 0;
@@ -1388,7 +1393,7 @@
         
         // Fetch ALL queues
         try {
-          const response = await fetch(`${API_BASE_URL}/admin/queue/${currentDept}`);
+          const response = await fetch(`${API_BASE_URL}/admin/queue/${currentDept}${instParam}`);
           if (response.ok) {
             allQueues = await response.json();
             
@@ -1536,15 +1541,9 @@
     async function loadAdminStatus() {
       try {
         const adminSession = JSON.parse(localStorage.getItem('adminSession'));
-        const departmentMapping = {
-          'dean': 'A',
-          'ie-chair': 'B',
-          'cpe-chair': 'C',
-          'ece-chair': 'D',
-          'others': 'E'
-        };
-        
-        const departmentPrefix = departmentMapping[adminSession.department];
+        // Use service_id as status key, or fall back to legacy department prefix mapping
+        const legacyMapping = {'dean': 'A', 'ie-chair': 'B', 'cpe-chair': 'C', 'ece-chair': 'D', 'others': 'E'};
+        const departmentPrefix = adminSession.service_id || legacyMapping[adminSession.department] || adminSession.department;
         const response = await fetch(`${API_BASE_URL}/admin/status/${departmentPrefix}`);
         
         if (response.ok) {
@@ -1590,7 +1589,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            department: adminSession.department,
+            department: adminSession.service_id || adminSession.department,
             status: status
           })
         });
@@ -1643,7 +1642,7 @@
     // Show dean controls if user is dean
     function checkDeanAccess() {
       const deanControls = document.getElementById('deanControls');
-      if (adminSession && adminSession.department === 'dean' && deanControls) {
+      if (adminSession && (adminSession.role === 'institution-admin' || adminSession.department === 'dean') && deanControls) {
         deanControls.style.display = 'block';
       }
     }
@@ -1705,7 +1704,8 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            department: adminSession.department,
+            department: adminSession.service_id || adminSession.department,
+            institution_id: adminSession.institution_id,
             confirmation: 'DELETE_ALL_QUEUES_PERMANENTLY'
           })
         });
@@ -1747,7 +1747,8 @@
     // Load current audio setting
     async function loadAudioSetting() {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/audio-setting/${adminSession.department}`);
+        const audioKey = adminSession.service_id || adminSession.department;
+        const response = await fetch(`${API_BASE_URL}/admin/audio-setting/${audioKey}`);
         
         if (response.ok) {
           const result = await response.json();
@@ -1774,7 +1775,7 @@
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            department: adminSession.department,
+            department: adminSession.service_id || adminSession.department,
             muted: isMuted
           })
         });

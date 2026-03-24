@@ -1440,6 +1440,10 @@
         const queueData = await response.json();
         console.log('[DATA] Queue data received:', queueData);
         
+        // Store service_id and institution_id for use in API calls
+        if (queueData.service_id) window._queueServiceId = queueData.service_id;
+        if (queueData.institution_id) window._queueInstitutionId = queueData.institution_id;
+        
         // Get real-time status and position
         const statusResponse = await fetch(`${API_BASE_URL}/queue/${queueId}/status`);
         let statusData = {
@@ -1822,7 +1826,8 @@
         if (!displayNumber) {
           try {
             console.log(`[ENDPOINT] Trying admin active queues endpoint for department ${prefix}`);
-            const adminQueueResponse = await fetch(`${API_BASE_URL}/admin/queue/${getDepartmentFromPrefix(prefix)}`);
+            const instParam = window._queueInstitutionId ? `?institution_id=${window._queueInstitutionId}` : '';
+            const adminQueueResponse = await fetch(`${API_BASE_URL}/admin/queue/${getDepartmentFromPrefix(prefix)}${instParam}`);
             if (adminQueueResponse.ok) {
               const adminQueues = await adminQueueResponse.json();
               const calledQueue = adminQueues.find(q => q.status === 'called');
@@ -1964,7 +1969,10 @@
     }
     
     // Helper function to convert prefix to department name
+    // Uses service_id from queue data when available, falls back to legacy mapping
     function getDepartmentFromPrefix(prefix) {
+      // If we have a service_id from the loaded queue data, use it
+      if (window._queueServiceId) return window._queueServiceId;
       const prefixMap = {
         'A': 'dean',
         'B': 'ie-chair', 
@@ -1972,7 +1980,7 @@
         'D': 'ece-chair',
         'E': 'others'
       };
-      return prefixMap[prefix] || 'dean';
+      return prefixMap[prefix] || prefix;
     }
 
     // Show feedback button when transaction is completed

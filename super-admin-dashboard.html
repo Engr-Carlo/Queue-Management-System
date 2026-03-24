@@ -332,6 +332,11 @@
           </a>
         </li>
         <li class="nav-item">
+          <a class="nav-link" href="#" onclick="showTab('institutions'); return false;">
+            <i class="fas fa-building"></i> Institutions
+          </a>
+        </li>
+        <li class="nav-item">
           <a class="nav-link" href="#" onclick="showTab('users'); return false;">
             <i class="fas fa-users-cog"></i> User Management
           </a>
@@ -342,25 +347,11 @@
       <div id="dashboardTab">
         
         <!-- Department Filter -->
-        <div class="department-filter">
+        <div class="department-filter" id="departmentFilter">
           <button class="dept-filter-btn active" onclick="filterDepartment('all')">
-            <i class="fas fa-globe"></i> All Departments
+            <i class="fas fa-globe"></i> All Services
           </button>
-          <button class="dept-filter-btn" onclick="filterDepartment('dean')">
-            <i class="fas fa-user-tie"></i> Dean
-          </button>
-          <button class="dept-filter-btn" onclick="filterDepartment('ie-chair')">
-            <i class="fas fa-industry"></i> IE Chair
-          </button>
-          <button class="dept-filter-btn" onclick="filterDepartment('cpe-chair')">
-            <i class="fas fa-microchip"></i> CPE Chair
-          </button>
-          <button class="dept-filter-btn" onclick="filterDepartment('ece-chair')">
-            <i class="fas fa-bolt"></i> ECE Chair
-          </button>
-          <button class="dept-filter-btn" onclick="filterDepartment('others')">
-            <i class="fas fa-users"></i> Others
-          </button>
+          <!-- Dynamic filter buttons loaded from API -->
         </div>
 
         <!-- Stats Cards -->
@@ -449,6 +440,66 @@
 
       <!-- User Management Tab -->
       <div id="userManagementTab" style="display: none;">
+
+      <!-- Institutions Management Tab -->
+      <div id="institutionsTab" style="display: none;">
+        <div class="user-management-section">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <div>
+              <h3 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">
+                <i class="fas fa-building"></i> Institution Management
+              </h3>
+              <p style="color: #64748b; font-size: 0.95rem;">Create and manage institutions</p>
+            </div>
+            <button class="btn-change-password" onclick="showAddInstitutionForm()">
+              <i class="fas fa-plus"></i> Add Institution
+            </button>
+          </div>
+          
+          <div id="addInstitutionForm" style="display: none; background: #f8fafc; border: 2px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+            <h5 style="font-weight: 700; margin-bottom: 16px;"><i class="fas fa-plus-circle"></i> New Institution</h5>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Name *</label>
+                <input type="text" id="instName" class="form-control" placeholder="e.g. PNC College of Engineering">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Type *</label>
+                <select id="instType" class="form-select">
+                  <option value="university">University</option>
+                  <option value="hospital">Hospital</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="government">Government</option>
+                  <option value="bank">Bank</option>
+                  <option value="clinic">Clinic</option>
+                  <option value="billing">Billing Center</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label fw-bold">Slug *</label>
+                <input type="text" id="instSlug" class="form-control" placeholder="e.g. pnc-coe">
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Description</label>
+                <input type="text" id="instDesc" class="form-control" placeholder="Brief description (optional)">
+              </div>
+              <div class="col-12">
+                <button class="btn btn-primary" onclick="createInstitution()">
+                  <i class="fas fa-save"></i> Create Institution
+                </button>
+                <button class="btn btn-secondary ms-2" onclick="document.getElementById('addInstitutionForm').style.display='none'">Cancel</button>
+              </div>
+            </div>
+          </div>
+          
+          <div id="institutionsList">
+            <p style="text-align: center; color: #64748b;">Loading institutions...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Original User Management Tab (continued) -->
         <div class="user-management-section">
           <div style="margin-bottom: 30px;">
             <h3 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">
@@ -483,12 +534,8 @@
               </h5>
               <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 15px;">Delete all queues from a specific department</p>
               <select id="deleteDeptSelect" class="form-select" style="margin-bottom: 15px;">
-                <option value="">Select Department</option>
-                <option value="dean">Dean - College of Engineering</option>
-                <option value="ie-chair">IE Department Chair</option>
-                <option value="cpe-chair">CPE Department Chair</option>
-                <option value="ece-chair">ECE Department Chair</option>
-                <option value="others">Other Staff/Faculty</option>
+                <option value="">Select Service</option>
+                <!-- Populated dynamically -->
               </select>
               <button class="btn btn-danger w-100" onclick="deleteByDepartment()">
                 <i class="fas fa-trash"></i> Delete Department Queues
@@ -561,7 +608,7 @@
       const session = JSON.parse(adminSession);
       
       // Check if super-admin
-      if (session.department !== 'super-admin') {
+      if (session.role !== 'super-admin' && session.department !== 'super-admin') {
         alert('Access denied. Super admin privileges required.');
         window.location.href = 'admin-login.html';
         return false;
@@ -580,18 +627,24 @@
     function showTab(tab) {
       const dashboardTab = document.getElementById('dashboardTab');
       const userTab = document.getElementById('userManagementTab');
+      const instTab = document.getElementById('institutionsTab');
       const tabs = document.querySelectorAll('.nav-link');
+
+      dashboardTab.style.display = 'none';
+      userTab.style.display = 'none';
+      instTab.style.display = 'none';
+      tabs.forEach(t => t.classList.remove('active'));
 
       if (tab === 'dashboard') {
         dashboardTab.style.display = 'block';
-        userTab.style.display = 'none';
         tabs[0].classList.add('active');
-        tabs[1].classList.remove('active');
-      } else {
-        dashboardTab.style.display = 'none';
-        userTab.style.display = 'block';
-        tabs[0].classList.remove('active');
+      } else if (tab === 'institutions') {
+        instTab.style.display = 'block';
         tabs[1].classList.add('active');
+        loadInstitutions();
+      } else {
+        userTab.style.display = 'block';
+        tabs[2].classList.add('active');
         renderUsersList();
       }
     }
@@ -605,18 +658,67 @@
       event.target.classList.add('active');
 
       // Update filter label
-      const labels = {
-        'all': 'All Departments',
-        'dean': 'Dean Only',
-        'ie-chair': 'IE Department Only',
-        'cpe-chair': 'CPE Department Only',
-        'ece-chair': 'ECE Department Only',
-        'others': 'Others Only'
-      };
-      document.getElementById('filterLabel').textContent = labels[dept];
+      const label = dept === 'all' ? 'All Services' : (serviceNames[dept] || dept);
+      document.getElementById('filterLabel').textContent = label;
 
       // Reload data with filter
       loadAllData();
+    }
+
+    // Dynamic service data
+    let serviceNames = {};  // id -> name
+    let serviceList = [];   // [{id, name, prefix, institution_id}, ...]
+    let institutionList = [];
+
+    async function loadServiceFilters() {
+      try {
+        // Load all institutions and their services
+        const instResponse = await fetch(`${API_BASE_URL}/institutions`);
+        if (!instResponse.ok) return;
+        institutionList = await instResponse.json();
+        
+        serviceList = [];
+        serviceNames = {};
+        
+        for (const inst of institutionList) {
+          const svcResponse = await fetch(`${API_BASE_URL}/institutions/${inst.id}/services`);
+          if (svcResponse.ok) {
+            const services = await svcResponse.json();
+            services.forEach(s => {
+              s.institution_id = inst.id;
+              s.institution_name = inst.name;
+              serviceList.push(s);
+              serviceNames[s.id] = s.name;
+            });
+          }
+        }
+
+        // Build filter buttons
+        const filterContainer = document.getElementById('departmentFilter');
+        filterContainer.innerHTML = `
+          <button class="dept-filter-btn active" onclick="filterDepartment('all')">
+            <i class="fas fa-globe"></i> All Services
+          </button>
+        `;
+        serviceList.forEach(s => {
+          filterContainer.innerHTML += `
+            <button class="dept-filter-btn" onclick="filterDepartment('${s.id}')">
+              <i class="fas fa-concierge-bell"></i> ${s.name}
+            </button>
+          `;
+        });
+
+        // Build delete select
+        const deleteSelect = document.getElementById('deleteDeptSelect');
+        if (deleteSelect) {
+          deleteSelect.innerHTML = '<option value="">Select Service</option>';
+          serviceList.forEach(s => {
+            deleteSelect.innerHTML += `<option value="${s.id}">${s.name} (${s.institution_name})</option>`;
+          });
+        }
+      } catch (error) {
+        console.error('Error loading service filters:', error);
+      }
     }
 
     async function loadAllData() {
@@ -625,28 +727,41 @@
       
       allQueues = [];
       
-      // Fetch data from all departments
-      const departments = ['dean', 'ie-chair', 'cpe-chair', 'ece-chair', 'others'];
-      
       try {
-        for (const dept of departments) {
-          // Skip if filtering and not the selected department
-          if (currentFilter !== 'all' && currentFilter !== dept) {
-            continue;
-          }
-
-          const response = await fetch(`${API_BASE_URL}/admin/queue/${dept}`);
+        // Use service list to fetch queues per service
+        const servicesToFetch = currentFilter === 'all' ? serviceList : serviceList.filter(s => String(s.id) === String(currentFilter));
+        
+        for (const svc of servicesToFetch) {
+          const instParam = svc.institution_id ? `?institution_id=${svc.institution_id}` : '';
+          const response = await fetch(`${API_BASE_URL}/admin/queue/${svc.id}${instParam}`);
           if (response.ok) {
-            const deptQueues = await response.json();
-            // Add department info to each queue
-            deptQueues.forEach(q => {
-              q.department = dept;
-              // Mark old queues as archived
+            const svcQueues = await response.json();
+            svcQueues.forEach(q => {
+              q.department = svc.id;
+              q.department_name = svc.name;
               if (q.date !== todayStr) {
                 q.status = 'archived';
               }
             });
-            allQueues.push(...deptQueues);
+            allQueues.push(...svcQueues);
+          }
+        }
+
+        // If no services loaded yet, try legacy departments as fallback
+        if (serviceList.length === 0) {
+          const legacyDepts = ['dean', 'ie-chair', 'cpe-chair', 'ece-chair', 'others'];
+          for (const dept of legacyDepts) {
+            if (currentFilter !== 'all' && currentFilter !== dept) continue;
+            const response = await fetch(`${API_BASE_URL}/admin/queue/${dept}`);
+            if (response.ok) {
+              const deptQueues = await response.json();
+              deptQueues.forEach(q => {
+                q.department = dept;
+                q.department_name = dept;
+                if (q.date !== todayStr) q.status = 'archived';
+              });
+              allQueues.push(...deptQueues);
+            }
           }
         }
 
@@ -684,7 +799,7 @@
       // Get last 7 days data
       const last7Days = [];
       const today = new Date();
-      const departments = ['dean', 'ie-chair', 'cpe-chair', 'ece-chair', 'others'];
+      const services = serviceList.length > 0 ? serviceList : [{id: 'all', name: 'All'}];
       
       // Prepare date labels
       const dates = [];
@@ -697,92 +812,35 @@
         dates.push(dateStr);
       }
 
+      const chartColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#7c3aed', '#ec4899', '#06b6d4', '#84cc16'];
+
       if (dailyChart) {
         dailyChart.data.labels = last7Days;
         
-        // If showing all departments, create separate line for each
-        if (currentFilter === 'all') {
-          const deptData = departments.map(dept => {
-            return dates.map(dateStr => 
-              allQueues.filter(q => q.department === dept && q.date === dateStr && q.status !== 'archived').length
+        // If showing all services, create separate line for each
+        if (currentFilter === 'all' && services.length > 1) {
+          dailyChart.data.datasets = services.map((svc, index) => {
+            const color = chartColors[index % chartColors.length];
+            const data = dates.map(dateStr => 
+              allQueues.filter(q => String(q.department) === String(svc.id) && q.date === dateStr && q.status !== 'archived').length
             );
+            return {
+              label: svc.name,
+              data: data,
+              borderColor: color,
+              backgroundColor: color.replace(')', ', 0.1)').replace('rgb', 'rgba'),
+              borderWidth: 3,
+              fill: false,
+              tension: 0.4,
+              pointBackgroundColor: color,
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 6
+            };
           });
-
-          // Update datasets with multiple lines
-          dailyChart.data.datasets = [
-            {
-              label: 'Dean',
-              data: deptData[0],
-              borderColor: '#3b82f6',
-              backgroundColor: 'rgba(59, 130, 246, 0.1)',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointBackgroundColor: '#3b82f6',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6
-            },
-            {
-              label: 'IE',
-              data: deptData[1],
-              borderColor: '#10b981',
-              backgroundColor: 'rgba(16, 185, 129, 0.1)',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointBackgroundColor: '#10b981',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6
-            },
-            {
-              label: 'CPE',
-              data: deptData[2],
-              borderColor: '#f59e0b',
-              backgroundColor: 'rgba(245, 158, 11, 0.1)',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointBackgroundColor: '#f59e0b',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6
-            },
-            {
-              label: 'ECE',
-              data: deptData[3],
-              borderColor: '#ef4444',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointBackgroundColor: '#ef4444',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6
-            },
-            {
-              label: 'Others',
-              data: deptData[4],
-              borderColor: '#7c3aed',
-              backgroundColor: 'rgba(124, 58, 237, 0.1)',
-              borderWidth: 3,
-              fill: false,
-              tension: 0.4,
-              pointBackgroundColor: '#7c3aed',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6
-            }
-          ];
         } else {
-          // Single department view
+          // Single service view
           const counts = dates.map(dateStr => 
             allQueues.filter(q => q.date === dateStr && q.status !== 'archived').length
           );
@@ -810,28 +868,29 @@
     function updateDepartmentChart(todayStr) {
       const todayQueues = allQueues.filter(q => q.date === todayStr);
       
-      const deptCounts = {
-        'dean': 0,
-        'ie-chair': 0,
-        'cpe-chair': 0,
-        'ece-chair': 0,
-        'others': 0
-      };
+      // Build counts per service dynamically
+      const labels = [];
+      const counts = [];
+      const colors = ['rgba(59, 130, 246, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)', 'rgba(239, 68, 68, 0.8)', 'rgba(124, 58, 237, 0.8)', 'rgba(236, 72, 153, 0.8)', 'rgba(6, 182, 212, 0.8)', 'rgba(132, 204, 22, 0.8)'];
 
-      todayQueues.forEach(q => {
-        if (deptCounts[q.department] !== undefined) {
-          deptCounts[q.department]++;
-        }
-      });
+      if (serviceList.length > 0) {
+        serviceList.forEach((svc, i) => {
+          labels.push(svc.name);
+          counts.push(todayQueues.filter(q => String(q.department) === String(svc.id)).length);
+        });
+      } else {
+        // Fallback to legacy department names from queue data
+        const deptSet = new Set(todayQueues.map(q => q.department_name || q.department));
+        deptSet.forEach(dept => {
+          labels.push(dept);
+          counts.push(todayQueues.filter(q => (q.department_name || q.department) === dept).length);
+        });
+      }
 
       if (departmentChart) {
-        departmentChart.data.datasets[0].data = [
-          deptCounts['dean'],
-          deptCounts['ie-chair'],
-          deptCounts['cpe-chair'],
-          deptCounts['ece-chair'],
-          deptCounts['others']
-        ];
+        departmentChart.data.labels = labels;
+        departmentChart.data.datasets[0].data = counts;
+        departmentChart.data.datasets[0].backgroundColor = labels.map((_, i) => colors[i % colors.length]);
         departmentChart.update('none');
       }
     }
@@ -910,17 +969,11 @@
         departmentChart = new Chart(deptCtx, {
           type: 'bar',
           data: {
-            labels: ['Dean', 'IE', 'CPE', 'ECE', 'Others'],
+            labels: [],
             datasets: [{
               label: 'Queues',
-              data: [0, 0, 0, 0, 0],
-              backgroundColor: [
-                'rgba(59, 130, 246, 0.8)',
-                'rgba(16, 185, 129, 0.8)',
-                'rgba(245, 158, 11, 0.8)',
-                'rgba(239, 68, 68, 0.8)',
-                'rgba(124, 58, 237, 0.8)'
-              ],
+              data: [],
+              backgroundColor: [],
               borderRadius: 8,
               borderWidth: 0
             }]
@@ -1096,21 +1149,16 @@
       const dept = document.getElementById('deleteDeptSelect').value;
       
       if (!dept) {
-        alert('Please select a department first!');
+        alert('Please select a service first!');
         return;
       }
 
-      const deptNames = {
-        'dean': 'Dean - College of Engineering',
-        'ie-chair': 'IE Department Chair',
-        'cpe-chair': 'CPE Department Chair',
-        'ece-chair': 'ECE Department Chair',
-        'others': 'Other Staff/Faculty'
-      };
+      const svc = serviceList.find(s => String(s.id) === String(dept));
+      const deptName = svc ? `${svc.name} (${svc.institution_name})` : dept;
 
       const confirmed = confirm(
-        `⚠️ DELETE DEPARTMENT QUEUES\n\n` +
-        `This will PERMANENTLY DELETE all queues from:\n${deptNames[dept]}\n\n` +
+        `⚠️ DELETE SERVICE QUEUES\n\n` +
+        `This will PERMANENTLY DELETE all queues from:\n${deptName}\n\n` +
         `This action CANNOT be undone!\n\n` +
         `Click OK to DELETE or Cancel to abort.`
       );
@@ -1119,7 +1167,7 @@
 
       const doubleConfirm = confirm(
         `🚨 FINAL CONFIRMATION\n\n` +
-        `You are about to delete ALL queues from ${deptNames[dept]}.\n\n` +
+        `You are about to delete ALL queues from ${deptName}.\n\n` +
         `Are you absolutely sure?`
       );
 
@@ -1133,11 +1181,11 @@
 
         if (response.ok) {
           const result = await response.json();
-          alert(`✅ Success!\n\nDeleted ${result.deleted || 0} queues from ${deptNames[dept]}`);
+          alert(`✅ Success!\n\nDeleted ${result.deleted || 0} queues from ${deptName}`);
           document.getElementById('deleteDeptSelect').value = '';
           loadAllData();
         } else {
-          alert('❌ Error: Failed to delete department queues. Please try again.');
+          alert('❌ Error: Failed to delete service queues. Please try again.');
         }
       } catch (error) {
         console.error('Error deleting department queues:', error);
@@ -1184,12 +1232,161 @@
       }
     }
 
+    // Institution Management Functions
+    function showAddInstitutionForm() {
+      document.getElementById('addInstitutionForm').style.display = 'block';
+    }
+
+    async function createInstitution() {
+      const name = document.getElementById('instName').value.trim();
+      const type = document.getElementById('instType').value;
+      const slug = document.getElementById('instSlug').value.trim();
+      const description = document.getElementById('instDesc').value.trim();
+
+      if (!name || !slug) {
+        alert('Name and slug are required!');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/institutions`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, type, slug, description })
+        });
+
+        if (response.ok) {
+          alert('Institution created successfully!');
+          document.getElementById('addInstitutionForm').style.display = 'none';
+          document.getElementById('instName').value = '';
+          document.getElementById('instSlug').value = '';
+          document.getElementById('instDesc').value = '';
+          loadInstitutions();
+          loadServiceFilters(); // Refresh filters
+        } else {
+          const err = await response.json();
+          alert('Error: ' + (err.error || 'Failed to create institution'));
+        }
+      } catch (error) {
+        console.error('Error creating institution:', error);
+        alert('Network error. Please try again.');
+      }
+    }
+
+    async function loadInstitutions() {
+      const container = document.getElementById('institutionsList');
+      try {
+        const response = await fetch(`${API_BASE_URL}/institutions`);
+        if (!response.ok) throw new Error('Failed to fetch');
+        const institutions = await response.json();
+
+        if (institutions.length === 0) {
+          container.innerHTML = '<p style="text-align: center; color: #64748b;">No institutions yet. Click "Add Institution" to create one.</p>';
+          return;
+        }
+
+        container.innerHTML = '';
+        for (const inst of institutions) {
+          // Load services for this institution
+          let services = [];
+          try {
+            const svcRes = await fetch(`${API_BASE_URL}/institutions/${inst.id}/services`);
+            if (svcRes.ok) services = await svcRes.json();
+          } catch (e) {}
+
+          const card = document.createElement('div');
+          card.className = 'user-card';
+          card.style.flexDirection = 'column';
+          card.style.alignItems = 'stretch';
+          card.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <div class="user-info">
+                <h5><i class="fas fa-building"></i> ${inst.name}</h5>
+                <p>Type: ${inst.type} | Slug: ${inst.slug} | ID: ${inst.id} ${inst.description ? '| ' + inst.description : ''}</p>
+              </div>
+              <div>
+                <button class="btn-change-password" style="font-size: 0.8rem; padding: 6px 12px;" onclick="toggleServiceForm(${inst.id})">
+                  <i class="fas fa-plus"></i> Add Service
+                </button>
+              </div>
+            </div>
+            <div id="serviceForm-${inst.id}" style="display: none; background: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 12px;">
+              <div class="row g-2">
+                <div class="col-md-4"><input type="text" class="form-control form-control-sm" id="svcName-${inst.id}" placeholder="Service name *"></div>
+                <div class="col-md-2"><input type="text" class="form-control form-control-sm" id="svcPrefix-${inst.id}" placeholder="Prefix (A-Z) *" maxlength="1"></div>
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="svcDesc-${inst.id}" placeholder="Description"></div>
+                <div class="col-md-3">
+                  <button class="btn btn-sm btn-primary" onclick="addService(${inst.id})"><i class="fas fa-save"></i> Add</button>
+                  <button class="btn btn-sm btn-secondary" onclick="document.getElementById('serviceForm-${inst.id}').style.display='none'">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top: 4px;">
+              ${services.length > 0 ? services.map(s => `
+                <span style="display: inline-block; background: #e5e7eb; padding: 4px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; margin: 3px 4px; color: #374151;">
+                  <span style="background: #7c3aed; color: white; border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; margin-right: 4px;">${s.prefix}</span>
+                  ${s.name}
+                </span>
+              `).join('') : '<span style="font-size: 0.85rem; color: #9ca3af; font-style: italic;">No services configured</span>'}
+            </div>
+          `;
+          container.appendChild(card);
+        }
+      } catch (error) {
+        console.error('Error loading institutions:', error);
+        container.innerHTML = '<p style="text-align: center; color: #ef4444;">Error loading institutions</p>';
+      }
+    }
+
+    function toggleServiceForm(instId) {
+      const form = document.getElementById(`serviceForm-${instId}`);
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function addService(instId) {
+      const name = document.getElementById(`svcName-${instId}`).value.trim();
+      const prefix = document.getElementById(`svcPrefix-${instId}`).value.trim().toUpperCase();
+      const description = document.getElementById(`svcDesc-${instId}`).value.trim();
+
+      if (!name || !prefix) {
+        alert('Service name and prefix are required!');
+        return;
+      }
+
+      if (prefix.length !== 1 || !/^[A-Z]$/.test(prefix)) {
+        alert('Prefix must be a single letter A-Z!');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/institutions/${instId}/services`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, prefix, description })
+        });
+
+        if (response.ok) {
+          alert('Service added successfully!');
+          loadInstitutions();
+          loadServiceFilters();
+        } else {
+          const err = await response.json();
+          alert('Error: ' + (err.error || 'Failed to add service'));
+        }
+      } catch (error) {
+        console.error('Error adding service:', error);
+        alert('Network error. Please try again.');
+      }
+    }
+
     // Initialize
     document.addEventListener('DOMContentLoaded', function() {
       if (checkAuth()) {
-        initCharts();
-        loadAllData();
-        setInterval(loadAllData, 5000); // Refresh every 5 seconds
+        loadServiceFilters().then(() => {
+          initCharts();
+          loadAllData();
+          setInterval(loadAllData, 5000);
+        });
       }
     });
   </script>

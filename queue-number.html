@@ -549,22 +549,22 @@
     let queueData = {};
     let qrScanCheckInterval = null;
     
+    // Get institution ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const institutionId = urlParams.get('inst') || localStorage.getItem('institution_id');
+    
+    if (!institutionId) {
+      window.location.href = 'index.html';
+    }
+    
     // Generate unique queue number
     async function generateQueueNumber() {
-      // Use selectedPersonName for display, but selectedPerson for prefix logic
-      const person = localStorage.getItem('selectedPerson') || 'dean';
-      let prefix = 'A'; // Default for Dean
-      
-      // Map all possible person strings to correct prefix
-      if (person.toLowerCase().includes('dean')) prefix = 'A';
-      else if (person.toLowerCase().includes('ie')) prefix = 'B';
-      else if (person.toLowerCase().includes('cpe')) prefix = 'C';
-      else if (person.toLowerCase().includes('ece')) prefix = 'D';
-      else prefix = 'E';
+      // Use service prefix from localStorage (set by home.html)
+      const prefix = localStorage.getItem('selectedServicePrefix') || 'A';
 
       try {
         // Get next queue number from backend API
-        const response = await fetch(`${API_BASE_URL}/queue/next-number/${prefix}`);
+        const response = await fetch(`${API_BASE_URL}/queue/next-number/${prefix}?institution_id=${institutionId}`);
         
         if (!response.ok) {
           const errorData = await response.json();
@@ -612,9 +612,9 @@
               qrScanCheckInterval = null;
             }
             
-            // After 4 seconds, redirect to index
+            // After 4 seconds, redirect to home
             setTimeout(() => {
-              window.location.href = 'index.html';
+              window.location.href = institutionId ? `home.html?inst=${institutionId}` : 'index.html';
             }, 4000);
           }
         }
@@ -641,7 +641,8 @@
     
     // Initialize queue data
     async function initializeQueue() {
-      const selectedPerson = localStorage.getItem('selectedPersonName') || 'Dean - College of Engineering';
+      const selectedPerson = localStorage.getItem('selectedPersonName') || 'Service';
+      const serviceId = localStorage.getItem('selectedServiceId');
       
       try {
         // Generate queue number from backend
@@ -664,7 +665,9 @@
             hour12: true 
           }),
           timestamp: now.toISOString(),
-          status: 'waiting'
+          status: 'waiting',
+          institution_id: parseInt(institutionId),
+          service_id: serviceId ? parseInt(serviceId) : null
         };
 
         // Send data directly to database via backend API
@@ -716,8 +719,7 @@
     
     // Generate QR Code
     function generateQRCode() {
-      // Use Vercel deployment URL for the frontend
-      const publicBaseUrl = 'https://queue-management-system-4v7f.vercel.app/';
+      const publicBaseUrl = window.location.origin + '/';
       const queueUrl = `${publicBaseUrl}queue-status.html?id=${queueData.id}`;
       
       console.log('Generating QR Code for URL:', queueUrl); // Debug log
@@ -803,10 +805,12 @@
       // Clear previous data
       localStorage.removeItem('selectedPerson');
       localStorage.removeItem('selectedPersonName');
+      localStorage.removeItem('selectedServiceId');
+      localStorage.removeItem('selectedServicePrefix');
       localStorage.removeItem('selectionTime');
       
       // Redirect to home
-      window.location.href = 'index.html';
+      window.location.href = institutionId ? `home.html?inst=${institutionId}` : 'index.html';
     }
     
     // Initialize when page loads
@@ -814,8 +818,8 @@
       // Check if we have selection data
       const selectedPerson = localStorage.getItem('selectedPerson');
       if (!selectedPerson) {
-        // No selection data, redirect to index
-        window.location.href = 'index.html';
+        // No selection data, redirect to home
+        window.location.href = institutionId ? `home.html?inst=${institutionId}` : 'index.html';
         return;
       }
       
@@ -835,8 +839,7 @@
     
     // Alternative QR generation using Google Charts API
     function generateAlternativeQR() {
-      // Use Vercel deployment URL for the frontend
-      const publicBaseUrl = 'https://queue-management-system-4v7f.vercel.app/';
+      const publicBaseUrl = window.location.origin + '/';
       const queueUrl = `${publicBaseUrl}queue-status.html?id=${queueData.id}`;
       
       console.log('Using alternative QR generation method');

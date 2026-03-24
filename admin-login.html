@@ -176,26 +176,25 @@
     <div class="login-header">
       <div class="login-logo"><i class="fas fa-building" style="font-size: 3rem;"></i></div>
       <h1 class="login-title">Admin Login</h1>
-      <p class="login-subtitle">Department Head Access</p>
+      <p class="login-subtitle">Administrator Access</p>
     </div>
 
     <form id="loginForm">
-      <div class="form-group">
-        <label for="department" class="form-label">Department</label>
-        <select class="form-select" id="department" required>
-          <option value="">Select Department</option>
-          <option value="super-admin">Super Admin - System Administrator</option>
-          <option value="dean">Dean - College of Engineering</option>
-          <option value="ie-chair">IE Department Chair</option>
-          <option value="cpe-chair">CPE Department Chair</option>
-          <option value="ece-chair">ECE Department Chair</option>
-          <option value="others">Other Staff/Faculty</option>
+      <div class="form-group" id="institutionGroup">
+        <label for="institution" class="form-label">Institution</label>
+        <select class="form-select" id="institution" required>
+          <option value="">Loading institutions...</option>
         </select>
       </div>
 
       <div class="form-group">
+        <label for="username" class="form-label">Username</label>
+        <input type="text" class="form-control" id="username" placeholder="Enter your username" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
         <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
+        <input type="password" class="form-control" id="password" placeholder="Enter your password" required autocomplete="current-password">
       </div>
 
       <button type="submit" class="btn btn-login" id="loginBtn">
@@ -211,51 +210,93 @@
   </div>
 
   <script>
+    // Load institutions on page load
+    async function loadInstitutions() {
+      const select = document.getElementById('institution');
+      try {
+        const response = await fetch(`${API_BASE_URL}/institutions`);
+        if (response.ok) {
+          const institutions = await response.json();
+          select.innerHTML = '<option value="">Select Institution</option>';
+          select.innerHTML += '<option value="super-admin">Super Admin (System-wide)</option>';
+          institutions.forEach(inst => {
+            select.innerHTML += `<option value="${inst.id}">${inst.name}</option>`;
+          });
+        } else {
+          select.innerHTML = '<option value="">Failed to load institutions</option>';
+        }
+      } catch (error) {
+        console.error('Error loading institutions:', error);
+        select.innerHTML = '<option value="">Connection error</option>';
+      }
+    }
+
+    // Toggle institution selector visibility based on super-admin selection
+    document.addEventListener('DOMContentLoaded', function() {
+      loadInstitutions();
+
+      const institutionSelect = document.getElementById('institution');
+      const usernameInput = document.getElementById('username');
+
+      institutionSelect.addEventListener('change', function() {
+        if (this.value === 'super-admin') {
+          usernameInput.value = 'super-admin';
+          usernameInput.readOnly = true;
+        } else {
+          if (usernameInput.value === 'super-admin') usernameInput.value = '';
+          usernameInput.readOnly = false;
+        }
+      });
+    });
+
     document.getElementById('loginForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       
-      const department = document.getElementById('department').value;
+      const institutionValue = document.getElementById('institution').value;
+      const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const errorMessage = document.getElementById('errorMessage');
       const loginBtn = document.getElementById('loginBtn');
 
-      // Reset error message
       errorMessage.style.display = 'none';
       loginBtn.disabled = true;
       loginBtn.textContent = 'Logging in...';
 
+      const isSuperAdmin = institutionValue === 'super-admin';
+      const institution_id = isSuperAdmin ? null : institutionValue;
+
       try {
-        // Authenticate against database
+        const body = { username, password };
+        if (institution_id) body.institution_id = institution_id;
+
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            department: department,
-            password: password
-          })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
         });
 
         const result = await response.json();
 
         if (result.success && result.user) {
-          // Store admin session
           localStorage.setItem('adminSession', JSON.stringify({
-            department: result.user.department,
+            department: result.user.department || result.user.username,
+            username: result.user.username,
             name: result.user.name,
             icon: result.user.icon,
+            role: result.user.role,
+            institution_id: result.user.institution_id,
+            service_id: result.user.service_id,
+            institution_name: result.user.institution_name || '',
             loginTime: new Date().toISOString()
           }));
 
-          // Redirect to appropriate dashboard
-          if (result.user.department === 'super-admin') {
+          if (result.user.role === 'super-admin') {
             window.location.href = 'super-admin-dashboard.html';
           } else {
             window.location.href = 'admin-dashboard.html';
           }
         } else {
-          errorMessage.textContent = result.error || 'Invalid department or password. Please try again.';
+          errorMessage.textContent = result.error || 'Invalid credentials. Please try again.';
           errorMessage.style.display = 'block';
           loginBtn.disabled = false;
           loginBtn.textContent = 'Login to Dashboard';
@@ -270,28 +311,25 @@
     });
 
     // Check if already logged in
-    document.addEventListener('DOMContentLoaded', function() {
+    (function() {
       const adminSession = localStorage.getItem('adminSession');
       if (adminSession) {
         const session = JSON.parse(adminSession);
-        // Check if session is still valid (24 hours)
         const loginTime = new Date(session.loginTime);
         const now = new Date();
         const hoursDiff = (now - loginTime) / (1000 * 60 * 60);
         
         if (hoursDiff < 24) {
-          // Still logged in, redirect to appropriate dashboard
-          if (session.department === 'super-admin') {
+          if (session.role === 'super-admin' || session.department === 'super-admin') {
             window.location.href = 'super-admin-dashboard.html';
           } else {
             window.location.href = 'admin-dashboard.html';
           }
         } else {
-          // Session expired
           localStorage.removeItem('adminSession');
         }
       }
-    });
+    })();
   </script>
   
   <!-- Developer Credit -->

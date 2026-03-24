@@ -4,7 +4,7 @@
 
 ### Color Scheme
 
-#### BEFORE (Inconsistent)
+#### BEFORE (Inconsistent) sample
 ```
 Page           | Primary Color | Secondary
 ---------------|---------------|-------------
