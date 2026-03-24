@@ -196,6 +196,17 @@ def init_schema(conn):
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100)")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'service-admin'")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS service_id INTEGER")
+    cur.execute("""
+        DO $$ BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'department'
+            ) THEN
+                ALTER TABLE users ALTER COLUMN department DROP NOT NULL;
+            END IF;
+        END $$;
+    """)
     # Populate username from legacy department column only when migrating the old schema
     cur.execute("""
         DO $$ BEGIN
