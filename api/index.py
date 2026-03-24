@@ -160,16 +160,6 @@ def init_schema(conn):
             updated_at TIMESTAMP DEFAULT NOW()
         )
     """)
-    # Unique per institution (NULL institution_id = super-admin, only one)
-    cur.execute("""
-        DO $$ BEGIN
-            IF NOT EXISTS (
-                SELECT 1 FROM pg_constraint WHERE conname = 'uq_users_inst_username'
-            ) THEN
-                ALTER TABLE users ADD CONSTRAINT uq_users_inst_username UNIQUE (institution_id, username);
-            END IF;
-        END $$;
-    """)
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS queue (
@@ -200,11 +190,6 @@ def init_schema(conn):
         )
     """)
 
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_institution ON queue(institution_id)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_service ON queue(service_id)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_status ON queue(institution_id, status)")
-    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_date ON queue(institution_id, created_at)")
-
     # === MIGRATION: add new columns to existing tables from old single-tenant schema ===
     # users table
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS institution_id INTEGER")
@@ -221,6 +206,30 @@ def init_schema(conn):
     cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS service_id INTEGER")
     cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_by VARCHAR(255) DEFAULT NULL")
     cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_at TIMESTAMP DEFAULT NULL")
+
+    # Unique per institution (NULL institution_id = super-admin, only one)
+    cur.execute("""
+        DO $$ BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'institution_id'
+            ) AND EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'username'
+            ) AND NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'uq_users_inst_username'
+            ) THEN
+                ALTER TABLE users ADD CONSTRAINT uq_users_inst_username UNIQUE (institution_id, username);
+            END IF;
+        END $$;
+    """)
+
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_institution ON queue(institution_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_service ON queue(service_id)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_status ON queue(institution_id, status)")
+    cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_date ON queue(institution_id, created_at)")
 
     conn.commit()
 
