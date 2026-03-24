@@ -1342,11 +1342,18 @@
 
         container.innerHTML = '';
         for (const inst of institutions) {
-          // Load services for this institution
           let services = [];
+          let admins = [];
           try {
             const svcRes = await fetch(`${API_BASE_URL}/institutions/${inst.id}/services`);
             if (svcRes.ok) services = await svcRes.json();
+          } catch (e) {}
+          try {
+            const adminRes = await fetch(`${API_BASE_URL}/institutions/${inst.id}/admins`);
+            if (adminRes.ok) {
+              const adminResult = await adminRes.json();
+              admins = adminResult.admins || [];
+            }
           } catch (e) {}
 
           const card = document.createElement('div');
@@ -1359,10 +1366,37 @@
                 <h5><i class="fas fa-building"></i> ${inst.name}</h5>
                 <p>Type: ${inst.type} | Slug: ${inst.slug} | ID: ${inst.id} ${inst.description ? '| ' + inst.description : ''}</p>
               </div>
-              <div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end;">
+                <button class="btn-change-password" style="font-size: 0.8rem; padding: 6px 12px;" onclick="toggleAdminForm(${inst.id})">
+                  <i class="fas fa-user-plus"></i> Add Login
+                </button>
                 <button class="btn-change-password" style="font-size: 0.8rem; padding: 6px 12px;" onclick="toggleServiceForm(${inst.id})">
                   <i class="fas fa-plus"></i> Add Service
                 </button>
+              </div>
+            </div>
+            <div id="adminForm-${inst.id}" style="display: none; background: #f8fafc; padding: 16px; border-radius: 8px; margin-bottom: 12px; border: 1px solid #e2e8f0;">
+              <div style="font-size: 0.9rem; font-weight: 700; color: #334155; margin-bottom: 12px;">Create Login Credentials</div>
+              <div class="row g-2">
+                <div class="col-md-3"><input type="text" class="form-control form-control-sm" id="adminName-${inst.id}" placeholder="Full name *"></div>
+                <div class="col-md-2"><input type="text" class="form-control form-control-sm" id="adminUsername-${inst.id}" placeholder="Username *"></div>
+                <div class="col-md-2"><input type="password" class="form-control form-control-sm" id="adminPassword-${inst.id}" placeholder="Password *"></div>
+                <div class="col-md-2">
+                  <select class="form-select form-select-sm" id="adminRole-${inst.id}" onchange="handleAdminRoleChange(${inst.id})">
+                    <option value="institution-admin">Institution Admin</option>
+                    <option value="service-admin">Service Admin</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <select class="form-select form-select-sm" id="adminService-${inst.id}" disabled>
+                    <option value="">Select service</option>
+                    ${services.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+                  </select>
+                </div>
+                <div class="col-12">
+                  <button class="btn btn-sm btn-primary" onclick="createInstitutionAdmin(${inst.id})"><i class="fas fa-save"></i> Create Login</button>
+                  <button class="btn btn-sm btn-secondary" onclick="document.getElementById('adminForm-${inst.id}').style.display='none'">Cancel</button>
+                </div>
               </div>
             </div>
             <div id="serviceForm-${inst.id}" style="display: none; background: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 12px;">
@@ -1384,6 +1418,20 @@
                 </span>
               `).join('') : '<span style="font-size: 0.85rem; color: #9ca3af; font-style: italic;">No services configured</span>'}
             </div>
+            <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+              <div style="font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px;">Login Credentials</div>
+              ${admins.length > 0 ? admins.map(admin => `
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; margin-bottom: 8px;">
+                  <div>
+                    <div style="font-weight: 700; color: #1e293b;">${admin.name}</div>
+                    <div style="font-size: 0.85rem; color: #64748b;">@${admin.username} | ${admin.role}${admin.service_name ? ` | ${admin.service_name}` : ''}</div>
+                  </div>
+                  <button class="btn-change-password" style="font-size: 0.75rem; padding: 6px 12px;" onclick="openPasswordModal('${admin.username}', '${admin.name}')">
+                    <i class="fas fa-key"></i> Change Password
+                  </button>
+                </div>
+              `).join('') : '<span style="font-size: 0.85rem; color: #9ca3af; font-style: italic;">No login credentials created yet</span>'}
+            </div>
           `;
           container.appendChild(card);
         }
@@ -1396,6 +1444,76 @@
     function toggleServiceForm(instId) {
       const form = document.getElementById(`serviceForm-${instId}`);
       form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function toggleAdminForm(instId) {
+      const form = document.getElementById(`adminForm-${instId}`);
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      if (form.style.display === 'block') {
+        handleAdminRoleChange(instId);
+      }
+    }
+
+    function handleAdminRoleChange(instId) {
+      const roleSelect = document.getElementById(`adminRole-${instId}`);
+      const serviceSelect = document.getElementById(`adminService-${instId}`);
+      if (!roleSelect || !serviceSelect) return;
+      const isServiceAdmin = roleSelect.value === 'service-admin';
+      serviceSelect.disabled = !isServiceAdmin;
+      if (!isServiceAdmin) {
+        serviceSelect.value = '';
+      }
+    }
+
+    async function createInstitutionAdmin(instId) {
+      const name = document.getElementById(`adminName-${instId}`).value.trim();
+      const username = document.getElementById(`adminUsername-${instId}`).value.trim();
+      const password = document.getElementById(`adminPassword-${instId}`).value;
+      const role = document.getElementById(`adminRole-${instId}`).value;
+      const serviceId = document.getElementById(`adminService-${instId}`).value;
+
+      if (!name || !username || !password) {
+        alert('Name, username, and password are required.');
+        return;
+      }
+
+      if (role === 'service-admin' && !serviceId) {
+        alert('Select a service for a service-admin account.');
+        return;
+      }
+
+      const payload = {
+        name,
+        username,
+        password,
+        role,
+        icon: role === 'institution-admin' ? 'fa-user-tie' : 'fa-user'
+      };
+
+      if (role === 'service-admin') {
+        payload.service_id = Number(serviceId);
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/institutions/${instId}/admins`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+          alert('Error: ' + (result.error || 'Failed to create login credentials'));
+          return;
+        }
+
+        alert(`Login created successfully.\n\nUsername: ${username}\nPassword: ${password}`);
+        loadInstitutions();
+        renderUsersList();
+      } catch (error) {
+        console.error('Error creating admin credentials:', error);
+        alert('Network error. Please try again.');
+      }
     }
 
     async function addService(instId) {
