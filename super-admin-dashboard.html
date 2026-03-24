@@ -345,8 +345,21 @@
 
       <!-- Dashboard Tab -->
       <div id="dashboardTab">
+        <div class="queue-card" style="background: white; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-radius: 12px; margin-bottom: 20px;">
+          <div style="padding: 20px; display: flex; flex-wrap: wrap; gap: 16px; align-items: end; justify-content: space-between;">
+            <div style="min-width: 280px; flex: 1; max-width: 420px;">
+              <label for="institutionAnalyticsFilter" style="display: block; font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.04em;">Institution View</label>
+              <select id="institutionAnalyticsFilter" class="form-select" onchange="handleInstitutionFilterChange(this.value)">
+                <option value="all">All Institutions</option>
+              </select>
+            </div>
+            <div id="analyticsScopeLabel" style="font-size: 0.95rem; font-weight: 600; color: #64748b;">
+              Showing analytics for all institutions
+            </div>
+          </div>
+        </div>
         
-        <!-- Department Filter -->
+        <!-- Service Filter -->
         <div class="department-filter" id="departmentFilter">
           <button class="dept-filter-btn active" onclick="filterDepartment('all')">
             <i class="fas fa-globe"></i> All Services
@@ -440,6 +453,63 @@
 
       <!-- User Management Tab -->
       <div id="userManagementTab" style="display: none;">
+        <div class="user-management-section">
+          <div style="margin-bottom: 30px;">
+            <h3 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">
+              <i class="fas fa-users-cog"></i> User Account Management
+            </h3>
+            <p style="color: #64748b; font-size: 0.95rem;">Manage passwords for institution and service accounts</p>
+          </div>
+
+          <div id="successMessage" class="success-message">
+            <i class="fas fa-check-circle"></i> Password updated successfully!
+          </div>
+
+          <div id="usersList">
+            <!-- Users will be populated here -->
+          </div>
+        </div>
+
+        <!-- Delete Queue Controls -->
+        <div class="user-management-section" style="margin-top: 30px; border: 2px solid #ef4444;">
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 1.5rem; font-weight: 800; color: #dc2626; margin-bottom: 8px;">
+              <i class="fas fa-triangle-exclamation"></i> Danger Zone - Delete Queue Data
+            </h3>
+            <p style="color: #64748b; font-size: 0.95rem;">Permanently delete queue records. This action cannot be undone.</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 20px;">
+              <h5 style="color: #dc2626; font-weight: 700; margin-bottom: 12px;">
+                <i class="fas fa-trash"></i> Delete by Service
+              </h5>
+              <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 15px;">Delete all queues from a specific service</p>
+              <select id="deleteDeptSelect" class="form-select" style="margin-bottom: 15px;">
+                <option value="">Select Service</option>
+              </select>
+              <button class="btn btn-danger w-100" onclick="deleteByDepartment()">
+                <i class="fas fa-trash"></i> Delete Service Queues
+              </button>
+            </div>
+
+            <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 20px;">
+              <h5 style="color: #dc2626; font-weight: 700; margin-bottom: 12px;">
+                <i class="fas fa-trash-can"></i> Delete All Queues
+              </h5>
+              <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 15px;">Delete all queues across every institution and service</p>
+              <div style="background: white; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
+                <p style="font-size: 0.8rem; color: #991b1b; margin: 0;">
+                  <i class="fas fa-exclamation-circle"></i> <strong>WARNING:</strong> This will permanently delete all queue records.
+                </p>
+              </div>
+              <button class="btn btn-danger w-100" onclick="deleteAllQueues()">
+                <i class="fas fa-trash-can"></i> Delete ALL Queues
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Institutions Management Tab -->
       <div id="institutionsTab" style="display: none;">
@@ -499,68 +569,6 @@
         </div>
       </div>
 
-      <!-- Original User Management Tab (continued) -->
-        <div class="user-management-section">
-          <div style="margin-bottom: 30px;">
-            <h3 style="font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-bottom: 8px;">
-              <i class="fas fa-users-cog"></i> User Account Management
-            </h3>
-            <p style="color: #64748b; font-size: 0.95rem;">Manage passwords for department accounts</p>
-          </div>
-
-          <div id="successMessage" class="success-message">
-            <i class="fas fa-check-circle"></i> Password updated successfully!
-          </div>
-
-          <div id="usersList">
-            <!-- Users will be populated here -->
-          </div>
-        </div>
-
-        <!-- Delete Queue Controls -->
-        <div class="user-management-section" style="margin-top: 30px; border: 2px solid #ef4444;">
-          <div style="margin-bottom: 24px;">
-            <h3 style="font-size: 1.5rem; font-weight: 800; color: #dc2626; margin-bottom: 8px;">
-              <i class="fas fa-triangle-exclamation"></i> Danger Zone - Delete Queue Data
-            </h3>
-            <p style="color: #64748b; font-size: 0.95rem;">Permanently delete queue records. This action cannot be undone!</p>
-          </div>
-
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-            <!-- Delete by Department -->
-            <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 20px;">
-              <h5 style="color: #dc2626; font-weight: 700; margin-bottom: 12px;">
-                <i class="fas fa-trash"></i> Delete by Department
-              </h5>
-              <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 15px;">Delete all queues from a specific department</p>
-              <select id="deleteDeptSelect" class="form-select" style="margin-bottom: 15px;">
-                <option value="">Select Service</option>
-                <!-- Populated dynamically -->
-              </select>
-              <button class="btn btn-danger w-100" onclick="deleteByDepartment()">
-                <i class="fas fa-trash"></i> Delete Department Queues
-              </button>
-            </div>
-
-            <!-- Delete All -->
-            <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 12px; padding: 20px;">
-              <h5 style="color: #dc2626; font-weight: 700; margin-bottom: 12px;">
-                <i class="fas fa-trash-can"></i> Delete All Queues
-              </h5>
-              <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 15px;">Delete ALL queues from ALL departments in the entire system</p>
-              <div style="background: white; border: 1px solid #fca5a5; border-radius: 8px; padding: 12px; margin-bottom: 15px;">
-                <p style="font-size: 0.8rem; color: #991b1b; margin: 0;">
-                  <i class="fas fa-exclamation-circle"></i> <strong>WARNING:</strong> This will permanently delete all queue records!
-                </p>
-              </div>
-              <button class="btn btn-danger w-100" onclick="deleteAllQueues()">
-                <i class="fas fa-trash-can"></i> Delete ALL Queues
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
   </div>
 
@@ -594,6 +602,7 @@
   <script>
     let allQueues = [];
     let currentFilter = 'all';
+    let currentInstitutionFilter = 'all';
     let dailyChart, departmentChart, statusChart;
     let currentEditAccount = null;
 
@@ -655,7 +664,9 @@
       // Update button states
       const buttons = document.querySelectorAll('.dept-filter-btn');
       buttons.forEach(btn => btn.classList.remove('active'));
-      event.target.classList.add('active');
+      if (typeof event !== 'undefined' && event && event.target) {
+        event.target.classList.add('active');
+      }
 
       // Update filter label
       const label = dept === 'all' ? 'All Services' : (serviceNames[dept] || dept);
@@ -663,6 +674,45 @@
 
       // Reload data with filter
       loadAllData();
+    }
+
+    async function handleInstitutionFilterChange(institutionId) {
+      currentInstitutionFilter = institutionId || 'all';
+      currentFilter = 'all';
+      updateAnalyticsScopeLabel();
+      await loadServiceFilters();
+      loadAllData();
+    }
+
+    function updateAnalyticsScopeLabel() {
+      const scopeLabel = document.getElementById('analyticsScopeLabel');
+      if (!scopeLabel) return;
+
+      if (currentInstitutionFilter === 'all') {
+        scopeLabel.textContent = 'Showing analytics for all institutions';
+        return;
+      }
+
+      const institution = institutionList.find(inst => String(inst.id) === String(currentInstitutionFilter));
+      scopeLabel.textContent = institution
+        ? `Showing analytics for ${institution.name}`
+        : 'Showing analytics for selected institution';
+    }
+
+    function populateInstitutionAnalyticsSelect() {
+      const select = document.getElementById('institutionAnalyticsFilter');
+      if (!select) return;
+
+      const previousValue = currentInstitutionFilter || 'all';
+      select.innerHTML = '<option value="all">All Institutions</option>';
+      institutionList.forEach(inst => {
+        select.innerHTML += `<option value="${inst.id}">${inst.name}</option>`;
+      });
+
+      const hasCurrent = currentInstitutionFilter === 'all' || institutionList.some(inst => String(inst.id) === String(previousValue));
+      select.value = hasCurrent ? previousValue : 'all';
+      currentInstitutionFilter = select.value || 'all';
+      updateAnalyticsScopeLabel();
     }
 
     // Dynamic service data
@@ -676,11 +726,16 @@
         const instResponse = await fetch(`${API_BASE_URL}/institutions`);
         if (!instResponse.ok) return;
         institutionList = await instResponse.json();
+        populateInstitutionAnalyticsSelect();
         
         serviceList = [];
         serviceNames = {};
-        
-        for (const inst of institutionList) {
+
+        const institutionsToLoad = currentInstitutionFilter === 'all'
+          ? institutionList
+          : institutionList.filter(inst => String(inst.id) === String(currentInstitutionFilter));
+
+        for (const inst of institutionsToLoad) {
           const svcResponse = await fetch(`${API_BASE_URL}/institutions/${inst.id}/services`);
           if (svcResponse.ok) {
             const services = await svcResponse.json();
@@ -703,10 +758,12 @@
         serviceList.forEach(s => {
           filterContainer.innerHTML += `
             <button class="dept-filter-btn" onclick="filterDepartment('${s.id}')">
-              <i class="fas fa-concierge-bell"></i> ${s.name}
+              <i class="fas fa-concierge-bell"></i> ${s.name}${currentInstitutionFilter === 'all' ? ` <span style="opacity:0.7; font-weight:500;">(${s.institution_name})</span>` : ''}
             </button>
           `;
         });
+
+        document.getElementById('filterLabel').textContent = 'All Services';
 
         // Build delete select
         const deleteSelect = document.getElementById('deleteDeptSelect');
@@ -784,8 +841,7 @@
       animateValue('statActiveNow', 0, activeNow, 1500);
       animateValue('statCompleted', 0, totalCompleted, 1500);
 
-      // Calculate average wait time: random 2-5 minutes
-      const avgWaitTime = Math.floor(Math.random() * 4) + 2;
+      const avgWaitTime = totalToday === 0 ? 0 : Math.max(Math.ceil(activeNow * 1.5), 1);
       animateValue('statAvgWait', 0, avgWaitTime, 1500);
     }
 
@@ -825,10 +881,10 @@
               allQueues.filter(q => String(q.department) === String(svc.id) && q.date === dateStr && q.status !== 'archived').length
             );
             return {
-              label: svc.name,
+              label: currentInstitutionFilter === 'all' ? `${svc.name} (${svc.institution_name || 'Unknown'})` : svc.name,
               data: data,
               borderColor: color,
-              backgroundColor: color.replace(')', ', 0.1)').replace('rgb', 'rgba'),
+              backgroundColor: 'transparent',
               borderWidth: 3,
               fill: false,
               tension: 0.4,
@@ -1046,7 +1102,7 @@
             userCard.innerHTML = `
               <div class="user-info">
                 <h5><i class="fas ${user.icon}"></i> ${user.name}</h5>
-                <p>Account ID: ${user.id} | Password: ••••••••</p>
+                <p>${user.role || 'user'}${user.institution_name ? ` | ${user.institution_name}` : ''} | Account ID: ${user.id} | Password: ••••••••</p>
               </div>
               <button class="btn-change-password" onclick="openPasswordModal('${user.id}', '${user.name}')">
                 <i class="fas fa-key"></i> Change Password
@@ -1197,8 +1253,7 @@
       const confirmed = confirm(
         `⚠️⚠️⚠️ DELETE ALL QUEUES ⚠️⚠️⚠️\n\n` +
         `This will PERMANENTLY DELETE ALL QUEUES from the ENTIRE SYSTEM!\n\n` +
-        `All departments will be affected:\n` +
-        `• Dean\n• IE Department\n• CPE Department\n• ECE Department\n• Others\n\n` +
+        `All institutions and services will be affected.\n\n` +
         `This action CANNOT be undone!\n\n` +
         `Click OK to DELETE EVERYTHING or Cancel to abort.`
       );
@@ -1385,6 +1440,7 @@
         loadServiceFilters().then(() => {
           initCharts();
           loadAllData();
+          renderUsersList();
           setInterval(loadAllData, 5000);
         });
       }
