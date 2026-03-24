@@ -202,27 +202,53 @@ def init_schema(conn):
     cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_status ON queue(institution_id, status)")
     cur.execute("CREATE INDEX IF NOT EXISTS idx_queue_date ON queue(institution_id, created_at)")
 
+    # === MIGRATION: add new columns to existing tables from old single-tenant schema ===
+    # users table
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS institution_id INTEGER")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100)")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'service-admin'")
+    cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS service_id INTEGER")
+    # Populate username from legacy department column for old rows
+    cur.execute("UPDATE users SET username = department WHERE username IS NULL AND department IS NOT NULL")
+    # Fix roles for known legacy users
+    cur.execute("UPDATE users SET role = 'super-admin' WHERE username = 'super-admin' AND role = 'service-admin'")
+    cur.execute("UPDATE users SET role = 'institution-admin' WHERE username = 'dean' AND role = 'service-admin'")
+    # queue table
+    cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS institution_id INTEGER")
+    cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS service_id INTEGER")
+    cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_by VARCHAR(255) DEFAULT NULL")
+    cur.execute("ALTER TABLE queue ADD COLUMN IF NOT EXISTS returned_at TIMESTAMP DEFAULT NULL")
+
     conn.commit()
 
 
 def seed_default_data(conn):
-    """Seed the default PNC College of Engineering institution and users."""
+    """Seed the default PNC College of Engineering institution and users.
+    Safe to call on both fresh DBs and DBs migrated from the old single-tenant schema.
+    """
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM institutions")
-    if cur.fetchone()[0] > 0:
+
+    # Get or create the default institution
+    cur.execute("SELECT id FROM institutions WHERE slug = 'pnc-engineering'")
+    row = cur.fetchone()
+    if row:
+        # Institution already exists — nothing to seed
+        inst_id = row[0]
+        conn.commit()
         return
+    else:
+        cur.execute("""
+            INSERT INTO institutions (name, slug, type, description, is_active)
+            VALUES (%s, %s, %s, %s, TRUE) RETURNING id
+        """, (
+            'PNC College of Engineering',
+            'pnc-engineering',
+            'university',
+            'Palawan National College - College of Engineering Queue Management'
+        ))
+        inst_id = cur.fetchone()[0]
 
-    cur.execute("""
-        INSERT INTO institutions (name, slug, type, description, is_active)
-        VALUES (%s, %s, %s, %s, TRUE) RETURNING id
-    """, (
-        'PNC College of Engineering',
-        'pnc-engineering',
-        'university',
-        'Palawan National College - College of Engineering Queue Management'
-    ))
-    inst_id = cur.fetchone()[0]
-
+    # Create services for the default institution
     services = [
         (inst_id, "Dean's Office", 'A', 'Dean - College of Engineering', 'fa-user-tie', 1),
         (inst_id, 'IE Department', 'B', 'Industrial Engineering Department Chair', 'fa-industry', 2),
@@ -234,33 +260,56 @@ def seed_default_data(conn):
     for s in services:
         cur.execute("""
             INSERT INTO services (institution_id, name, prefix, description, icon, display_order)
-            VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON CONFLICT (institution_id, prefix) DO UPDATE SET name = EXCLUDED.name
+            RETURNING id
         """, s)
         svc_ids[s[2]] = cur.fetchone()[0]
 
-    # Super-admin (no institution)
+    # Link any existing legacy users (institution_id IS NULL, not super-admin) to this institution
     cur.execute("""
-        INSERT INTO users (institution_id, username, password, name, role, icon)
-        VALUES (NULL, %s, %s, %s, 'super-admin', %s)
-    """, ('super-admin', hash_password('admin2026'), 'Super Admin - System Administrator', 'fa-crown'))
+        UPDATE users SET institution_id = %s
+        WHERE institution_id IS NULL AND username IS NOT NULL AND username != 'super-admin'
+    """, (inst_id,))
 
-    # Institution admin
+    # Assign service_ids to legacy service admins
+    legacy_prefix_map = {'A': 'dean', 'B': 'ie-chair', 'C': 'cpe-chair', 'D': 'ece-chair', 'E': 'others'}
+    for prefix, uname in legacy_prefix_map.items():
+        cur.execute(
+            "UPDATE users SET service_id = %s WHERE username = %s AND institution_id = %s AND service_id IS NULL",
+            (svc_ids[prefix], uname, inst_id)
+        )
+
+    # Fix dean to institution-admin role
     cur.execute("""
-        INSERT INTO users (institution_id, username, password, name, role, icon)
-        VALUES (%s, %s, %s, %s, 'institution-admin', %s)
-    """, (inst_id, 'dean', hash_password('dean2025'), 'Dean - College of Engineering', 'fa-user-tie'))
+        UPDATE users SET role = 'institution-admin'
+        WHERE username = 'dean' AND institution_id = %s AND role = 'service-admin'
+    """, (inst_id,))
 
-    # Service admins
-    for uname, pw, display, icon, prefix in [
-        ('ie-chair', 'ie2025', 'IE Department Chair', 'fa-industry', 'B'),
-        ('cpe-chair', 'cpe2025', 'CPE Department Chair', 'fa-microchip', 'C'),
-        ('ece-chair', 'ece2025', 'ECE Department Chair', 'fa-bolt', 'D'),
-        ('others', 'staff2025', 'Other Staff/Faculty', 'fa-users', 'E'),
-    ]:
+    # Super-admin: update role if legacy row exists, otherwise create
+    cur.execute("SELECT id FROM users WHERE username = 'super-admin' AND institution_id IS NULL")
+    if cur.fetchone():
+        cur.execute("UPDATE users SET role = 'super-admin' WHERE username = 'super-admin' AND institution_id IS NULL")
+    else:
+        cur.execute("""
+            INSERT INTO users (institution_id, username, password, name, role, icon)
+            VALUES (NULL, %s, %s, %s, 'super-admin', %s)
+        """, ('super-admin', hash_password('admin2026'), 'Super Admin - System Administrator', 'fa-crown'))
+
+    # Create any missing institution users (fresh DB case) with ON CONFLICT DO NOTHING
+    new_users = [
+        (inst_id, 'dean', hash_password('dean2025'), 'Dean - College of Engineering', 'institution-admin', 'fa-user-tie', svc_ids['A']),
+        (inst_id, 'ie-chair', hash_password('ie2025'), 'IE Department Chair', 'service-admin', 'fa-industry', svc_ids['B']),
+        (inst_id, 'cpe-chair', hash_password('cpe2025'), 'CPE Department Chair', 'service-admin', 'fa-microchip', svc_ids['C']),
+        (inst_id, 'ece-chair', hash_password('ece2025'), 'ECE Department Chair', 'service-admin', 'fa-bolt', svc_ids['D']),
+        (inst_id, 'others', hash_password('staff2025'), 'Other Staff/Faculty', 'service-admin', 'fa-users', svc_ids['E']),
+    ]
+    for u in new_users:
         cur.execute("""
             INSERT INTO users (institution_id, username, password, name, role, icon, service_id)
-            VALUES (%s, %s, %s, %s, 'service-admin', %s, %s)
-        """, (inst_id, uname, hash_password(pw), display, icon, svc_ids[prefix]))
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+        """, u)
 
     conn.commit()
     print("Default institution and users seeded.")
