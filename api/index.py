@@ -77,7 +77,10 @@ def get_db_connection():
     try:
         database_url = os.environ.get('DATABASE_URL')
         if database_url:
-            conn = psycopg2.connect(database_url, sslmode='require')
+            # Strip channel_binding param — not supported by all psycopg2 builds
+            import re as _re
+            database_url = _re.sub(r'[&?]channel_binding=[^&]*', '', database_url)
+            conn = psycopg2.connect(database_url)
         else:
             conn = psycopg2.connect(
                 database=os.environ.get('PGDATABASE'),
