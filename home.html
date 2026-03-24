@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -11,618 +11,242 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="stylesheet" href="style.css">
   <style>
-    * {
-      user-select: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-    }
-    
+    * { user-select: none; -webkit-user-select: none; box-sizing: border-box; }
     body {
-      background: #ffffff;
-      min-height: 100vh;
+      margin: 0; padding: 0; min-height: 100vh; overflow-x: hidden;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #1a1a1a;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-      overflow-y: auto;
-      position: relative;
-      cursor: default;
+      color: #0F172A;
     }
-    
-    body::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
-      background-size: cover;
-      background-position: center;
-      background-repeat: no-repeat;
-      opacity: 0.4;
+    .page-bg {
+      position: fixed; inset: 0;
+      background: url('https://images.unsplash.com/photo-1557683316-973673baf926?w=1920&q=80') center/cover no-repeat;
       z-index: 0;
     }
-    
-    .kiosk-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-      backdrop-filter: blur(10px);
-      padding: 15px 30px;
-      z-index: 10;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    .page-bg::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(160deg, rgba(15,23,42,0.92) 0%, rgba(13,148,136,0.75) 100%);
     }
-    
-    .header-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
+    .top-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+      background: rgba(15,23,42,0.6); backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 12px 24px;
     }
-    
-    .kiosk-title {
-      color: white;
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin: 0;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .top-bar-inner {
+      display: flex; justify-content: space-between; align-items: center;
+      max-width: 1200px; margin: 0 auto;
     }
-    
-    .queue-logo {
-      width: 40px;
-      height: 40px;
-      object-fit: contain;
-      filter: brightness(0) invert(1);
+    .top-bar-title {
+      color: #fff; font-size: 1rem; font-weight: 700;
+      display: flex; align-items: center; gap: 10px;
     }
-    
-    .step-indicator {
-      color: rgba(255, 255, 255, 0.9);
-      font-size: 1rem;
-      font-weight: 500;
+    .top-bar-title .dot { width: 8px; height: 8px; border-radius: 50%; background: #2DD4BF; }
+    .step-pill {
+      background: rgba(45,212,191,0.15); border: 1px solid rgba(45,212,191,0.3);
+      color: #2DD4BF; padding: 5px 14px; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 600;
     }
-    
-    .hero-container {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      position: relative;
-      padding: 100px 30px 50px;
-      z-index: 1;
+    .main-container {
+      position: relative; z-index: 1; min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 90px 20px 40px;
     }
-    
-    .hero-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(255, 255, 255, 0.75);
-      z-index: 1;
+    .content-area { text-align: center; max-width: 960px; width: 100%; }
+
+    .institution-banner {
+      background: rgba(255,255,255,0.06); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+      padding: 20px 28px; margin-bottom: 32px;
+      display: flex; align-items: center; gap: 16px; text-align: left;
     }
-    
-    .hero-content {
-      position: relative;
-      z-index: 2;
-      text-align: center;
-      max-width: 1000px;
-      width: 100%;
+    .institution-banner-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: linear-gradient(135deg, #0D9488, #0F766E);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 1.4rem; flex-shrink: 0;
     }
-    
+    .institution-banner-text h2 {
+      color: #fff; font-size: 1.2rem; font-weight: 700; margin: 0 0 2px;
+    }
+    .institution-banner-text p {
+      color: rgba(255,255,255,0.5); font-size: 0.85rem; margin: 0;
+    }
+
     .page-title {
-      font-size: 3.2rem;
-      font-weight: 800;
-      color: #1a1a1a;
-      margin-bottom: 15px;
-      letter-spacing: -0.02em;
-      line-height: 1.1;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      font-size: clamp(1.8rem, 4.5vw, 2.8rem); font-weight: 800; color: #fff;
+      margin-bottom: 8px; letter-spacing: -0.02em;
     }
-    
     .page-subtitle {
-      font-size: 1.5rem;
-      font-weight: 500;
-      color: #4b5563;
-      margin-bottom: 50px;
-      line-height: 1.3;
+      font-size: clamp(0.95rem, 2vw, 1.1rem); color: rgba(255,255,255,0.55);
+      margin-bottom: 36px;
     }
-    
+
     .selection-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 25px;
-      margin-bottom: 50px;
-      max-width: 900px;
-      width: 100%;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px; margin-bottom: 40px; max-width: 860px; width: 100%;
+      margin-left: auto; margin-right: auto;
     }
-    
     .person-card {
-      background: rgba(255, 255, 255, 0.95);
-      border: 3px solid #e5e7eb;
-      border-radius: 20px;
-      padding: 40px 25px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      backdrop-filter: blur(15px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
-      min-height: 180px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+      background: rgba(255,255,255,0.06); backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+      padding: 32px 20px; text-align: center; cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
     }
-    
     .person-card:hover {
-      transform: translateY(-8px) scale(1.02);
-      border-color: var(--color-primary);
-      box-shadow: 0 15px 40px rgba(59, 130, 246, 0.2);
-      background: rgba(255, 255, 255, 0.98);
+      background: rgba(255,255,255,0.12); border-color: #2DD4BF;
+      transform: translateY(-4px);
+      box-shadow: 0 16px 32px rgba(0,0,0,0.25);
     }
-    
-    .person-card:active {
-      transform: translateY(-4px) scale(1.01);
-      transition: all 0.1s ease;
-    }
-    
     .person-card.selected {
-      border-color: var(--color-primary);
-      background: var(--color-primary-lighter);
-      transform: translateY(-5px) scale(1.02);
-      box-shadow: 0 12px 35px rgba(59, 130, 246, 0.25);
+      border-color: #2DD4BF; background: rgba(45,212,191,0.12);
+      box-shadow: 0 0 0 2px rgba(45,212,191,0.4), 0 16px 32px rgba(0,0,0,0.25);
     }
-    
     .person-icon {
-      width: 80px;
-      height: 80px;
-      background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 36px;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, rgba(13,148,136,0.25), rgba(45,212,191,0.1));
+      border: 1px solid rgba(45,212,191,0.2); border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 16px; transition: all 0.3s ease;
     }
-    
-    .person-card:hover .person-icon,
-    .person-card.selected .person-icon {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-      color: white;
-      transform: scale(1.1) rotate(5deg);
-      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    .person-card:hover .person-icon, .person-card.selected .person-icon {
+      background: linear-gradient(135deg, #0D9488, #0F766E);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 6px 20px rgba(13,148,136,0.4);
     }
-    
-    .person-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #1a1a1a;
-      margin-bottom: 8px;
+    .person-icon i { font-size: 1.6rem; color: #2DD4BF; }
+    .person-card:hover .person-icon i, .person-card.selected .person-icon i { color: #fff; }
+    .person-title { font-size: 1.05rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .person-department { font-size: 0.85rem; color: rgba(255,255,255,0.45); }
+
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      color: rgba(255,255,255,0.5); font-size: 0.9rem; font-weight: 500;
+      text-decoration: none; cursor: pointer; border: none; background: none;
+      transition: color 0.2s; padding: 0; margin-top: 8px;
     }
-    
-    .person-department {
-      font-size: 1rem;
-      color: #6b7280;
-      font-weight: 500;
-    }
-    
-    .action-buttons {
-      display: flex;
-      gap: 25px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
-    .btn-kiosk {
-      padding: 18px 45px;
-      font-size: 1.3rem;
-      font-weight: 700;
-      border-radius: 12px;
-      transition: all 0.2s ease;
-      text-decoration: none;
-      display: inline-block;
-      cursor: pointer;
-      border: none;
-      min-width: 160px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-    }
-    
-    .btn-kiosk:active {
-      transform: translateY(2px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    }
-    
-    .btn-primary-kiosk {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-      color: white;
-    }
-    
-    .btn-primary-kiosk:hover:not(:disabled) {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
-      color: white;
-    }
-    
-    .btn-primary-kiosk:disabled {
-      background: linear-gradient(135deg, #9ca3af, #6b7280);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .btn-secondary-kiosk {
-      background: linear-gradient(135deg, #6b7280, #4b5563);
-      color: white;
-    }
-    
-    .btn-secondary-kiosk:hover {
-      background: linear-gradient(135deg, #4b5563, #374151);
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(75, 85, 99, 0.3);
-      color: white;
-    }
-    
-    .selection-feedback {
-      position: fixed;
-      bottom: 30px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(34, 197, 94, 0.95);
-      color: white;
-      padding: 12px 25px;
-      border-radius: 25px;
-      font-weight: 600;
-      font-size: 1.1rem;
-      backdrop-filter: blur(10px);
-      opacity: 0;
-      transition: all 0.3s ease;
-      z-index: 30;
-    }
-    
-    .selection-feedback.show {
-      opacity: 1;
-      transform: translateX(-50%) translateY(-10px);
-    }
-    
-    /* Confirmation Modal Styles */
+    .back-btn:hover { color: #2DD4BF; }
+
+    /* Confirmation Modal */
     .confirmation-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(15px);
-      -webkit-backdrop-filter: blur(15px);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      transition: all 0.3s ease;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(12px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 1000; opacity: 0; transition: opacity 0.3s ease;
     }
-    
-    .confirmation-modal.show {
-      display: flex;
-      opacity: 1;
-    }
-    
+    .confirmation-modal.show { display: flex; opacity: 1; }
     .modal-content {
-      background: rgba(255, 255, 255, 0.98);
-      backdrop-filter: blur(20px);
-      border-radius: 25px;
-      padding: 50px 40px;
-      text-align: center;
-      max-width: 500px;
-      width: 90%;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      border: 2px solid rgba(255, 255, 255, 0.8);
-      transform: scale(0.8);
-      transition: all 0.3s ease;
+      background: #0F172A; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 40px 32px; text-align: center;
+      max-width: 420px; width: 90%;
+      box-shadow: 0 24px 48px rgba(0,0,0,0.5);
+      transform: scale(0.9); transition: transform 0.3s ease;
     }
-    
-    .confirmation-modal.show .modal-content {
-      transform: scale(1);
+    .confirmation-modal.show .modal-content { transform: scale(1); }
+    .modal-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: linear-gradient(135deg, #0D9488, #0F766E);
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; color: #fff; font-size: 1.4rem;
     }
-    
-    .modal-title {
-      font-size: 2rem;
-      font-weight: 800;
-      color: #1a1a1a;
-      margin-bottom: 15px;
-      letter-spacing: -0.02em;
-    }
-    
-    .modal-subtitle {
-      font-size: 1.3rem;
-      color: #4b5563;
-      margin-bottom: 10px;
-      font-weight: 600;
-    }
-    
-    .modal-department {
-      font-size: 1.1rem;
-      color: #6b7280;
-      margin-bottom: 35px;
-      font-weight: 500;
-    }
-    
-    .modal-buttons {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-    
+    .modal-title { font-size: 1.3rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .modal-subtitle { font-size: 1rem; color: rgba(255,255,255,0.6); margin-bottom: 24px; }
+    .modal-buttons { display: flex; gap: 12px; justify-content: center; }
     .modal-btn {
-      padding: 16px 35px;
-      font-size: 1.2rem;
-      font-weight: 700;
-      border-radius: 12px;
-      transition: all 0.2s ease;
-      cursor: pointer;
-      border: none;
-      min-width: 140px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+      padding: 12px 28px; font-size: 0.95rem; font-weight: 600;
+      border-radius: 12px; cursor: pointer; border: none; transition: all 0.2s;
     }
-    
-    .modal-btn:active {
-      transform: translateY(2px);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    }
-    
     .modal-btn-primary {
-      background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
-      color: white;
+      background: linear-gradient(135deg, #0D9488, #0F766E); color: #fff;
     }
-    
-    .modal-btn.btn-confirm:hover {
-      background: linear-gradient(135deg, #1d4ed8, #1e40af);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(59, 130, 246, 0.3);
+    .modal-btn-primary:hover {
+      transform: translateY(-2px); box-shadow: 0 8px 24px rgba(13,148,136,0.4);
     }
-    
     .modal-btn-secondary {
-      background: linear-gradient(135deg, #6b7280, #4b5563);
-      color: white;
+      background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff;
     }
-    
-    .modal-btn-secondary:hover {
-      background: linear-gradient(135deg, #4b5563, #374151);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(75, 85, 99, 0.3);
-    }
-    
-    .touch-ripple {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(59, 130, 246, 0.3);
-      pointer-events: none;
-      transform: scale(0);
-      animation: ripple 0.6s linear;
-    }
-    
-    @keyframes ripple {
-      to {
-        transform: scale(4);
-        opacity: 0;
-      }
-    }
-    
-    @media (max-width: 768px) {
-      .kiosk-header {
-        padding: 12px 20px;
-      }
-      
-      .kiosk-title {
-        font-size: 1.1rem;
-      }
-      
-      .queue-logo {
-        width: 28px;
-        height: 28px;
-        background: white;
-        padding: 2px;
-      }
-      
-      .step-indicator {
-        font-size: 0.9rem;
-      }
-      
-      .hero-container {
-        padding: 80px 20px 40px;
-      }
-      
-      .page-title {
-        font-size: 2.5rem;
-      }
-      
-      .page-subtitle {
-        font-size: 1.2rem;
-      }
-      
-      .selection-grid {
-        grid-template-columns: 1fr;
-        gap: 20px;
-      }
-      
-      .person-card {
-        padding: 35px 20px;
-        min-height: 160px;
-      }
-      
-      .person-icon {
-        width: 70px;
-        height: 70px;
-        font-size: 32px;
-      }
-      
-      .person-title {
-        font-size: 1.2rem;
-      }
-      
-      .action-buttons {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .btn-kiosk {
-        width: 100%;
-        max-width: 300px;
-        padding: 16px 35px;
-        font-size: 1.2rem;
-      }
-      
-      .modal-content {
-        padding: 40px 30px;
-        width: 95%;
-      }
-      
-      .modal-title {
-        font-size: 1.7rem;
-      }
-      
-      .modal-subtitle {
-        font-size: 1.1rem;
-      }
-      
-      .modal-department {
-        font-size: 1rem;
-      }
-      
-      .modal-buttons {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .modal-btn {
-        width: 100%;
-        max-width: 250px;
-        padding: 14px 30px;
-        font-size: 1.1rem;
-      }
-    }
-    
-    /* Developer Credit Footer */
+    .modal-btn-secondary:hover { background: rgba(255,255,255,0.15); }
+
     .developer-credit {
-      position: fixed;
-      bottom: 10px;
-      right: 15px;
-      font-size: 0.95rem;
-      color: #6b7280;
-      opacity: 0.6;
-      z-index: 1001;
-      pointer-events: none;
-      font-family: 'Inter', sans-serif;
-      font-weight: 400;
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      position: fixed; bottom: 10px; right: 15px; font-size: 0.8rem;
+      color: rgba(255,255,255,0.25); z-index: 1001; pointer-events: none;
     }
-    
     @media (max-width: 768px) {
-      .developer-credit {
-        font-size: 0.85rem;
-        bottom: 8px;
-        right: 12px;
-      }
+      .main-container { padding: 80px 16px 32px; }
+      .selection-grid { grid-template-columns: 1fr; gap: 12px; }
+      .person-card { padding: 24px 16px; }
+      .institution-banner { flex-direction: column; text-align: center; padding: 16px; }
+      .modal-buttons { flex-direction: column; }
+      .modal-btn { width: 100%; }
     }
   </style>
 </head>
 <body>
-  <!-- Kiosk Header -->
-  <div class="kiosk-header">
-    <div class="header-content">
-      <h1 class="kiosk-title">
-        <img src="images/logo.svg" alt="Queue Logo" class="queue-logo">
-        <span id="headerInstitutionName">Queue Management System</span>
-      </h1>
-      <div class="step-indicator">Step 1 of 2</div>
+  <div class="page-bg"></div>
+
+  <div class="top-bar">
+    <div class="top-bar-inner">
+      <div class="top-bar-title">
+        <span class="dot"></span>
+        <span id="headerInstitutionName">Queue Management</span>
+      </div>
+      <div class="step-pill">Step 1 of 2</div>
     </div>
   </div>
 
-  <div class="hero-container">
-    <div class="hero-overlay"></div>
-    
-    <div class="hero-content">
-      <h1 class="page-title"><i class="fas fa-hand-wave"></i> Who would you like to see?</h1>
-      <p class="page-subtitle">Please select the service you need</p>
-      
-      <div id="serviceGrid" class="selection-grid">
-        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #6b7280;">
-          <i class="fas fa-spinner fa-spin" style="font-size: 2rem;"></i>
-          <p>Loading services...</p>
+  <div class="main-container">
+    <div class="content-area">
+      <div class="institution-banner" id="institutionBanner" style="display:none;">
+        <div class="institution-banner-icon"><i class="fas fa-building"></i></div>
+        <div class="institution-banner-text">
+          <h2 id="bannerInstName">Loading...</h2>
+          <p>You are queuing at this institution</p>
         </div>
       </div>
-      
-      <!-- Action buttons - hidden since we're using modal -->
-      <div class="action-buttons" style="display: none;">
-        <button id="continueBtn" class="btn-kiosk btn-primary-kiosk" disabled onclick="continueTo()">
-          <i class="fas fa-check"></i> Continue
-        </button>
-        <button class="btn-kiosk btn-secondary-kiosk" onclick="goBack()">
-          <i class="fas fa-arrow-left"></i> Back
-        </button>
+      <h1 class="page-title">Select a Service</h1>
+      <p class="page-subtitle">Choose who you would like to see</p>
+      <div id="serviceGrid" class="selection-grid">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(255,255,255,0.5);">
+          <i class="fas fa-spinner fa-spin" style="font-size:1.5rem;"></i>
+          <p style="margin-top:12px;">Loading services...</p>
+        </div>
       </div>
+      <button class="back-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Back to institutions</button>
     </div>
   </div>
-  
-  <!-- Confirmation Modal -->
+
   <div id="confirmationModal" class="confirmation-modal">
     <div class="modal-content">
-      <div class="modal-title"><i class="fas fa-check-circle"></i> Confirm Selection</div>
+      <div class="modal-icon"><i class="fas fa-check"></i></div>
+      <div class="modal-title">Confirm Selection</div>
       <div class="modal-subtitle" id="modalPersonName"></div>
-      <div class="modal-department" id="modalDepartment"></div>
       <div class="modal-buttons">
         <button class="modal-btn modal-btn-primary" onclick="confirmSelection()">
           <i class="fas fa-check"></i> Continue
         </button>
-        <button class="modal-btn modal-btn-secondary" onclick="cancelSelection()">
-          <i class="fas fa-xmark"></i> Cancel
-        </button>
+        <button class="modal-btn modal-btn-secondary" onclick="cancelSelection()">Cancel</button>
       </div>
     </div>
   </div>
-  
-  <!-- Selection Feedback -->
-  <div id="selectionFeedback" class="selection-feedback"></div>
-  
+
+  <div class="developer-credit">Developed By: Engr. Carlo Cimacio</div>
+
   <script>
-    let selectedPerson = null;
-    let selectedPersonName = null;
-    let selectedServiceId = null;
-    let selectedServicePrefix = null;
+    let selectedPerson = null, selectedPersonName = null;
+    let selectedServiceId = null, selectedServicePrefix = null;
     let institutionId = null;
-    
-    // Get institution ID from URL
+
     const urlParams = new URLSearchParams(window.location.search);
     institutionId = urlParams.get('inst');
-    
-    if (!institutionId) {
-      window.location.href = 'index.html';
-    }
-    
+    if (!institutionId) window.location.href = 'index.html';
+
     const DEFAULT_ICONS = {
-      dean: 'fa-user-tie',
-      chair: 'fa-chalkboard-teacher',
-      registrar: 'fa-clipboard-list',
-      cashier: 'fa-cash-register',
-      reception: 'fa-concierge-bell',
-      doctor: 'fa-user-doctor',
-      lab: 'fa-flask',
-      pharmacy: 'fa-pills',
-      default: 'fa-concierge-bell'
+      dean: 'fa-user-tie', chair: 'fa-chalkboard-teacher',
+      registrar: 'fa-clipboard-list', cashier: 'fa-cash-register',
+      reception: 'fa-concierge-bell', doctor: 'fa-user-doctor',
+      lab: 'fa-flask', pharmacy: 'fa-pills', default: 'fa-concierge-bell'
     };
-    
+
     function getServiceIcon(service) {
       if (service.icon) return service.icon;
       const name = service.name.toLowerCase();
@@ -631,89 +255,56 @@
       }
       return DEFAULT_ICONS.default;
     }
-    
+
     async function loadServices() {
       const grid = document.getElementById('serviceGrid');
       try {
-        // Load institution info and services in parallel
         const [instRes, servicesRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/institutions/${institutionId}`),
-          fetch(`${API_BASE_URL}/institutions/${institutionId}/services`)
+          fetch(API_BASE_URL + '/institutions/' + institutionId),
+          fetch(API_BASE_URL + '/institutions/' + institutionId + '/services')
         ]);
-        
         if (!instRes.ok || !servicesRes.ok) throw new Error('Failed to fetch');
-        
         const institution = await instRes.json();
         const services = await servicesRes.json();
-        
-        // Update header with institution name
+
         document.getElementById('headerInstitutionName').textContent = institution.name;
-        document.title = `Queue Management - ${institution.name}`;
-        
-        // Store institution info
+        document.getElementById('bannerInstName').textContent = institution.name;
+        document.getElementById('institutionBanner').style.display = 'flex';
+        document.title = 'Select Service - ' + institution.name;
         localStorage.setItem('institution_id', institutionId);
         localStorage.setItem('institution_name', institution.name);
-        
+
         if (services.length === 0) {
-          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#6b7280;"><i class="fas fa-info-circle" style="font-size:2rem;"></i><p>No services available for this institution.</p></div>';
+          grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(255,255,255,0.5);"><p>No services available.</p></div>';
           return;
         }
-        
-        grid.innerHTML = services.map(service => {
-          const icon = getServiceIcon(service);
-          return `
-            <div class="person-card" onclick="selectService(event, ${service.id}, '${service.prefix}', '${service.name.replace(/'/g, "\\'")}')">
-              <div class="person-icon"><i class="fas ${icon}" style="font-size: 3rem;"></i></div>
-              <div class="person-title">${service.name}</div>
-              ${service.description ? `<div class="person-department">${service.description}</div>` : ''}
-            </div>
-          `;
+        grid.innerHTML = services.map(function(service) {
+          var icon = getServiceIcon(service);
+          var escapedName = service.name.replace(/'/g, "\\'");
+          var descHtml = service.description ? '<div class="person-department">' + service.description + '</div>' : '';
+          return '<div class="person-card" onclick="selectService(event, ' + service.id + ', \'' + service.prefix + '\', \'' + escapedName + '\')">'
+            + '<div class="person-icon"><i class="fas ' + icon + '"></i></div>'
+            + '<div class="person-title">' + service.name + '</div>'
+            + descHtml + '</div>';
         }).join('');
       } catch (error) {
         console.error('Error loading services:', error);
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#6b7280;">Failed to load services. <a href="#" onclick="loadServices()">Retry</a></div>';
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:rgba(255,255,255,0.5);">Failed to load. <a href="#" onclick="loadServices()" style="color:#2DD4BF;">Retry</a></div>';
       }
     }
-    
-    function createRipple(event, element) {
-      const rect = element.getBoundingClientRect();
-      const ripple = document.createElement('span');
-      const size = Math.max(rect.width, rect.height);
-      const x = event.clientX - rect.left - size / 2;
-      const y = event.clientY - rect.top - size / 2;
-      
-      ripple.classList.add('touch-ripple');
-      ripple.style.width = ripple.style.height = size + 'px';
-      ripple.style.left = x + 'px';
-      ripple.style.top = y + 'px';
-      
-      element.style.position = 'relative';
-      element.style.overflow = 'hidden';
-      element.appendChild(ripple);
-      
-      setTimeout(() => ripple.remove(), 600);
-    }
-    
+
     function selectService(event, serviceId, prefix, serviceName) {
-      createRipple(event, event.currentTarget);
-      
-      document.querySelectorAll('.person-card').forEach(card => card.classList.remove('selected'));
+      document.querySelectorAll('.person-card').forEach(function(c) { c.classList.remove('selected'); });
       event.currentTarget.classList.add('selected');
-      
       selectedPerson = prefix.toLowerCase();
       selectedPersonName = serviceName;
       selectedServiceId = serviceId;
       selectedServicePrefix = prefix;
-      
       document.getElementById('modalPersonName').textContent = serviceName;
-      document.getElementById('modalDepartment').textContent = '';
-      
-      const modal = document.getElementById('confirmationModal');
-      modal.classList.add('show');
-      
+      document.getElementById('confirmationModal').classList.add('show');
       if ('vibrate' in navigator) navigator.vibrate(50);
     }
-    
+
     function confirmSelection() {
       if (selectedPerson) {
         localStorage.setItem('selectedPerson', selectedPerson);
@@ -721,56 +312,31 @@
         localStorage.setItem('selectedServiceId', selectedServiceId);
         localStorage.setItem('selectedServicePrefix', selectedServicePrefix);
         localStorage.setItem('selectionTime', new Date().toISOString());
-        
-        window.location.href = `queue-number.html?inst=${institutionId}`;
+        window.location.href = 'queue-number.html?inst=' + institutionId;
       }
     }
-    
+
     function cancelSelection() {
-      const modal = document.getElementById('confirmationModal');
-      modal.classList.remove('show');
-      
-      document.querySelectorAll('.person-card').forEach(card => card.classList.remove('selected'));
-      
-      selectedPerson = null;
-      selectedPersonName = null;
-      selectedServiceId = null;
-      selectedServicePrefix = null;
+      document.getElementById('confirmationModal').classList.remove('show');
+      document.querySelectorAll('.person-card').forEach(function(c) { c.classList.remove('selected'); });
+      selectedPerson = null; selectedPersonName = null;
+      selectedServiceId = null; selectedServicePrefix = null;
     }
-    
-    function goBack() {
-      window.location.href = 'index.html';
-    }
-    
-    // Prevent context menu and text selection (kiosk mode)
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('selectstart', e => e.preventDefault());
-    
-    // Keyboard navigation
+
+    function goBack() { window.location.href = 'index.html'; }
+
+    document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     document.addEventListener('keydown', function(e) {
-      const modal = document.getElementById('confirmationModal');
-      const isModalOpen = modal.classList.contains('show');
-      
-      if (isModalOpen) {
+      var modal = document.getElementById('confirmationModal');
+      if (modal.classList.contains('show')) {
         if (e.key === 'Enter') confirmSelection();
         else if (e.key === 'Escape') cancelSelection();
-      } else {
-        if (e.key === 'Escape') goBack();
-      }
+      } else if (e.key === 'Escape') goBack();
     });
-    
-    // Close modal when clicking outside
     document.getElementById('confirmationModal').addEventListener('click', function(e) {
       if (e.target === this) cancelSelection();
     });
-    
-    // Load services on page load
     loadServices();
   </script>
-  
-  <!-- Developer Credit -->
-  <div class="developer-credit">
-    Developed By: Engr. Carlo Cimacio
-  </div>
 </body>
 </html>

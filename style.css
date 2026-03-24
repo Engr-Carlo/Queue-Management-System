@@ -1,21 +1,21 @@
 /* ========================================
    QUEUE MANAGEMENT SYSTEM - DESIGN SYSTEM
-   Version 2.0 - Blue Theme
+   Version 3.0 - Teal Professional Theme
    ======================================== */
 
 /* === CSS VARIABLES - DESIGN TOKENS === */
 :root {
-  /* Color Palette - 3 Colors */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #1d4ed8;
-  --color-primary-light: #60a5fa;
-  --color-primary-lighter: #dbeafe;
+  /* Color Palette - 1 Vibrant + 2 Neutral */
+  --color-primary: #0D9488;
+  --color-primary-dark: #0F766E;
+  --color-primary-light: #2DD4BF;
+  --color-primary-lighter: #CCFBF1;
   
-  --color-neutral-dark: #1e293b;
+  --color-neutral-dark: #0F172A;
   --color-neutral: #475569;
-  --color-neutral-light: #cbd5e1;
-  --color-neutral-lighter: #f1f5f9;
-  --color-neutral-lightest: #f8fafc;
+  --color-neutral-light: #CBD5E1;
+  --color-neutral-lighter: #F1F5F9;
+  --color-neutral-lightest: #F8FAFC;
   
   --color-white: #ffffff;
   

@@ -13,16 +13,15 @@
   <script src="config.js"></script>
   <style>
     body {
-      background: #f8fafc;
+      background: #0F172A;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #1a1a1a;
+      color: #F8FAFC;
     }
 
     .navbar {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      background: linear-gradient(135deg, #0D9488, #0F766E);
       padding: 15px 0;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 
     .navbar-brand {
       color: white !important;
@@ -31,12 +30,12 @@
     }
 
     .nav-tabs {
-      border-bottom: 2px solid #e5e7eb;
+      border-bottom: 2px solid rgba(255,255,255,.08);
       margin-bottom: 30px;
     }
 
     .nav-tabs .nav-link {
-      color: #64748b;
+      color: rgba(248,250,252,.5);
       font-weight: 600;
       padding: 12px 24px;
       border: none;
@@ -45,14 +44,14 @@
     }
 
     .nav-tabs .nav-link:hover {
-      color: #3b82f6;
-      border-bottom-color: #bfdbfe;
+      color: #2DD4BF;
+      border-bottom-color: rgba(45,212,191,.3);
     }
 
     .nav-tabs .nav-link.active {
-      color: #3b82f6;
+      color: #2DD4BF;
       background: none;
-      border-bottom-color: #3b82f6;
+      border-bottom-color: #2DD4BF;
     }
 
     .admin-info {
@@ -76,30 +75,34 @@
     }
 
     .page-header {
-      background: white;
+      background: rgba(255,255,255,.06);
       padding: 24px 32px;
       border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(16px);
       margin-bottom: 24px;
     }
 
     .page-title {
       font-size: 1.75rem;
       font-weight: 800;
-      color: #1e293b;
+      color: #F8FAFC;
       margin: 0;
     }
 
     .page-subtitle {
-      color: #64748b;
+      color: rgba(248,250,252,.5);
       margin: 8px 0 0 0;
       font-size: 0.95rem;
     }
 
     .queue-table-container {
-      background: white;
+      background: rgba(255,255,255,.06);
       border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(16px);
       overflow: hidden;
     }
 
@@ -109,7 +112,7 @@
     }
 
     .queue-table thead {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      background: linear-gradient(135deg, #0D9488, #0F766E);
       color: white;
     }
 
@@ -124,24 +127,25 @@
     }
 
     .queue-table tbody tr {
-      border-bottom: 1px solid #f1f5f9;
+      border-bottom: 1px solid rgba(255,255,255,.06);
       transition: all 0.2s;
     }
 
     .queue-table tbody tr:hover {
-      background: #f8fafc;
+      background: rgba(255,255,255,.04);
     }
 
     .queue-table tbody td {
       padding: 16px;
       vertical-align: middle;
       font-size: 0.9rem;
+      color: rgba(248,250,252,.8);
     }
 
     .queue-number {
       font-size: 1.25rem;
       font-weight: 800;
-      color: #3b82f6;
+      color: #2DD4BF;
     }
 
     .badge {
@@ -164,8 +168,8 @@
     }
 
     .badge-serving {
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(13,148,136,.15);
+      color: #2DD4BF;
     }
 
     .badge-completed {
@@ -174,13 +178,13 @@
     }
 
     .badge-cancelled {
-      background: #f3f4f6;
-      color: #4b5563;
+      background: rgba(255,255,255,.08);
+      color: rgba(248,250,252,.5);
     }
 
     .badge-archived {
-      background: #e2e8f0;
-      color: #475569;
+      background: rgba(255,255,255,.06);
+      color: rgba(248,250,252,.4);
     }
 
     .action-btn {
@@ -195,13 +199,13 @@
     }
 
     .btn-call {
-      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      background: linear-gradient(135deg, #0D9488, #0F766E);
       color: white;
     }
 
     .btn-call:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.3);
     }
 
     .btn-complete {
@@ -235,12 +239,12 @@
     }
 
     .btn-secondary-action {
-      background: #f1f5f9;
-      color: #475569;
+      background: rgba(255,255,255,.08);
+      color: rgba(248,250,252,.6);
     }
 
     .btn-secondary-action:hover {
-      background: #e2e8f0;
+      background: rgba(255,255,255,.12);
     }
 
     .stats-summary {
@@ -251,16 +255,18 @@
     }
 
     .stat-card {
-      background: white;
+      background: rgba(255,255,255,.06);
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-      border-left: 4px solid #3b82f6;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      border: 1px solid rgba(255,255,255,.08);
+      border-left: 4px solid #0D9488;
+      backdrop-filter: blur(16px);
     }
 
     .stat-label {
       font-size: 0.85rem;
-      color: #64748b;
+      color: rgba(248,250,252,.5);
       font-weight: 600;
       text-transform: uppercase;
       margin-bottom: 8px;
@@ -269,7 +275,7 @@
     .stat-value {
       font-size: 2rem;
       font-weight: 800;
-      color: #1e293b;
+      color: #F8FAFC;
     }
 
     .toolbar {
@@ -277,8 +283,8 @@
       justify-content: space-between;
       align-items: center;
       padding: 16px 24px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e5e7eb;
+      background: rgba(255,255,255,.04);
+      border-bottom: 1px solid rgba(255,255,255,.06);
     }
 
     .search-box {
@@ -290,16 +296,18 @@
     .search-box input {
       width: 100%;
       padding: 10px 16px 10px 40px;
-      border: 2px solid #e5e7eb;
+      border: 2px solid rgba(255,255,255,.1);
       border-radius: 8px;
       font-size: 0.9rem;
       transition: all 0.3s;
+      background: rgba(255,255,255,.06);
+      color: #F8FAFC;
     }
 
     .search-box input:focus {
       outline: none;
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+      border-color: #0D9488;
+      box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
     }
 
     .search-box i {
@@ -317,8 +325,9 @@
 
     .filter-btn {
       padding: 8px 16px;
-      border: 2px solid #e5e7eb;
-      background: white;
+      border: 2px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.06);
+      color: rgba(248,250,252,.6);
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
@@ -327,14 +336,14 @@
     }
 
     .filter-btn:hover {
-      border-color: #3b82f6;
-      color: #3b82f6;
+      border-color: #0D9488;
+      color: #2DD4BF;
     }
 
     .filter-btn.active {
-      background: #3b82f6;
+      background: #0D9488;
       color: white;
-      border-color: #3b82f6;
+      border-color: #0D9488;
     }
 
     .empty-state {
@@ -351,7 +360,7 @@
 
     .time-badge {
       font-size: 0.8rem;
-      color: #64748b;
+      color: rgba(248,250,252,.5);
     }
 
     .refresh-indicator {
@@ -359,8 +368,8 @@
       align-items: center;
       gap: 8px;
       padding: 8px 16px;
-      background: #dbeafe;
-      color: #1e40af;
+      background: rgba(13,148,136,.15);
+      color: #2DD4BF;
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
@@ -427,7 +436,7 @@
       </div>
       <div class="stat-card" style="border-left-color: #64748b;">
         <div class="stat-label">Archived</div>
-        <div class="stat-value" style="color: #64748b;" id="statArchived">0</div>
+        <div class="stat-value" style="color: rgba(248,250,252,.4);" id="statArchived">0</div>
       </div>
     </div>
 
@@ -472,12 +481,12 @@
 
     <!-- Recent Activity Section -->
     <div style="margin-top: 32px;">
-      <div style="background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05); overflow: hidden;">
-        <div style="padding: 24px; border-bottom: 2px solid #f1f5f9;">
-          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #1e293b;">
-            <i class="fas fa-clock-rotate-left" style="margin-right: 10px; color: #3b82f6;"></i>Recent Activity
+      <div style="background: rgba(255,255,255,.06); border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); border: 1px solid rgba(255,255,255,.08); backdrop-filter: blur(16px); overflow: hidden;">
+        <div style="padding: 24px; border-bottom: 2px solid rgba(255,255,255,.06);">
+          <h3 style="margin: 0; font-size: 1.25rem; font-weight: 800; color: #F8FAFC;">
+            <i class="fas fa-clock-rotate-left" style="margin-right: 10px; color: #2DD4BF;"></i>Recent Activity
           </h3>
-          <p style="margin: 8px 0 0 0; color: #64748b; font-size: 0.9rem;">
+          <p style="margin: 8px 0 0 0; color: rgba(248,250,252,.5); font-size: 0.9rem;">
             Recently completed queues in your department
           </p>
         </div>
@@ -531,7 +540,9 @@
       icon.classList.add('spinning');
 
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/queue/${adminSession.department}`);
+        const deptKey = adminSession.service_id || adminSession.department;
+        const instParam = adminSession.institution_id ? `?institution_id=${adminSession.institution_id}` : '';
+        const response = await fetch(`${API_BASE_URL}/admin/queue/${deptKey}${instParam}`);
         if (response.ok) {
           const data = await response.json();
           
@@ -777,7 +788,9 @@
     // Load recent activity
     async function loadRecentActivity() {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/activity/${adminSession.department}`);
+        const deptKey = adminSession.service_id || adminSession.department;
+        const instParam = adminSession.institution_id ? `?institution_id=${adminSession.institution_id}` : '';
+        const response = await fetch(`${API_BASE_URL}/admin/activity/${deptKey}${instParam}`);
         if (response.ok) {
           const activities = await response.json();
           displayRecentActivity(activities);
@@ -796,16 +809,16 @@
       }
 
       activityContainer.innerHTML = activities.slice(0, 10).map(activity => `
-        <div style="padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+        <div style="padding: 16px; border-bottom: 1px solid rgba(255,255,255,.06); display: flex; justify-content: space-between; align-items: center;">
           <div>
-            <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">
+            <div style="font-weight: 600; color: #F8FAFC; margin-bottom: 4px;">
               ${activity.number} - ${activity.person}
             </div>
-            <div style="font-size: 0.85rem; color: #64748b;">
+            <div style="font-size: 0.85rem; color: rgba(248,250,252,.5);">
               <i class="fas fa-check-circle" style="color: #10b981;"></i> Completed
             </div>
           </div>
-          <div style="text-align: right; font-size: 0.85rem; color: #64748b;">
+          <div style="text-align: right; font-size: 0.85rem; color: rgba(248,250,252,.5);">
             ${activity.completedAt}
           </div>
         </div>
