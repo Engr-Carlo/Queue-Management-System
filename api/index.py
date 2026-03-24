@@ -196,8 +196,20 @@ def init_schema(conn):
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100)")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(30) NOT NULL DEFAULT 'service-admin'")
     cur.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS service_id INTEGER")
-    # Populate username from legacy department column for old rows
-    cur.execute("UPDATE users SET username = department WHERE username IS NULL AND department IS NOT NULL")
+    # Populate username from legacy department column only when migrating the old schema
+    cur.execute("""
+        DO $$ BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM information_schema.columns
+                WHERE table_name = 'users' AND column_name = 'department'
+            ) THEN
+                UPDATE users
+                SET username = department
+                WHERE username IS NULL AND department IS NOT NULL;
+            END IF;
+        END $$;
+    """)
     # Fix roles for known legacy users
     cur.execute("UPDATE users SET role = 'super-admin' WHERE username = 'super-admin' AND role = 'service-admin'")
     cur.execute("UPDATE users SET role = 'institution-admin' WHERE username = 'dean' AND role = 'service-admin'")
@@ -244,10 +256,7 @@ def seed_default_data(conn):
     cur.execute("SELECT id FROM institutions WHERE slug = 'pnc-engineering'")
     row = cur.fetchone()
     if row:
-        # Institution already exists — nothing to seed
         inst_id = row[0]
-        conn.commit()
-        return
     else:
         cur.execute("""
             INSERT INTO institutions (name, slug, type, description, is_active)
