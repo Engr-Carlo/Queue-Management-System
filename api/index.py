@@ -1014,19 +1014,34 @@ def get_queue_status(queue_id):
     try:
         cur = conn.cursor()
         cur.execute("""
-            SELECT number, person, created_at, called, is_present, institution_id, service_id
-            FROM queue WHERE id = %s AND completed = FALSE
+            SELECT number, person, created_at, called, is_present, institution_id, service_id, completed
+            FROM queue WHERE id = %s
         """, (queue_id,))
         row = cur.fetchone()
         if not row:
             conn.close()
-            return jsonify({"error": "Queue not found or already completed"}), 404
+            return jsonify({"error": "Queue not found"}), 404
 
         queue_number = row[0]
         is_called = row[3] if row[3] is not None else False
         is_present = row[4] if row[4] is not None else False
+        is_completed = row[7] if row[7] is not None else False
         prefix = queue_number[0].upper() if queue_number else 'A'
         admin_status = admin_statuses.get(prefix, 'available')
+
+        # If the queue is completed, return a clear completed status
+        # (previously returned 404, which caused the frontend to fall back to 'Waiting')
+        if is_completed:
+            conn.close()
+            return jsonify({
+                "status": {"text": "Completed", "class": "status-completed"},
+                "is_cleared": True,
+                "is_called": False,
+                "is_present": is_present,
+                "admin_status": admin_status,
+                "department_prefix": prefix,
+                "queue_number": queue_number
+            })
 
         if admin_status == 'away':
             status = {"text": "Admin Away", "class": "status-away", "priority": "low"}

@@ -923,20 +923,24 @@
     }
 
     function showFeedbackButton() {
+      // Guard: prevent running more than once
+      if (document.getElementById('feedbackButtonContainer')) return;
       if (autoRefreshInterval) { clearInterval(autoRefreshInterval); autoRefreshInterval = null; }
       const statusElement = document.getElementById('queueStatus');
       statusElement.textContent = 'Completed';
       statusElement.className = 'queue-status status-completed';
+      statusElement.style.animation = '';
       const estimatedTimeSection = document.querySelector('.estimated-time');
       estimatedTimeSection.style.background = 'linear-gradient(135deg,#10b981,#059669)';
       estimatedTimeSection.querySelector('h3').textContent = 'Transaction Complete';
       estimatedTimeSection.querySelector('.time').textContent = 'Your transaction has been processed successfully';
 
       const feedbackButtonContainer = document.createElement('div');
-      feedbackButtonContainer.style.cssText = `margin:18px 0;text-align:center;padding:20px;background:rgba(16,185,129,.10);border-radius:14px;border:2px solid rgba(16,185,129,.25);`;
+      feedbackButtonContainer.id = 'feedbackButtonContainer';
+      feedbackButtonContainer.style.cssText = `margin:18px 0;text-align:center;padding:20px;background:#F0FDF4;border-radius:14px;border:2px solid #BBF7D0;`;
       feedbackButtonContainer.innerHTML = `
-        <h4 style="margin:0 0 12px;color:#4ade80;font-size:1.1rem;font-weight:600;"><i class="fas fa-star"></i> Help Us Improve</h4>
-        <p style="margin:0 0 18px;color:rgba(248,250,252,.55);font-size:.9rem;">Share your experience to help us serve you better</p>
+        <h4 style="margin:0 0 12px;color:#16A34A;font-size:1.1rem;font-weight:600;"><i class="fas fa-star"></i> Help Us Improve</h4>
+        <p style="margin:0 0 18px;color:#64748B;font-size:.9rem;">Share your experience to help us serve you better</p>
         <button onclick="redirectToFeedback()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:14px 28px;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(16,185,129,.25);"
           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 25px rgba(16,185,129,.35)'"
           onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(16,185,129,.25)'">
