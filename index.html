@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -13,87 +13,78 @@
   <style>
     body {
       margin: 0; padding: 0; min-height: 100vh;
+      background: #F8FAFC;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #0F172A; overflow-x: hidden;
+      color: #1E293B; overflow-x: hidden;
     }
-    .page-bg {
-      position: fixed; inset: 0;
-      background: url('https://images.unsplash.com/photo-1557683316-973673baf926?w=1920&q=80') center/cover no-repeat;
-      z-index: 0;
-    }
-    .page-bg::after {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, rgba(15,23,42,0.88) 0%, rgba(13,148,136,0.72) 100%);
-    }
+    .page-bg { display: none; }
     .hero-container {
-      position: relative; z-index: 1; min-height: 100vh;
+      min-height: 100vh;
       display: flex; flex-direction: column; align-items: center;
-      padding: 60px 20px 40px;
+      background: linear-gradient(180deg, #0F766E 0%, #0D9488 240px, #F8FAFC 240px);
+      padding: 60px 20px 60px;
     }
     .hero-content { text-align: center; max-width: 1100px; width: 100%; }
     .brand-badge {
       display: inline-flex; align-items: center; gap: 8px;
-      background: rgba(255,255,255,0.1); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
       padding: 8px 20px; border-radius: 999px;
-      color: #2DD4BF; font-size: 0.85rem; font-weight: 600;
+      color: #fff; font-size: 0.85rem; font-weight: 600;
       letter-spacing: 0.5px; margin-bottom: 24px;
     }
     .hero-title {
-      font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; color: #fff;
-      margin-bottom: 12px; letter-spacing: -0.03em; line-height: 1.1;
+      font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; color: #fff;
+      margin-bottom: 10px; letter-spacing: -0.03em; line-height: 1.1;
     }
-    .hero-title span { color: #2DD4BF; }
+    .hero-title span { color: #CCFBF1; }
     .hero-subtitle {
-      font-size: clamp(1rem, 2.5vw, 1.15rem); font-weight: 400;
-      color: rgba(255,255,255,0.65); margin-bottom: 48px; line-height: 1.5;
+      font-size: clamp(0.95rem, 2.5vw, 1.1rem); font-weight: 400;
+      color: rgba(255,255,255,0.8); margin-bottom: 40px; line-height: 1.5;
     }
     .institution-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 20px; width: 100%; margin-bottom: 40px;
     }
     .institution-card {
-      background: rgba(255,255,255,0.06); backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+      background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px;
       padding: 32px 24px; text-align: center; cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
     }
     .institution-card:hover {
-      background: rgba(255,255,255,0.12); border-color: #2DD4BF;
-      transform: translateY(-6px);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 0 1px rgba(45,212,191,0.3);
+      border-color: #0D9488; transform: translateY(-6px);
+      box-shadow: 0 12px 32px rgba(13,148,136,0.15);
     }
     .institution-icon {
       width: 72px; height: 72px;
-      background: linear-gradient(135deg, rgba(13,148,136,0.25), rgba(45,212,191,0.1));
-      border: 1px solid rgba(45,212,191,0.25); border-radius: 16px;
+      background: #F0FDFA; border: 1px solid #99F6E4; border-radius: 16px;
       display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 16px; font-size: 1.8rem; color: #2DD4BF;
+      margin: 0 auto 16px; font-size: 1.8rem; color: #0D9488;
       transition: all 0.3s ease;
     }
     .institution-card:hover .institution-icon {
       background: linear-gradient(135deg, #0D9488, #0F766E);
-      color: #fff; transform: scale(1.08);
-      box-shadow: 0 8px 24px rgba(13,148,136,0.4);
+      color: #fff; border-color: transparent;
+      box-shadow: 0 6px 20px rgba(13,148,136,0.3);
     }
-    .institution-name { font-size: 1.15rem; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .institution-type { font-size: 0.85rem; color: rgba(255,255,255,0.5); font-weight: 500; text-transform: capitalize; }
-    .institution-desc { font-size: 0.82rem; color: rgba(255,255,255,0.4); margin-top: 8px; line-height: 1.4; }
-    .loading-text, .no-institutions { font-size: 1.05rem; color: rgba(255,255,255,0.55); padding: 60px 0; }
+    .institution-name { font-size: 1.15rem; font-weight: 700; color: #1E293B; margin-bottom: 4px; }
+    .institution-type { font-size: 0.85rem; color: #64748B; font-weight: 500; text-transform: capitalize; }
+    .institution-desc { font-size: 0.82rem; color: #94A3B8; margin-top: 8px; line-height: 1.4; }
+    .loading-text, .no-institutions { font-size: 1.05rem; color: #64748B; padding: 60px 0; }
     .footer-links {
-      display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 16px;
+      display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; margin-top: 8px;
     }
     .footer-links a {
-      color: rgba(255,255,255,0.4); text-decoration: none;
+      color: #64748B; text-decoration: none;
       font-size: 0.85rem; font-weight: 500; transition: color 0.2s;
     }
-    .footer-links a:hover { color: #2DD4BF; }
+    .footer-links a:hover { color: #0D9488; }
     .developer-credit {
       position: fixed; bottom: 10px; right: 15px; font-size: 0.8rem;
-      color: rgba(255,255,255,0.25); z-index: 1001; pointer-events: none;
+      color: #CBD5E1; z-index: 1001; pointer-events: none;
     }
     @media (max-width: 768px) {
-      .hero-container { padding: 40px 16px 24px; }
+      .hero-container { padding: 40px 16px 32px; background: linear-gradient(180deg, #0F766E 0%, #0D9488 200px, #F8FAFC 200px); }
       .institution-grid { grid-template-columns: 1fr; gap: 14px; }
       .institution-card { padding: 24px 20px; }
     }

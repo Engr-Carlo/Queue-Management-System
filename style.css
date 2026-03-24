@@ -11,13 +11,15 @@
   --color-primary-light: #2DD4BF;
   --color-primary-lighter: #CCFBF1;
   
-  --color-neutral-dark: #0F172A;
-  --color-neutral: #475569;
+  --color-neutral-dark: #1E293B;
+  --color-neutral: #64748B;
   --color-neutral-light: #CBD5E1;
   --color-neutral-lighter: #F1F5F9;
   --color-neutral-lightest: #F8FAFC;
   
   --color-white: #ffffff;
+  --color-surface: #ffffff;
+  --color-bg: #F8FAFC;
   
   /* Status Colors */
   --color-success: #10b981;

@@ -14,13 +14,13 @@
   <script src="config.js"></script>
   <style>
     body {
-      background: #0F172A;
+      background: #F8FAFC;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      color: #F8FAFC;
+      color: #1E293B;
     }
 
     .navbar {
-      background: linear-gradient(135deg, #0D9488, #0F766E);
+      background: linear-gradient(135deg, #0F766E, #0D9488);
       padding: 15px 0;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     }
@@ -32,12 +32,12 @@
     }
 
     .nav-tabs {
-      border-bottom: 2px solid rgba(255,255,255,.08);
+      border-bottom: 2px solid #E2E8F0;
       margin-bottom: 30px;
     }
 
     .nav-tabs .nav-link {
-      color: rgba(248,250,252,.5);
+      color: #64748B;
       font-weight: 600;
       padding: 12px 24px;
       border: none;
@@ -46,14 +46,14 @@
     }
 
     .nav-tabs .nav-link:hover {
-      color: #2DD4BF;
-      border-bottom-color: rgba(45,212,191,.3);
+      color: #0D9488;
+      border-bottom-color: rgba(13,148,136,.3);
     }
 
     .nav-tabs .nav-link.active {
-      color: #2DD4BF;
+      color: #0D9488;
       background: none;
-      border-bottom-color: #2DD4BF;
+      border-bottom-color: #0D9488;
     }
 
     .admin-info {
@@ -82,12 +82,11 @@
     }
 
     .stats-card {
-      background: rgba(255,255,255,.06);
-      backdrop-filter: blur(12px);
+      background: #FFFFFF;
       border-radius: 15px;
       padding: 25px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #E2E8F0;
       margin-bottom: 20px;
       transition: transform 0.3s ease;
     }
@@ -114,18 +113,17 @@
     }
 
     .stats-label {
-      color: rgba(248,250,252,.5);
+      color: #64748B;
       font-size: 0.9rem;
       font-weight: 500;
     }
 
     .queue-card {
-      background: rgba(255,255,255,.06);
-      backdrop-filter: blur(12px);
+      background: #FFFFFF;
       border-radius: 15px;
       padding: 25px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #E2E8F0;
       margin-bottom: 20px;
     }
 
@@ -139,14 +137,14 @@
     .queue-title {
       font-size: 1.4rem;
       font-weight: 700;
-      color: #F8FAFC;
+      color: #1E293B;
       margin: 0;
     }
 
     .refresh-btn {
-      background: rgba(255,255,255,.08);
-      color: rgba(248,250,252,.6);
-      border: 1px solid rgba(255,255,255,.1);
+      background: #F1F5F9;
+      color: #64748B;
+      border: 1px solid #E2E8F0;
       border-radius: 8px;
       padding: 8px 12px;
       font-size: 0.9rem;
@@ -155,13 +153,13 @@
     }
 
     .refresh-btn:hover {
-      background: rgba(255,255,255,.14);
-      color: #F8FAFC;
+      background: #E2E8F0;
+      color: #1E293B;
     }
 
     .queue-item {
-      background: rgba(255,255,255,.04);
-      border: 1px solid rgba(255,255,255,.08);
+      background: #F8FAFC;
+      border: 1px solid #E2E8F0;
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 15px;
@@ -170,18 +168,18 @@
 
     .queue-item:hover {
       border-color: #0D9488;
-      box-shadow: 0 4px 12px rgba(13,148,136,.15);
+      box-shadow: 0 4px 12px rgba(13,148,136,.12);
     }
 
     .queue-item[data-present="true"] {
-      background: rgba(34, 197, 94, 0.05);
-      border: 2px solid rgba(34, 197, 94, 0.3);
-      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.1);
+      background: #F0FDF4;
+      border: 2px solid #BBF7D0;
+      box-shadow: 0 4px 15px rgba(34, 197, 94, 0.08);
     }
 
     .queue-item[data-present="true"]:hover {
       border-color: #16a34a;
-      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.2);
+      box-shadow: 0 6px 20px rgba(34, 197, 94, 0.15);
     }
 
     .queue-item[data-present="true"] .queue-number {
@@ -191,7 +189,7 @@
     .queue-number {
       font-size: 1.8rem;
       font-weight: 900;
-      color: #2DD4BF;
+      color: #0D9488;
       margin-bottom: 10px;
     }
 
@@ -209,13 +207,13 @@
 
     .queue-meta {
       font-size: 0.9rem;
-      color: rgba(248,250,252,.45);
+      color: #64748B;
       margin-bottom: 5px;
     }
 
     .queue-person {
       font-weight: 600;
-      color: #F8FAFC;
+      color: #1E293B;
       font-size: 1.1rem;
     }
 
@@ -259,7 +257,7 @@
     }
 
     .btn-remove {
-      background: linear-gradient(135deg, #2DD4BF, #0D9488);
+      background: linear-gradient(135deg, #ef4444, #dc2626);
       color: white;
       border: none;
       border-radius: 8px;
@@ -308,19 +306,19 @@
     }
 
     .status-available {
-      background: rgba(34, 197, 94, 0.1);
+      background: #F0FDF4;
       color: #16a34a;
     }
 
     .status-busy {
-      background: rgba(239, 68, 68, 0.1);
+      background: #FEF2F2;
       color: #ef4444;
     }
 
     .no-queues {
       text-align: center;
       padding: 40px;
-      color: rgba(248,250,252,.45);
+      color: #94A3B8;
     }
 
     .no-queues-icon {
@@ -329,12 +327,11 @@
     }
 
     .department-status {
-      background: rgba(255,255,255,.06);
-      backdrop-filter: blur(12px);
+      background: #FFFFFF;
       border-radius: 15px;
       padding: 20px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #E2E8F0;
       margin-bottom: 20px;
     }
 
@@ -345,9 +342,9 @@
 
     .status-btn {
       padding: 8px 16px;
-      border: 2px solid rgba(255,255,255,.1);
-      background: rgba(255,255,255,.04);
-      color: rgba(248,250,252,.6);
+      border: 2px solid #E2E8F0;
+      background: #F8FAFC;
+      color: #64748B;
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -375,8 +372,8 @@
       bottom: 10px;
       right: 15px;
       font-size: 0.82rem;
-      color: rgba(248,250,252,.25);
-      opacity: 0.6;
+      color: #CBD5E1;
+      opacity: 0.8;
       z-index: 1001;
       pointer-events: none;
       font-family: 'Inter', sans-serif;
@@ -385,12 +382,11 @@
 
     /* Data Visualization Cards */
     .viz-card {
-      background: rgba(255,255,255,.06);
-      backdrop-filter: blur(12px);
+      background: #FFFFFF;
       border-radius: 15px;
       padding: 25px 20px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      border: 1px solid rgba(255,255,255,.08);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #E2E8F0;
       margin-bottom: 20px;
       transition: all 0.3s ease;
       height: 100%;
@@ -398,7 +394,7 @@
 
     .viz-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
     }
 
     .viz-header {
@@ -411,7 +407,7 @@
     .viz-title {
       font-size: 1.0rem;
       font-weight: 700;
-      color: #F8FAFC;
+      color: #1E293B;
       margin: 0;
       display: flex;
       align-items: center;
@@ -485,7 +481,7 @@
         <!-- Department Status -->
         <div class="department-status" style="margin-bottom: 0;">
           <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 0.875rem; font-weight: 600; color: rgba(248,250,252,.5);">Status:</span>
+            <span style="font-size: 0.875rem; font-weight: 600; color: #64748B;">Status:</span>
             <div class="status-toggle">
               <button class="status-btn active" onclick="setStatus('available')">
                 <i class="fas fa-circle text-success"></i> Available
@@ -510,25 +506,25 @@
             <div style="font-size: 0.8rem; opacity: 0.85; font-weight: 500;">Queues Processed</div>
           </div>
         </div>
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center;">
           <div style="padding: 25px;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: rgba(248,250,252,.45); text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
-            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #2DD4BF;" id="statActiveNow">0</div>
-            <div style="font-size: 0.8rem; color: rgba(248,250,252,.45); font-weight: 500;">In Queue</div>
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1.5px;">Active Now</div>
+            <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #0D9488;" id="statActiveNow">0</div>
+            <div style="font-size: 0.8rem; color: #64748B; font-weight: 500;">In Queue</div>
           </div>
         </div>
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center;">
           <div style="padding: 25px;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: rgba(248,250,252,.45); text-transform: uppercase; letter-spacing: 1.5px;">Completed</div>
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1.5px;">Completed</div>
             <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #10b981;" id="statCompleted">0</div>
-            <div style="font-size: 0.8rem; color: rgba(248,250,252,.45); font-weight: 500;">Today</div>
+            <div style="font-size: 0.8rem; color: #64748B; font-weight: 500;">Today</div>
           </div>
         </div>
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 4px 15px rgba(0,0,0,0.2); text-align: center;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); text-align: center;">
           <div style="padding: 25px;">
-            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: rgba(248,250,252,.45); text-transform: uppercase; letter-spacing: 1.5px;">Avg Wait</div>
+            <div style="font-size: 0.75rem; font-weight: 700; margin-bottom: 12px; color: #94A3B8; text-transform: uppercase; letter-spacing: 1.5px;">Avg Wait</div>
             <div style="font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 8px; color: #f59e0b;" id="statAvgWait">0m</div>
-            <div style="font-size: 0.8rem; color: rgba(248,250,252,.45); font-weight: 500;">Minutes</div>
+            <div style="font-size: 0.8rem; color: #64748B; font-weight: 500;">Minutes</div>
           </div>
         </div>
       </div>
@@ -536,16 +532,16 @@
       <!-- Analytics Grid -->
       <!-- Daily Queue Activity - Full Width -->
       <div style="margin-bottom: 20px;">
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.2); border-radius: 20px; overflow: hidden;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); border-radius: 20px; overflow: hidden;">
           <div style="padding: 24px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 8px;">
                 <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #0D9488, #0F766E); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                   <i class="fas fa-chart-line" style="color: white; font-size: 0.85rem;"></i>
                 </div>
                 Daily Queue Activity (Last 7 Days)
               </h3>
-              <span style="background: rgba(255,255,255,.08); color: rgba(248,250,252,.5); padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">Live Data</span>
+              <span style="background: #F0FDFA; color: #0D9488; padding: 4px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">Live Data</span>
             </div>
             <div style="height: 260px; position: relative;">
               <canvas id="hourlyActivityChart"></canvas>
@@ -557,10 +553,10 @@
       <!-- Today's Hourly Activity + Status Distribution - Side by Side -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
         <!-- LEFT - Today's Hourly Activity -->
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.2); border-radius: 20px; overflow: hidden;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); border-radius: 20px; overflow: hidden;">
           <div style="padding: 24px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
-              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">
+              <h3 style="margin: 0; font-size: 1rem; font-weight: 700; color: #1E293B; display: flex; align-items: center; gap: 8px;">
                 <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #2DD4BF, #0D9488); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
                   <i class="fas fa-clock" style="color: white; font-size: 0.85rem;"></i>
                 </div>
@@ -575,7 +571,7 @@
         </div>
 
         <!-- RIGHT - Status Distribution -->
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.2); border-radius: 20px; overflow: hidden;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); border-radius: 20px; overflow: hidden;">
           <div style="padding: 24px;">
             <div style="display: flex; align-items: center; margin-bottom: 20px;">
               <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
@@ -593,7 +589,7 @@
       <!-- Second Row - Bar Charts -->
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
         <!-- Queue Status Breakdown -->
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.2); border-radius: 20px; overflow: hidden;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); border-radius: 20px; overflow: hidden;">
           <div style="padding: 24px;">
             <div style="display: flex; align-items: center; margin-bottom: 20px;">
               <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
@@ -608,7 +604,7 @@
         </div>
 
         <!-- Department Volume Comparison -->
-        <div class="queue-card" style="background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 2px 8px rgba(0,0,0,.15), 0 8px 24px rgba(0,0,0,.2); border-radius: 20px; overflow: hidden;">
+        <div class="queue-card" style="background: #FFFFFF; border: 1px solid #E2E8F0; box-shadow: 0 2px 8px rgba(0,0,0,.06); border-radius: 20px; overflow: hidden;">
           <div style="padding: 24px;">
             <div style="display: flex; align-items: center; margin-bottom: 20px;">
               <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #2DD4BF, #0D9488); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 10px;">
@@ -1087,16 +1083,16 @@
                 labels: {
                   padding: 15,
                   font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
-                  color: 'rgba(248,250,252,.5)',
+                  color: '#94A3B8',
                   usePointStyle: true,
                   pointStyle: 'circle'
                 }
               },
               tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                titleColor: '#F8FAFC',
-                bodyColor: 'rgba(248,250,252,.7)',
-                borderColor: 'rgba(255,255,255,.1)',
+                backgroundColor: 'rgba(255,255,255,.97)',
+                titleColor: '#1E293B',
+                bodyColor: '#64748B',
+                borderColor: '#E2E8F0',
                 borderWidth: 1,
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
@@ -1107,12 +1103,12 @@
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.5)', font: { size: 11, weight: '600' }, padding: 8 }
+                ticks: { color: '#94A3B8', font: { size: 11, weight: '600' }, padding: 8 }
               },
               y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,.06)', drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.5)', font: { size: 10.5, weight: '600' }, precision: 0, padding: 8 }
+                grid: { color: '#F1F5F9', drawBorder: false },
+                ticks: { color: '#94A3B8', font: { size: 10.5, weight: '600' }, precision: 0, padding: 8 }
               }
             }
           }
@@ -1153,10 +1149,10 @@
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                titleColor: '#F8FAFC',
-                bodyColor: 'rgba(248,250,252,.7)',
-                borderColor: 'rgba(255,255,255,.1)',
+                backgroundColor: 'rgba(255,255,255,.97)',
+                titleColor: '#1E293B',
+                bodyColor: '#64748B',
+                borderColor: '#E2E8F0',
                 borderWidth: 1,
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
@@ -1166,12 +1162,12 @@
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.5)', font: { size: 10, weight: '600' }, padding: 4 }
+                ticks: { color: '#94A3B8', font: { size: 10, weight: '600' }, padding: 4 }
               },
               y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,.06)', drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.5)', font: { size: 10, weight: '600' }, precision: 0, padding: 4 }
+                grid: { color: '#F1F5F9', drawBorder: false },
+                ticks: { color: '#94A3B8', font: { size: 10, weight: '600' }, precision: 0, padding: 4 }
               }
             }
           }
@@ -1193,7 +1189,7 @@
                 '#10b981',  // Green - Completed
                 '#6b7280'   // Gray - Archived
               ],
-              borderColor: 'rgba(15,23,42,.8)',
+              borderColor: '#FFFFFF',
               borderWidth: 4,
               hoverOffset: 15,
               hoverBorderWidth: 5
@@ -1215,7 +1211,7 @@
                 labels: {
                   padding: 20,
                   font: { size: 12, weight: '600', family: "'Inter', sans-serif" },
-                  color: '#F8FAFC',
+                  color: '#1E293B',
                   usePointStyle: true,
                   pointStyle: 'circle',
                   generateLabels: function(chart) {
@@ -1238,10 +1234,10 @@
                 }
               },
               tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                titleColor: '#F8FAFC',
-                bodyColor: 'rgba(248,250,252,.7)',
-                borderColor: 'rgba(255,255,255,.1)',
+                backgroundColor: 'rgba(255,255,255,.97)',
+                titleColor: '#1E293B',
+                bodyColor: '#64748B',
+                borderColor: '#E2E8F0',
                 borderWidth: 1,
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
@@ -1291,10 +1287,10 @@
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                titleColor: '#F8FAFC',
-                bodyColor: 'rgba(248,250,252,.7)',
-                borderColor: 'rgba(255,255,255,.1)',
+                backgroundColor: 'rgba(255,255,255,.97)',
+                titleColor: '#1E293B',
+                bodyColor: '#64748B',
+                borderColor: '#E2E8F0',
                 borderWidth: 1,
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
@@ -1304,12 +1300,12 @@
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.7)', font: { size: 12, weight: '600' }, padding: 10 }
+                ticks: { color: '#64748B', font: { size: 12, weight: '600' }, padding: 10 }
               },
               y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,.06)', drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.5)', font: { size: 11, weight: '600' }, precision: 0, padding: 8 }
+                grid: { color: '#F1F5F9', drawBorder: false },
+                ticks: { color: '#94A3B8', font: { size: 11, weight: '600' }, precision: 0, padding: 8 }
               }
             }
           }
@@ -1347,10 +1343,10 @@
             plugins: {
               legend: { display: false },
               tooltip: {
-                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                titleColor: '#F8FAFC',
-                bodyColor: 'rgba(248,250,252,.7)',
-                borderColor: 'rgba(255,255,255,.1)',
+                backgroundColor: 'rgba(255,255,255,.97)',
+                titleColor: '#1E293B',
+                bodyColor: '#64748B',
+                borderColor: '#E2E8F0',
                 borderWidth: 1,
                 padding: 12,
                 titleFont: { size: 13, weight: '600' },
@@ -1360,12 +1356,12 @@
             scales: {
               x: {
                 grid: { display: false, drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.7)', font: { size: 12, weight: '600' }, padding: 10 }
+                ticks: { color: '#64748B', font: { size: 12, weight: '600' }, padding: 10 }
               },
               y: {
                 beginAtZero: true,
-                grid: { color: 'rgba(255,255,255,.06)', drawBorder: false },
-                ticks: { color: 'rgba(248,250,252,.5)', font: { size: 11, weight: '600' }, precision: 0, padding: 8 }
+                grid: { color: '#F1F5F9', drawBorder: false },
+                ticks: { color: '#94A3B8', font: { size: 11, weight: '600' }, precision: 0, padding: 8 }
               }
             }
           }

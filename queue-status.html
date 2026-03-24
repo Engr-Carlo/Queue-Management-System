@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <script src="icons.js"></script>
@@ -16,19 +16,14 @@
 
     body{
       font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
-      color:#F8FAFC;
+      color:#1E293B;background:#F8FAFC;
       min-height:100vh;
       overflow-x:hidden;
       display:flex;align-items:center;justify-content:center;
     }
 
     /* ── full-screen background ───────────────────────── */
-    .page-bg{
-      position:fixed;inset:0;z-index:-1;
-      background:
-        linear-gradient(160deg,rgba(15,23,42,.92),rgba(13,148,136,.75)),
-        url('https://images.unsplash.com/photo-1557683316-973673baf926?w=1920&q=80') center/cover no-repeat;
-    }
+    .page-bg{display:none}
 
     .container{
       max-width:460px;width:92%;margin:20px auto;padding:0;
@@ -36,80 +31,75 @@
 
     /* ── top bar ──────────────────────────────────────── */
     .top-bar{
-      background:rgba(255,255,255,.06);
-      backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-      border:1px solid rgba(255,255,255,.10);
+      background:linear-gradient(135deg,#0F766E,#0D9488);
+      border:none;
       border-radius:16px 16px 0 0;
       padding:24px 20px;text-align:center;
     }
     .top-bar .icon-circle{
       width:52px;height:52px;border-radius:14px;
-      background:linear-gradient(135deg,#0D9488,#0F766E);
+      background:rgba(255,255,255,.2);
       display:flex;align-items:center;justify-content:center;
       margin:0 auto 12px;font-size:22px;color:#fff;
     }
-    .top-bar h1{font-size:clamp(1.3rem,4vw,1.7rem);font-weight:800;margin:0 0 4px;color:#F8FAFC}
-    .top-bar p{color:rgba(248,250,252,.6);font-size:.92rem;margin:0}
+    .top-bar h1{font-size:clamp(1.3rem,4vw,1.7rem);font-weight:800;margin:0 0 4px;color:#fff}
+    .top-bar p{color:rgba(255,255,255,.75);font-size:.92rem;margin:0}
 
     /* ── card body ────────────────────────────────────── */
     .card-body{
-      background:rgba(255,255,255,.06);
-      backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-      border:1px solid rgba(255,255,255,.10);
-      border-top:none;
+      background:#FFFFFF;
+      border:1px solid #E2E8F0;border-top:none;
       border-radius:0 0 16px 16px;
       padding:28px 20px 24px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.08);
     }
 
     /* ── queue number ─────────────────────────────────── */
     .q-number-wrap{text-align:center;margin-bottom:24px}
     .q-number{
       font-size:clamp(3.2rem,12vw,4.5rem);font-weight:900;
-      background:linear-gradient(135deg,#2DD4BF,#0D9488);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-      background-clip:text;letter-spacing:-.02em;margin-bottom:10px;
+      color:#0D9488;
+      letter-spacing:-.02em;margin-bottom:10px;
     }
     .queue-status{
       display:inline-block;padding:8px 20px;border-radius:25px;
       font-weight:600;font-size:.95rem;
     }
-    .status-called{background:rgba(239,68,68,.15);color:#f87171;border:2px solid rgba(239,68,68,.35);animation:pulse 1s infinite}
-    .status-queued{background:rgba(148,163,184,.12);color:#94a3b8;border:2px solid rgba(148,163,184,.25)}
-    .status-waiting{background:rgba(245,158,11,.12);color:#fbbf24;border:2px solid rgba(245,158,11,.25)}
-    .status-ready{background:rgba(34,197,94,.12);color:#4ade80;border:2px solid rgba(34,197,94,.25)}
-    .status-completed{background:rgba(148,163,184,.12);color:#94a3b8;border:2px solid rgba(148,163,184,.25)}
-    .status-next{background:rgba(34,197,94,.12);color:#4ade80;border:2px solid rgba(34,197,94,.25);animation:pulse 2s infinite}
-    .status-away{background:rgba(239,68,68,.15);color:#f87171;border:2px solid rgba(239,68,68,.35)}
+    .status-called{background:#FEF2F2;color:#DC2626;border:2px solid #FECACA;animation:pulse 1s infinite}
+    .status-queued{background:#F1F5F9;color:#64748B;border:2px solid #E2E8F0}
+    .status-waiting{background:#FFFBEB;color:#D97706;border:2px solid #FDE68A}
+    .status-ready{background:#F0FDF4;color:#16A34A;border:2px solid #BBF7D0}
+    .status-completed{background:#F1F5F9;color:#64748B;border:2px solid #E2E8F0}
+    .status-next{background:#F0FDF4;color:#16A34A;border:2px solid #BBF7D0;animation:pulse 2s infinite}
+    .status-away{background:#FEF2F2;color:#DC2626;border:2px solid #FECACA}
     @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
 
     /* ── current queue section ─────────────────────────── */
     .current-queue-section{
-      background:rgba(13,148,136,.10);
-      border:2px solid rgba(13,148,136,.25);
+      background:#F0FDFA;
+      border:2px solid #99F6E4;
       border-radius:14px;padding:18px;margin:18px 0;text-align:center;
     }
-    .current-queue-label{font-size:.9rem;font-weight:600;color:#2DD4BF;margin:0 0 8px}
+    .current-queue-label{font-size:.9rem;font-weight:600;color:#0D9488;margin:0 0 8px}
     .current-queue-number{
       font-size:2.2rem;font-weight:900;
-      background:linear-gradient(135deg,#2DD4BF,#0D9488);
-      -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-      background-clip:text;letter-spacing:-.02em;margin:0;
+      color:#0D9488;letter-spacing:-.02em;margin:0;
     }
-    .current-queue-status{font-size:.82rem;color:rgba(248,250,252,.5);margin:4px 0 0}
+    .current-queue-status{font-size:.82rem;color:#64748B;margin:4px 0 0}
 
     /* ── queue details ────────────────────────────────── */
     .queue-details{
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.08);
+      background:#F8FAFC;
+      border:1px solid #E2E8F0;
       border-radius:14px;padding:16px 18px;margin:18px 0;
     }
     .detail-row{
       display:flex;justify-content:space-between;align-items:center;
-      padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06);
+      padding:11px 0;border-bottom:1px solid #F1F5F9;
     }
     .detail-row:last-child{border-bottom:none}
-    .detail-label{font-weight:500;color:rgba(248,250,252,.55);display:flex;align-items:center;gap:8px;font-size:.9rem}
-    .detail-value{font-weight:600;color:#F8FAFC;text-align:right;font-size:.9rem}
+    .detail-label{font-weight:500;color:#64748B;display:flex;align-items:center;gap:8px;font-size:.9rem}
+    .detail-value{font-weight:600;color:#1E293B;text-align:right;font-size:.9rem}
 
     /* ── estimated time / info box ─────────────────────── */
     .estimated-time{
@@ -121,10 +111,10 @@
 
     /* ── admin status ─────────────────────────────────── */
     .admin-status{
-      background:rgba(255,255,255,.04);
-      border:1px solid rgba(255,255,255,.08);
+      background:#F8FAFC;
+      border:1px solid #E2E8F0;
       border-radius:12px;padding:14px 16px;margin:16px 0;
-      text-align:center;font-size:.9rem;color:rgba(248,250,252,.7);
+      text-align:center;font-size:.9rem;color:#64748B;
     }
     .admin-available{border-left:4px solid #10b981}
     .admin-busy{border-left:4px solid #fbbf24}
@@ -143,27 +133,27 @@
 
     .auto-refresh{
       display:flex;align-items:center;justify-content:center;gap:8px;
-      color:rgba(248,250,252,.45);font-size:.82rem;margin-top:14px;
+      color:#94A3B8;font-size:.82rem;margin-top:14px;
     }
     .refresh-indicator{
-      width:16px;height:16px;border:2px solid rgba(248,250,252,.15);
-      border-radius:50%;border-top-color:#2DD4BF;animation:spin 2s linear infinite;
+      width:16px;height:16px;border:2px solid #E2E8F0;
+      border-radius:50%;border-top-color:#0D9488;animation:spin 2s linear infinite;
     }
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    .last-updated{text-align:center;color:rgba(248,250,252,.4);font-size:.82rem;margin-top:12px}
+    .last-updated{text-align:center;color:#94A3B8;font-size:.82rem;margin-top:12px}
 
     /* ── loading / error ──────────────────────────────── */
-    .loading{text-align:center;padding:40px;color:rgba(248,250,252,.6)}
+    .loading{text-align:center;padding:40px;color:#64748B}
     .loading-spinner{
       display:inline-block;width:36px;height:36px;
-      border:3px solid rgba(255,255,255,.10);border-radius:50%;
-      border-top-color:#2DD4BF;animation:spin 1s ease-in-out infinite;
+      border:3px solid #E2E8F0;border-radius:50%;
+      border-top-color:#0D9488;animation:spin 1s ease-in-out infinite;
       margin-bottom:14px;
     }
     .error-message{
-      background:rgba(239,68,68,.10);color:#f87171;
-      border:2px solid rgba(239,68,68,.25);border-radius:14px;
+      background:#FEF2F2;color:#DC2626;
+      border:2px solid #FECACA;border-radius:14px;
       padding:20px;text-align:center;margin:20px 0;
     }
 
@@ -200,18 +190,18 @@
     @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
 
     .developer-credit{
-      text-align:center;font-size:.82rem;color:rgba(248,250,252,.3);
+      text-align:center;font-size:.82rem;color:#CBD5E1;
       margin-top:18px;padding:14px 0;
-      border-top:1px solid rgba(255,255,255,.06);
+      border-top:1px solid #F1F5F9;
     }
 
     /* ── small-button helper ──────────────────────────── */
     .sm-btn{
-      background:rgba(13,148,136,.18);border:1px solid rgba(13,148,136,.35);
-      border-radius:8px;padding:6px 12px;font-size:.82rem;color:#2DD4BF;
+      background:#F0FDFA;border:1px solid #99F6E4;
+      border-radius:8px;padding:6px 12px;font-size:.82rem;color:#0D9488;
       cursor:pointer;transition:all .2s;font-weight:500;
     }
-    .sm-btn:hover{background:rgba(13,148,136,.30);transform:scale(1.04)}
+    .sm-btn:hover{background:#CCFBF1;transform:scale(1.04)}
   </style>
 </head>
 <body>
@@ -275,11 +265,11 @@
           <p class="time" id="waitMessage">Please wait for your queue number to be called</p>
 
           <!-- I'm Here Button Section -->
-          <div id="imHereSection" style="margin-top:18px;padding:18px;background:rgba(34,197,94,.12);border-radius:12px;border:2px solid rgba(34,197,94,.25);display:none;">
-            <h4 style="color:#4ade80;margin:0 0 8px;font-size:1rem;font-weight:600;">
+          <div id="imHereSection" style="margin-top:18px;padding:18px;background:#F0FDF4;border-radius:12px;border:2px solid #BBF7D0;display:none;">
+            <h4 style="color:#16A34A;margin:0 0 8px;font-size:1rem;font-weight:600;">
               <i class="fas fa-hand"></i> Let us know you're here!
             </h4>
-            <p style="color:rgba(248,250,252,.6);margin:0 0 14px;font-size:.85rem;">
+            <p style="color:#64748B;margin:0 0 14px;font-size:.85rem;">
               Press the button below to notify the admin that you've arrived and are ready to be called.
             </p>
             <button id="imHereBtn" onclick="notifyImHere()" style="
@@ -294,20 +284,20 @@
           </div>
 
           <!-- Already Notified Section -->
-          <div id="alreadyNotifiedSection" style="margin-top:18px;padding:18px;background:rgba(13,148,136,.12);border-radius:12px;border:2px solid rgba(13,148,136,.25);display:none;">
-            <h4 style="color:#2DD4BF;margin:0 0 8px;font-size:1rem;font-weight:600;">
+          <div id="alreadyNotifiedSection" style="margin-top:18px;padding:18px;background:#F0FDFA;border-radius:12px;border:2px solid #99F6E4;display:none;">
+            <h4 style="color:#0D9488;margin:0 0 8px;font-size:1rem;font-weight:600;">
               <i class="fas fa-check-circle"></i> You're marked as present!
             </h4>
-            <p style="color:rgba(248,250,252,.6);margin:0;font-size:.85rem;">
+            <p style="color:#64748B;margin:0;font-size:.85rem;">
               The admin knows you're here and ready. You'll be called soon!
             </p>
             <div style="margin-top:14px;">
               <button onclick="cancelImHere()" style="
-                background:rgba(255,255,255,.08);color:rgba(248,250,252,.6);
-                border:1px solid rgba(255,255,255,.12);border-radius:8px;
+                background:#F1F5F9;color:#64748B;
+                border:1px solid #E2E8F0;border-radius:8px;
                 padding:8px 16px;font-size:.85rem;cursor:pointer;transition:all .3s;
-              " onmouseover="this.style.background='rgba(255,255,255,.14)'"
-                 onmouseout="this.style.background='rgba(255,255,255,.08)'">
+              " onmouseover="this.style.background='#E2E8F0'"
+                 onmouseout="this.style.background='#F1F5F9'">
                 <i class="fas fa-xmark"></i> Cancel "I'm Here"
               </button>
             </div>
